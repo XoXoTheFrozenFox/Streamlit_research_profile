@@ -1,4 +1,3 @@
-import re
 import streamlit as st
 import streamlit.components.v1 as components
 
@@ -31,6 +30,7 @@ ROTATING = [
 # -----------------------------
 # Global terminal aesthetic (whole Streamlit page)
 # + HIDE Streamlit chrome (menu/footer/header)
+# Default theme = ORANGE; toggle => GREEN (driven by HTML component)
 # -----------------------------
 st.markdown(
     """
@@ -86,20 +86,6 @@ p, li{
   font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
 }
 
-/* Code blocks look like terminal blocks */
-pre{
-  background: rgba(0,0,0,0.35) !important;
-  border: 1px solid var(--border-orange) !important;
-  border-radius: 14px !important;
-  padding: 12px 14px !important;
-  overflow-x: auto !important;
-  box-shadow: 0 0 0 1px rgba(255,122,24,0.10) inset;
-}
-code{
-  color: inherit !important;
-  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace !important;
-}
-
 /* Green theme (set by JS) */
 html[data-theme="green"] body,
 html[data-theme="green"] [data-testid="stAppViewContainer"]{
@@ -118,10 +104,6 @@ html[data-theme="green"] div[data-testid="stMetric"]{
 html[data-theme="green"] div[data-testid="stAlert"]{
   border: 1px solid var(--border-green) !important;
 }
-html[data-theme="green"] pre{
-  border: 1px solid var(--border-green) !important;
-  box-shadow: 0 0 0 1px rgba(57,255,20,0.10) inset;
-}
 </style>
 """,
     unsafe_allow_html=True,
@@ -129,6 +111,9 @@ html[data-theme="green"] pre{
 
 # -----------------------------
 # Topbar component
+# - Theme toggle button left of portfolio button
+# - No infinite scroll from iframe resize
+# - Mobile bottom-edge clipping fixed (box-sizing + padding)
 # -----------------------------
 topbar_html = f"""
 <!doctype html>
@@ -152,7 +137,7 @@ topbar_html = f"""
 
   body {{
     margin: 0;
-    padding: 10px 8px 10px 8px;
+    padding: 10px 8px 12px 8px; /* extra bottom padding helps mobile */
     background: transparent;
     color: var(--orange);
     font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono",
@@ -211,10 +196,7 @@ topbar_html = f"""
     align-items:center;
     justify-content:flex-end;
     flex-wrap: wrap;
-    padding-right: 8px;
-    padding-left: 8px;
-    padding-top: 10px;
-    padding-bottom: 4px;
+    padding: 10px 8px 8px 8px; /* bottom padding prevents any edge cut */
     overflow: visible;
   }}
 
@@ -229,7 +211,6 @@ topbar_html = f"""
     color: currentColor;
 
     box-sizing: border-box;
-
     border:1px solid var(--border-orange);
     background: rgba(0,0,0,0.25);
     box-shadow: 0 0 0 1px rgba(255,122,24,0.12) inset, 0 10px 22px rgba(0,0,0,0.35);
@@ -295,7 +276,7 @@ topbar_html = f"""
   }}
 
   @media (max-width: 640px) {{
-    body {{ padding: 12px 10px 12px 10px; }}
+    body {{ padding: 12px 10px 14px 10px; }}
 
     .row1 {{
       grid-template-columns: 1fr;
@@ -313,7 +294,7 @@ topbar_html = f"""
     .icon-row {{
       justify-content: flex-start;
       gap: 8px;
-      padding: 0 0 8px 0;
+      padding: 0 0 10px 0; /* more bottom padding to guarantee no clipping */
       overflow: visible;
     }}
 
@@ -324,22 +305,6 @@ topbar_html = f"""
       font-size: 1.02rem;
       line-height: 1.25;
       margin-top: 6px;
-    }}
-  }}
-
-  @media (hover: none) and (pointer: coarse) {{
-    a.icon-btn:hover, button.icon-btn:hover {{
-      transform:none;
-      background: rgba(0,0,0,0.25);
-      box-shadow: 0 0 0 1px rgba(255,122,24,0.12) inset, 0 10px 22px rgba(0,0,0,0.35);
-    }}
-    html[data-theme="green"] a.icon-btn:hover,
-    html[data-theme="green"] button.icon-btn:hover {{
-      box-shadow: 0 0 0 1px rgba(57,255,20,0.12) inset, 0 10px 22px rgba(0,0,0,0.35);
-    }}
-
-    a.icon-btn:active, button.icon-btn:active {{
-      transform: scale(0.98);
     }}
   }}
 </style>
@@ -406,7 +371,7 @@ topbar_html = f"""
     setTheme(cur === "green" ? "orange" : "green");
   }});
 
-  // resize without infinite growth
+  // Resize without infinite growth
   function getHeight() {{
     const b = wrap.getBoundingClientRect().height;
     const sh = wrap.scrollHeight;
@@ -420,7 +385,7 @@ topbar_html = f"""
     if (raf) cancelAnimationFrame(raf);
     raf = requestAnimationFrame(() => {{
       try {{
-        const h = Math.min(320, Math.max(70, getHeight() + 12));
+        const h = Math.min(340, Math.max(70, getHeight() + 14));
         if (Math.abs(h - lastH) > 1 && window.frameElement) {{
           lastH = h;
           window.frameElement.style.height = h + "px";
@@ -435,7 +400,7 @@ topbar_html = f"""
     childList: true, subtree: true, characterData: true
   }});
 
-  // typing
+  // Typing
   const staticPrefix = {STATIC_PREFIX!r};
   const words = {ROTATING!r};
 
@@ -486,14 +451,6 @@ topbar_html = f"""
   wordEl.textContent = "";
   step();
 
-  function blurActive() {{
-    try {{ document.activeElement && document.activeElement.blur && document.activeElement.blur(); }} catch(e) {{}}
-  }}
-  window.addEventListener("pageshow", blurActive);
-  document.addEventListener("visibilitychange", function() {{
-    if (!document.hidden) blurActive();
-  }});
-
   setTimeout(resizeFrame, 120);
   setTimeout(resizeFrame, 350);
   setTimeout(resizeFrame, 700);
@@ -507,55 +464,17 @@ components.html(topbar_html, height=93)
 st.divider()
 
 # -----------------------------
-# Fake terminal / linux command blocks before each section
-# -----------------------------
-BASE = "Person@Interest:/Bernard"
-
-UBUNTU_BANNER = [
-    "Welcome to Ubuntu 22.04.3 LTS (GNU/Linux 6.5.0-xx-generic x86_64)",
-    "",
-    " * Documentation:  help.ubuntu.com",
-    " * Management:     landscape.canonical.com",
-    "",
-]
-
-def _safe_path_segment(title: str) -> str:
-    seg = re.sub(r"[^\w\s\-]", "", title).strip()
-    seg = re.sub(r"\s+", "_", seg)
-    return seg if seg else "Section"
-
-def _nano_block(title: str, show_banner: bool, show_ctrl_c_before: bool):
-    seg = _safe_path_segment(title)
-    filename = f'{title}.txt'
-
-    lines = []
-    if show_banner:
-        lines += UBUNTU_BANNER
-
-    if show_ctrl_c_before:
-        lines.append("^C  (CTRL+C to quit)")
-        lines.append("")
-
-    prompt = f"{BASE}/{seg}$"
-    lines.append(f'{prompt} nano "{filename}"')
-    lines.append("GNU nano 6.2")
-    lines.append("^C  (CTRL+C to quit)")
-    st.markdown("```text\n" + "\n".join(lines) + "\n```")
-
-# -----------------------------
 # Main content
 # -----------------------------
 left, right = st.columns([1.35, 1.0], gap="large")
 
 with left:
-    _nano_block("Research overview", show_banner=True, show_ctrl_c_before=False)
     st.markdown("## Research overview")
     st.write(
         "My research explores deep learning methods for classifying sunspot groups from solar imagery, "
         "with emphasis on robust generalization, handling class imbalance, and producing interpretable predictions."
     )
 
-    _nano_block("What I’m building", show_banner=False, show_ctrl_c_before=True)
     st.markdown("## What I’m building")
     st.markdown(
         """
@@ -566,7 +485,6 @@ with left:
         """.strip()
     )
 
-    _nano_block("Highlights", show_banner=False, show_ctrl_c_before=True)
     st.markdown("## Highlights")
     st.info("Replace these placeholders with your real results (macro-F1, dataset size, best model, key findings).")
 
@@ -577,5 +495,4 @@ with left:
     m4.metric("Backbone", "—")
 
 st.divider()
-# (You can also remove this caption if you want a totally clean page)
-st.caption("© 2026 Bernard Swanepoel • Built with Streamlit")
+st.caption("© 2026 Bernard Swanepoel")
