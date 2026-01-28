@@ -30,12 +30,17 @@ ROTATING = [
 
 # -----------------------------
 # Global terminal aesthetic (whole Streamlit page)
-# Default theme = neon ORANGE, toggle => neon GREEN
-# + style code blocks to look like terminal blocks
+# + HIDE Streamlit chrome (menu/footer/header)
 # -----------------------------
 st.markdown(
     """
 <style>
+/* Hide Streamlit default UI (menu/footer/header) */
+#MainMenu {visibility: hidden;}
+footer {visibility: hidden;}
+header {visibility: hidden;}
+
+/* Theme vars */
 :root{
   --bg:#050505;
   --orange:#ff7a18;
@@ -56,13 +61,7 @@ html, body, [data-testid="stAppViewContainer"]{
   padding-bottom: 1.25rem !important;
 }
 
-header[data-testid="stHeader"],
-div[data-testid="stToolbar"],
-div[data-testid="stDecoration"]{
-  background: transparent !important;
-  pointer-events: none !important;
-}
-
+/* Divider tight to content */
 hr{
   border: none !important;
   border-top: 1px solid var(--border-orange) !important;
@@ -130,9 +129,6 @@ html[data-theme="green"] pre{
 
 # -----------------------------
 # Topbar component
-# - No infinite scrolling (fixed resize loop)
-# - Theme toggle button left of portfolio button
-# - Mobile button bottom-edge clipping fixed (box-sizing + padding + overflow visible)
 # -----------------------------
 topbar_html = f"""
 <!doctype html>
@@ -317,7 +313,7 @@ topbar_html = f"""
     .icon-row {{
       justify-content: flex-start;
       gap: 8px;
-      padding: 0 0 8px 0; /* a bit more breathing room on mobile */
+      padding: 0 0 8px 0;
       overflow: visible;
     }}
 
@@ -386,7 +382,6 @@ topbar_html = f"""
 (function () {{
   const wrap = document.getElementById("wrap");
 
-  // ---------- THEME (default ORANGE, click => GREEN; sync to parent) ----------
   function setTheme(theme) {{
     const t = (theme === "green") ? "green" : "orange";
     document.documentElement.setAttribute("data-theme", t);
@@ -411,7 +406,7 @@ topbar_html = f"""
     setTheme(cur === "green" ? "orange" : "green");
   }});
 
-  // ---------- RESIZE (FIX: prevent infinite growth) ----------
+  // resize without infinite growth
   function getHeight() {{
     const b = wrap.getBoundingClientRect().height;
     const sh = wrap.scrollHeight;
@@ -440,7 +435,7 @@ topbar_html = f"""
     childList: true, subtree: true, characterData: true
   }});
 
-  // ---------- TYPING ----------
+  // typing
   const staticPrefix = {STATIC_PREFIX!r};
   const words = {ROTATING!r};
 
@@ -491,7 +486,6 @@ topbar_html = f"""
   wordEl.textContent = "";
   step();
 
-  // Prevent stuck focus when coming back (mobile)
   function blurActive() {{
     try {{ document.activeElement && document.activeElement.blur && document.activeElement.blur(); }} catch(e) {{}}
   }}
@@ -526,7 +520,6 @@ UBUNTU_BANNER = [
 ]
 
 def _safe_path_segment(title: str) -> str:
-    # keep it readable in a fake prompt (no crazy chars)
     seg = re.sub(r"[^\w\s\-]", "", title).strip()
     seg = re.sub(r"\s+", "_", seg)
     return seg if seg else "Section"
@@ -555,7 +548,6 @@ def _nano_block(title: str, show_banner: bool, show_ctrl_c_before: bool):
 left, right = st.columns([1.35, 1.0], gap="large")
 
 with left:
-    # Section 1
     _nano_block("Research overview", show_banner=True, show_ctrl_c_before=False)
     st.markdown("## Research overview")
     st.write(
@@ -563,7 +555,6 @@ with left:
         "with emphasis on robust generalization, handling class imbalance, and producing interpretable predictions."
     )
 
-    # Section 2
     _nano_block("What I’m building", show_banner=False, show_ctrl_c_before=True)
     st.markdown("## What I’m building")
     st.markdown(
@@ -575,7 +566,6 @@ with left:
         """.strip()
     )
 
-    # Section 3
     _nano_block("Highlights", show_banner=False, show_ctrl_c_before=True)
     st.markdown("## Highlights")
     st.info("Replace these placeholders with your real results (macro-F1, dataset size, best model, key findings).")
@@ -587,4 +577,5 @@ with left:
     m4.metric("Backbone", "—")
 
 st.divider()
+# (You can also remove this caption if you want a totally clean page)
 st.caption("© 2026 Bernard Swanepoel • Built with Streamlit")
