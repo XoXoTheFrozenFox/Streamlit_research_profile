@@ -30,12 +30,12 @@ ROTATING = [
 ]
 
 # -----------------------------
-# Global terminal aesthetic + hide Streamlit chrome
-# + 4 color profiles
-# + remove heading link icons
-# + make input/textarea TRUE black (no grey edges)
-# + no red validation borders
-# + show "Field empty!" inside inputs (bottom-right) when empty & not focused
+# Global terminal aesthetic
+# - 4 color profiles
+# - remove heading link icons
+# - inputs/textarea TRUE black (no grey edges)
+# - remove ANY red focus/invalid ring (wrapper + input)
+# - show "Field empty!" bottom-right inside box (not focused & empty)
 # -----------------------------
 st.markdown(
     """
@@ -109,7 +109,7 @@ div[data-testid="stAlert"]{
   border-radius: 14px !important;
 }
 
-/* Make INFO block background EXACTLY #050505 (if you ever re-add st.info) */
+/* st.info bg (if ever used) */
 div[data-testid="stAlert"][data-baseweb="notification"]{
   background: #050505 !important;
 }
@@ -122,24 +122,44 @@ p, li, label, div{
 }
 
 /* -----------------------------
-   TRUE BLACK inputs (kill grey halos + baseweb defaults)
+   TRUE BLACK inputs + remove ANY red wrapper ring
 ------------------------------ */
 div[data-testid="stTextInput"],
 div[data-testid="stTextArea"]{
-  position: relative !important;     /* for bottom-right hint overlay */
+  position: relative !important; /* for bottom-right hint */
 }
 
-/* Nuke any baseweb wrapper background/halo */
+/* Kill wrapper borders/box-shadows that show as red/grey rings */
 div[data-testid="stTextInput"] > div,
 div[data-testid="stTextArea"] > div,
 div[data-testid="stTextInput"] [data-baseweb],
-div[data-testid="stTextArea"] [data-baseweb]{
+div[data-testid="stTextArea"] [data-baseweb],
+div[data-testid="stTextInput"] [data-baseweb] *:not(input),
+div[data-testid="stTextArea"] [data-baseweb] *:not(textarea){
   background: var(--bg) !important;
+  border-color: transparent !important;
   box-shadow: none !important;
   outline: none !important;
 }
 
-/* Actual input/textarea */
+/* Also nuke any :focus-within ring on the OUTER containers */
+div[data-testid="stTextInput"]:focus-within,
+div[data-testid="stTextArea"]:focus-within{
+  box-shadow: none !important;
+  outline: none !important;
+  border-color: transparent !important;
+}
+
+/* Make baseweb textarea container borderless (THIS is usually the red ring) */
+div[data-testid="stTextArea"] [data-baseweb="textarea"],
+div[data-testid="stTextInput"] [data-baseweb="base-input"]{
+  background: var(--bg) !important;
+  border: none !important;
+  box-shadow: none !important;
+  outline: none !important;
+}
+
+/* Actual input/textarea = ONLY border you want */
 div[data-testid="stTextInput"] input,
 div[data-testid="stTextArea"] textarea{
   background: var(--bg) !important;
@@ -154,17 +174,11 @@ div[data-testid="stTextArea"] textarea{
   background-clip: padding-box !important;
 }
 
-/* Prevent any red/blue invalid/focus styling Streamlit/BaseWeb might inject */
+/* Force away any invalid/focus styling (no red ever) */
 div[data-testid="stTextInput"] input:focus,
 div[data-testid="stTextArea"] textarea:focus,
 div[data-testid="stTextInput"] input:focus-visible,
-div[data-testid="stTextArea"] textarea:focus-visible{
-  border: 1px solid var(--border-orange) !important;
-  box-shadow: none !important;
-  outline: none !important;
-}
-
-/* If Streamlit sets aria-invalid, force it back to theme border (no red) */
+div[data-testid="stTextArea"] textarea:focus-visible,
 div[data-testid="stTextInput"] input[aria-invalid="true"],
 div[data-testid="stTextArea"] textarea[aria-invalid="true"]{
   border: 1px solid var(--border-orange) !important;
@@ -172,6 +186,7 @@ div[data-testid="stTextArea"] textarea[aria-invalid="true"]{
   outline: none !important;
 }
 
+/* Placeholders */
 div[data-testid="stTextInput"] input::placeholder,
 div[data-testid="stTextArea"] textarea::placeholder{
   color: rgba(255,122,24,0.65) !important;
@@ -187,12 +202,12 @@ div[data-testid="stTextInput"] input:-webkit-autofill:focus{
   border: 1px solid var(--border-orange) !important;
 }
 
-/* Bottom-right "Field empty!" INSIDE inputs when empty and not focused */
+/* Bottom-right "Field empty!" INSIDE boxes when empty & NOT focused */
 div[data-testid="stTextInput"]:has(input:placeholder-shown):not(:focus-within)::after{
   content: "Field empty!";
   position: absolute;
   right: 14px;
-  top: 44px;                  /* aligns into the input box area */
+  top: 44px;
   font-size: 12px;
   opacity: 0.75;
   pointer-events: none;
@@ -201,13 +216,13 @@ div[data-testid="stTextArea"]:has(textarea:placeholder-shown):not(:focus-within)
   content: "Field empty!";
   position: absolute;
   right: 14px;
-  top: 44px;                  /* aligns into the textarea box area */
+  top: 44px;
   font-size: 12px;
   opacity: 0.75;
   pointer-events: none;
 }
 
-/* Streamlit buttons */
+/* Buttons */
 .stButton > button, div[data-testid="stFormSubmitButton"] button{
   background: var(--bg) !important;
   color: var(--orange) !important;
@@ -220,7 +235,7 @@ div[data-testid="stTextArea"]:has(textarea:placeholder-shown):not(:focus-within)
   background: rgba(255,122,24,0.08) !important;
 }
 
-/* Mailto "Send message" link styled EXACTLY like button */
+/* Mailto button */
 a.send-mailto-btn{
   display: inline-flex;
   align-items: center;
@@ -240,8 +255,6 @@ a.send-mailto-btn:hover{
   background: rgba(255,122,24,0.08) !important;
   transform: translateY(-1px);
 }
-
-/* Disabled-look */
 a.send-mailto-btn.is-disabled{
   opacity: 0.55;
   cursor: not-allowed;
@@ -272,11 +285,10 @@ html[data-theme="green"] div[data-testid="stTextInput"] input[aria-invalid="true
 html[data-theme="green"] div[data-testid="stTextArea"] textarea[aria-invalid="true"]{
   border: 1px solid var(--border-green) !important;
   box-shadow: none !important;
+  outline: none !important;
 }
-
 html[data-theme="green"] div[data-testid="stTextInput"] input::placeholder,
 html[data-theme="green"] div[data-testid="stTextArea"] textarea::placeholder{ color: rgba(57,255,20,0.65) !important; }
-
 html[data-theme="green"] .stButton > button,
 html[data-theme="green"] div[data-testid="stFormSubmitButton"] button,
 html[data-theme="green"] a.send-mailto-btn{
@@ -306,11 +318,10 @@ html[data-theme="blue"] div[data-testid="stTextInput"] input[aria-invalid="true"
 html[data-theme="blue"] div[data-testid="stTextArea"] textarea[aria-invalid="true"]{
   border: 1px solid var(--border-blue) !important;
   box-shadow: none !important;
+  outline: none !important;
 }
-
 html[data-theme="blue"] div[data-testid="stTextInput"] input::placeholder,
 html[data-theme="blue"] div[data-testid="stTextArea"] textarea::placeholder{ color: rgba(0,231,255,0.65) !important; }
-
 html[data-theme="blue"] .stButton > button,
 html[data-theme="blue"] div[data-testid="stFormSubmitButton"] button,
 html[data-theme="blue"] a.send-mailto-btn{
@@ -340,11 +351,10 @@ html[data-theme="pink"] div[data-testid="stTextInput"] input[aria-invalid="true"
 html[data-theme="pink"] div[data-testid="stTextArea"] textarea[aria-invalid="true"]{
   border: 1px solid var(--border-pink) !important;
   box-shadow: none !important;
+  outline: none !important;
 }
-
 html[data-theme="pink"] div[data-testid="stTextInput"] input::placeholder,
 html[data-theme="pink"] div[data-testid="stTextArea"] textarea::placeholder{ color: rgba(255,43,214,0.65) !important; }
-
 html[data-theme="pink"] .stButton > button,
 html[data-theme="pink"] div[data-testid="stFormSubmitButton"] button,
 html[data-theme="pink"] a.send-mailto-btn{
@@ -730,6 +740,7 @@ st.divider()
 # -----------------------------
 def build_mailto(to_email: str, subject: str, body: str) -> str:
     return f"mailto:{to_email}?subject={quote(subject)}&body={quote(body)}"
+
 
 # -----------------------------
 # Main content
