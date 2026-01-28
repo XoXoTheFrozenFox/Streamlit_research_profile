@@ -466,8 +466,8 @@ left, right = st.columns([1.35, 1.0], gap="large")
 with left:
     st.markdown("## Background about me")
     st.write(
-        "I’m Bernard Swanepoel, a Computer Science master’s student focused on applying deep learning to solar physics—"
-        "specifically automated sunspot detection and McIntosh classification."
+    "I’m Bernard Swanepoel, a Computer Science master’s student focused on applying deep learning to solar physics—especially automated sunspot detection and McIntosh classification. "
+    "Outside of research, I’m into gaming (Destiny, League of Legends, and pretty much anything Nintendo), I sing opera, and I enjoy 3D printing—mostly figures and fun prints."
     )
 
     st.markdown("## Research titles")
