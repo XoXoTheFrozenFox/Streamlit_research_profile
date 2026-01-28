@@ -10,7 +10,11 @@ st.set_page_config(
 # -----------------------------
 # Links / info
 # -----------------------------
-TAGLINE = "Research project title: Sunspot classification using deep learning techniques"
+TAGLINE = (
+    "Masters research project title: Sunspot classification using deep learning techniques\n"
+    "Line 2 here\n"
+    "Line 3 here"
+)
 
 PORTFOLIO_URL = "https://xoxothefrozenfox.github.io/react-personal-portfolio/"
 LINKEDIN_URL = "https://www.linkedin.com/in/bernard-swanepoel-a2777322b/"
