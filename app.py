@@ -31,7 +31,9 @@ ROTATING = [
 
 # -----------------------------
 # Global terminal aesthetic + hide Streamlit chrome
-# + form widgets styled PURE black like background
+# + add 2 more color profiles (neon blue, neon pink)
+# + make st.info block pure black like background
+# + hide header link icon on hover
 # -----------------------------
 st.markdown(
     """
@@ -41,13 +43,26 @@ st.markdown(
 footer {visibility: hidden;}
 header {visibility: hidden;}
 
+/* Hide Streamlit "link" icon next to headings on hover */
+a.stMarkdownHeaderLink,
+a[data-testid="stHeaderLink"],
+[data-testid="stHeader"] a,
+[data-testid="stHeader"] svg { display:none !important; opacity:0 !important; }
+
 /* Theme vars */
 :root{
   --bg:#050505;
+
   --orange:#ff7a18;
   --green:#39ff14;
+  --blue:#00e7ff;     /* neon blue */
+  --pink:#ff2bd6;     /* neon pink */
+
   --border-orange:rgba(255,122,24,0.45);
   --border-green:rgba(57,255,20,0.45);
+  --border-blue:rgba(0,231,255,0.45);
+  --border-pink:rgba(255,43,214,0.45);
+
   --panel: rgba(0,0,0,0.35);
 }
 
@@ -71,7 +86,7 @@ hr{
   margin: 0.18rem 0 0.55rem 0 !important;
 }
 
-/* Metrics & alerts */
+/* Metrics */
 div[data-testid="stMetric"]{
   background: var(--panel) !important;
   border: 1px solid var(--border-orange) !important;
@@ -79,10 +94,22 @@ div[data-testid="stMetric"]{
   padding: 12px 12px !important;
   box-shadow: 0 0 0 1px rgba(255,122,24,0.10) inset;
 }
+
+/* Alerts default (we'll override st.info specifically below) */
 div[data-testid="stAlert"]{
   background: var(--panel) !important;
   border: 1px solid var(--border-orange) !important;
   border-radius: 14px !important;
+}
+
+/* Make INFO block (your placeholder message) pure black like background */
+div[data-testid="stAlert"][data-baseweb="notification"]{
+  background: var(--bg) !important;
+}
+
+/* Extra-safe: make the inner content also match */
+div[data-testid="stAlert"][data-baseweb="notification"] *{
+  background: transparent !important;
 }
 
 p, li, label, div{
@@ -152,21 +179,17 @@ a.send-mailto-btn.is-disabled{
   transform: none !important;
 }
 
-/* Green theme (set by JS) */
+/* -----------------------------
+   THEME OVERRIDES (Green / Blue / Pink)
+------------------------------ */
+
+/* GREEN */
 html[data-theme="green"] body,
-html[data-theme="green"] [data-testid="stAppViewContainer"]{
-  color: var(--green) !important;
-}
-html[data-theme="green"] *{
-  color: var(--green) !important;
-}
-html[data-theme="green"] hr{
-  border-top: 1px solid var(--border-green) !important;
-}
+html[data-theme="green"] [data-testid="stAppViewContainer"]{ color: var(--green) !important; }
+html[data-theme="green"] *{ color: var(--green) !important; }
+html[data-theme="green"] hr{ border-top: 1px solid var(--border-green) !important; }
 html[data-theme="green"] div[data-testid="stMetric"],
-html[data-theme="green"] div[data-testid="stAlert"]{
-  border: 1px solid var(--border-green) !important;
-}
+html[data-theme="green"] div[data-testid="stAlert"]{ border: 1px solid var(--border-green) !important; }
 html[data-theme="green"] div[data-testid="stTextInput"] input,
 html[data-theme="green"] div[data-testid="stTextArea"] textarea{
   color: var(--green) !important;
@@ -174,9 +197,7 @@ html[data-theme="green"] div[data-testid="stTextArea"] textarea{
   box-shadow: 0 0 0 1px rgba(57,255,20,0.10) inset !important;
 }
 html[data-theme="green"] div[data-testid="stTextInput"] input::placeholder,
-html[data-theme="green"] div[data-testid="stTextArea"] textarea::placeholder{
-  color: rgba(57,255,20,0.65) !important;
-}
+html[data-theme="green"] div[data-testid="stTextArea"] textarea::placeholder{ color: rgba(57,255,20,0.65) !important; }
 html[data-theme="green"] .stButton > button,
 html[data-theme="green"] div[data-testid="stFormSubmitButton"] button,
 html[data-theme="green"] a.send-mailto-btn{
@@ -186,16 +207,72 @@ html[data-theme="green"] a.send-mailto-btn{
 }
 html[data-theme="green"] .stButton > button:hover,
 html[data-theme="green"] div[data-testid="stFormSubmitButton"] button:hover,
-html[data-theme="green"] a.send-mailto-btn:hover{
-  background: rgba(57,255,20,0.08) !important;
+html[data-theme="green"] a.send-mailto-btn:hover{ background: rgba(57,255,20,0.08) !important; }
+
+/* BLUE (neon) */
+html[data-theme="blue"] body,
+html[data-theme="blue"] [data-testid="stAppViewContainer"]{ color: var(--blue) !important; }
+html[data-theme="blue"] *{ color: var(--blue) !important; }
+html[data-theme="blue"] hr{ border-top: 1px solid var(--border-blue) !important; }
+html[data-theme="blue"] div[data-testid="stMetric"],
+html[data-theme="blue"] div[data-testid="stAlert"]{ border: 1px solid var(--border-blue) !important; }
+html[data-theme="blue"] div[data-testid="stMetric"]{
+  box-shadow: 0 0 0 1px rgba(0,231,255,0.10) inset;
 }
+html[data-theme="blue"] div[data-testid="stTextInput"] input,
+html[data-theme="blue"] div[data-testid="stTextArea"] textarea{
+  color: var(--blue) !important;
+  border: 1px solid var(--border-blue) !important;
+  box-shadow: 0 0 0 1px rgba(0,231,255,0.10) inset !important;
+}
+html[data-theme="blue"] div[data-testid="stTextInput"] input::placeholder,
+html[data-theme="blue"] div[data-testid="stTextArea"] textarea::placeholder{ color: rgba(0,231,255,0.65) !important; }
+html[data-theme="blue"] .stButton > button,
+html[data-theme="blue"] div[data-testid="stFormSubmitButton"] button,
+html[data-theme="blue"] a.send-mailto-btn{
+  color: var(--blue) !important;
+  border: 1px solid var(--border-blue) !important;
+  box-shadow: 0 0 0 1px rgba(0,231,255,0.10) inset !important;
+}
+html[data-theme="blue"] .stButton > button:hover,
+html[data-theme="blue"] div[data-testid="stFormSubmitButton"] button:hover,
+html[data-theme="blue"] a.send-mailto-btn:hover{ background: rgba(0,231,255,0.08) !important; }
+
+/* PINK (neon) */
+html[data-theme="pink"] body,
+html[data-theme="pink"] [data-testid="stAppViewContainer"]{ color: var(--pink) !important; }
+html[data-theme="pink"] *{ color: var(--pink) !important; }
+html[data-theme="pink"] hr{ border-top: 1px solid var(--border-pink) !important; }
+html[data-theme="pink"] div[data-testid="stMetric"],
+html[data-theme="pink"] div[data-testid="stAlert"]{ border: 1px solid var(--border-pink) !important; }
+html[data-theme="pink"] div[data-testid="stMetric"]{
+  box-shadow: 0 0 0 1px rgba(255,43,214,0.10) inset;
+}
+html[data-theme="pink"] div[data-testid="stTextInput"] input,
+html[data-theme="pink"] div[data-testid="stTextArea"] textarea{
+  color: var(--pink) !important;
+  border: 1px solid var(--border-pink) !important;
+  box-shadow: 0 0 0 1px rgba(255,43,214,0.10) inset !important;
+}
+html[data-theme="pink"] div[data-testid="stTextInput"] input::placeholder,
+html[data-theme="pink"] div[data-testid="stTextArea"] textarea::placeholder{ color: rgba(255,43,214,0.65) !important; }
+html[data-theme="pink"] .stButton > button,
+html[data-theme="pink"] div[data-testid="stFormSubmitButton"] button,
+html[data-theme="pink"] a.send-mailto-btn{
+  color: var(--pink) !important;
+  border: 1px solid var(--border-pink) !important;
+  box-shadow: 0 0 0 1px rgba(255,43,214,0.10) inset !important;
+}
+html[data-theme="pink"] .stButton > button:hover,
+html[data-theme="pink"] div[data-testid="stFormSubmitButton"] button:hover,
+html[data-theme="pink"] a.send-mailto-btn:hover{ background: rgba(255,43,214,0.08) !important; }
 </style>
 """,
     unsafe_allow_html=True,
 )
 
 # -----------------------------
-# Topbar component (orange default; toggle to green)
+# Topbar component (now cycles: orange -> green -> blue -> pink)
 # -----------------------------
 topbar_html = f"""
 <!doctype html>
@@ -208,8 +285,13 @@ topbar_html = f"""
   :root {{
     --orange:#ff7a18;
     --green:#39ff14;
+    --blue:#00e7ff;
+    --pink:#ff2bd6;
+
     --border-orange:rgba(255,122,24,0.45);
     --border-green:rgba(57,255,20,0.45);
+    --border-blue:rgba(0,231,255,0.45);
+    --border-pink:rgba(255,43,214,0.45);
   }}
 
   html, body {{
@@ -228,6 +310,8 @@ topbar_html = f"""
   }}
 
   html[data-theme="green"] body {{ color: var(--green); }}
+  html[data-theme="blue"]  body {{ color: var(--blue); }}
+  html[data-theme="pink"]  body {{ color: var(--pink); }}
 
   #wrap {{
     width: 100%;
@@ -306,10 +390,17 @@ topbar_html = f"""
     padding: 0;
   }}
 
-  html[data-theme="green"] a.icon-btn,
-  html[data-theme="green"] button.icon-btn {{
+  html[data-theme="green"] a.icon-btn, html[data-theme="green"] button.icon-btn {{
     border-color: var(--border-green);
     box-shadow: 0 0 0 1px rgba(57,255,20,0.12) inset, 0 10px 22px rgba(0,0,0,0.35);
+  }}
+  html[data-theme="blue"] a.icon-btn, html[data-theme="blue"] button.icon-btn {{
+    border-color: var(--border-blue);
+    box-shadow: 0 0 0 1px rgba(0,231,255,0.12) inset, 0 10px 22px rgba(0,0,0,0.35);
+  }}
+  html[data-theme="pink"] a.icon-btn, html[data-theme="pink"] button.icon-btn {{
+    border-color: var(--border-pink);
+    box-shadow: 0 0 0 1px rgba(255,43,214,0.12) inset, 0 10px 22px rgba(0,0,0,0.35);
   }}
 
   a.icon-btn i, button.icon-btn i {{
@@ -322,10 +413,17 @@ topbar_html = f"""
     background: rgba(255,122,24,0.12);
     box-shadow: 0 0 12px rgba(255,122,24,0.18), 0 10px 18px rgba(0,0,0,0.45);
   }}
-  html[data-theme="green"] a.icon-btn:hover,
-  html[data-theme="green"] button.icon-btn:hover {{
+  html[data-theme="green"] a.icon-btn:hover, html[data-theme="green"] button.icon-btn:hover {{
     background: rgba(57,255,20,0.12);
     box-shadow: 0 0 12px rgba(57,255,20,0.18), 0 10px 18px rgba(0,0,0,0.45);
+  }}
+  html[data-theme="blue"] a.icon-btn:hover, html[data-theme="blue"] button.icon-btn:hover {{
+    background: rgba(0,231,255,0.12);
+    box-shadow: 0 0 12px rgba(0,231,255,0.18), 0 10px 18px rgba(0,0,0,0.45);
+  }}
+  html[data-theme="pink"] a.icon-btn:hover, html[data-theme="pink"] button.icon-btn:hover {{
+    background: rgba(255,43,214,0.12);
+    box-shadow: 0 0 12px rgba(255,43,214,0.18), 0 10px 18px rgba(0,0,0,0.45);
   }}
 
   a.icon-btn:active, button.icon-btn:active {{
@@ -407,7 +505,7 @@ topbar_html = f"""
       </div>
 
       <div class="icon-row">
-        <button class="icon-btn" id="themeToggle" type="button" title="Toggle theme (Orange/Green)">
+        <button class="icon-btn" id="themeToggle" type="button" title="Toggle theme (Orange/Green/Blue/Pink)">
           <i class="fa-solid fa-palette"></i>
         </button>
 
@@ -429,8 +527,10 @@ topbar_html = f"""
 (function () {{
   const wrap = document.getElementById("wrap");
 
+  const themes = ["orange", "green", "blue", "pink"];
+
   function setTheme(theme) {{
-    const t = (theme === "green") ? "green" : "orange";
+    const t = themes.includes(theme) ? theme : "orange";
     document.documentElement.setAttribute("data-theme", t);
     try {{
       if (window.parent && window.parent.document) {{
@@ -445,7 +545,9 @@ topbar_html = f"""
   const toggleBtn = document.getElementById("themeToggle");
   toggleBtn.addEventListener("click", function () {{
     const cur = document.documentElement.getAttribute("data-theme") || "orange";
-    setTheme(cur === "green" ? "orange" : "green");
+    const i = themes.indexOf(cur);
+    const next = themes[(i + 1 + themes.length) % themes.length];
+    setTheme(next);
   }});
 
   // Resize without infinite growth
