@@ -256,7 +256,7 @@ topbar_html = f"""
     </div>
   </div>
 
-  <div class="tagline">{TAGLINE}</div>
+  <div class="tagline" style="white-space: pre-line;">{TAGLINE}</div>
 
 <script>
 (function () {{
