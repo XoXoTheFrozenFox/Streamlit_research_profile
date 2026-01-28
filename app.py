@@ -17,9 +17,7 @@ LINKEDIN_URL = "https://www.linkedin.com/in/bernard-swanepoel-a2777322b/"
 GITHUB_URL = "https://github.com/XoXoTheFrozenFox"
 EMAIL = "BernardSwanepoel1510@gmail.com"
 
-# ✅ IMPORTANT: use a NORMAL space at the end so wrapping can happen naturally on mobile
-# (still exactly one space after the dot)
-STATIC_PREFIX = "Hi🌞, my name is Bernard Swanepoel. "
+STATIC_PREFIX = "Hi🌞, my name is Bernard Swanepoel. "  # ends with ONE normal space
 
 ROTATING = [
     "Masters student✏️",
@@ -59,7 +57,6 @@ div[data-testid="stDecoration"]{
   pointer-events: none !important;
 }
 
-/* Divider tight to content */
 hr{
   border: none !important;
   border-top: 1px solid var(--border) !important;
@@ -89,12 +86,7 @@ p, li{
 )
 
 # -----------------------------
-# Topbar component
-# FIXES:
-# ✅ Desktop text never cuts off: title WRAPS, icons can wrap to next line if needed.
-# ✅ Mobile: typed word starts right after prefix (same line), wraps naturally when needed.
-# ✅ "$" never sits alone (uses $&nbsp;).
-# ✅ Height auto-resizes to exact content (no giant whitespace).
+# Topbar component (FIXED)
 # -----------------------------
 topbar_html = f"""
 <!doctype html>
@@ -109,11 +101,14 @@ topbar_html = f"""
     --border:rgba(57,255,20,0.45);
   }}
 
-  html, body {{ overflow: visible !important; }}
+  html, body {{
+    overflow: visible !important;
+    height: auto !important;
+  }}
 
   body {{
     margin: 0;
-    padding: 10px 8px 2px 8px;      /* minimal bottom padding => divider sits close */
+    padding: 10px 8px 6px 8px;  /* a bit more bottom padding so tagline never clips */
     background: transparent;
     color: var(--green);
     font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono",
@@ -123,17 +118,16 @@ topbar_html = f"""
 
   #wrap {{
     width: 100%;
-    display: inline-block;          /* stable measurements for iframe autosize */
+    display: block;
   }}
 
-  /* Row1: title + icons on same row when possible; wraps cleanly when not */
+  /* ✅ Use GRID so icons align to the TOP of the title block (first line) */
   .row1 {{
-    display: flex;
-    align-items: flex-start;
-    justify-content: space-between;
+    display: grid;
+    grid-template-columns: 1fr auto;
+    align-items: start;
     gap: 12px;
     width: 100%;
-    flex-wrap: wrap;                /* ✅ allows title/icons to wrap instead of cutting off */
   }}
 
   .terminal-title {{
@@ -141,23 +135,22 @@ topbar_html = f"""
     font-weight: 700;
     line-height: 1.22;
     margin: 0;
-    min-width: 260px;
-    flex: 1 1 520px;                /* ✅ title gets space, but can wrap */
-    white-space: normal;            /* ✅ wrap instead of clipping */
-    overflow: visible;              /* ✅ no cut off */
-    overflow-wrap: anywhere;        /* ✅ last-resort wrapping */
+    min-width: 0;                  /* ✅ critical: allow wrapping in grid */
+    white-space: normal;
+    overflow: visible;
+    overflow-wrap: anywhere;
     word-break: break-word;
     text-shadow: 0 0 18px rgba(57,255,20,0.12);
+    padding-top: 2px;              /* tiny nudge to match icon visual baseline */
   }}
 
-  /* The typing line is pure inline text, so wrapping is "intelligent" */
   .typing-line {{
     display: inline;
   }}
 
   .prompt {{
     display: inline;
-    white-space: nowrap;            /* keep "$ " together */
+    white-space: nowrap;           /* keep "$ " together */
   }}
 
   #prefix, #word {{
@@ -180,9 +173,8 @@ topbar_html = f"""
     gap:10px;
     align-items:center;
     justify-content:flex-end;
-    flex: 0 1 auto;
-    padding-top: 2px;
-    flex-wrap: wrap;                /* ✅ if icons overflow, wrap (no cut off) */
+    flex-wrap: wrap;
+    padding-top: 0px;              /* ✅ no weird drift */
   }}
 
   a.icon-btn {{
@@ -245,22 +237,24 @@ topbar_html = f"""
     text-shadow: 0 0 14px rgba(57,255,20,0.10);
   }}
 
-  /* Mobile layout */
+  /* ✅ Mobile: stack icons under title, keep them aligned to left */
   @media (max-width: 640px) {{
-    body {{ padding: 12px 10px 4px 10px; }}
+    body {{ padding: 12px 10px 8px 10px; }}
+
+    .row1 {{
+      grid-template-columns: 1fr;  /* stack */
+      gap: 8px;
+    }}
 
     .terminal-title {{
-      min-width: 0;
-      flex: 1 1 auto;
       font-size: 1.10rem;
       line-height: 1.25;
+      padding-top: 0;
     }}
 
     .icon-row {{
-      width: 100%;
       justify-content: flex-start;
       gap: 8px;
-      padding-top: 0;
     }}
 
     a.icon-btn {{ width: 38px; height: 38px; }}
@@ -321,21 +315,39 @@ topbar_html = f"""
 (function () {{
   const wrap = document.getElementById("wrap");
 
-  // Auto-resize iframe to wrap height only (prevents extra space and prevents clipping)
-  function resizeFrame() {{
-    try {{
-      const h = Math.ceil(wrap.getBoundingClientRect().height);
-      if (window.frameElement) {{
-        window.frameElement.style.height = (h + 2) + "px";
-      }}
-    }} catch (e) {{}}
+  // ✅ More reliable iframe autosize (handles font load + typing changes)
+  function getHeight() {{
+    // Use the max of several measurements to avoid under-sizing on mobile
+    const b = wrap.getBoundingClientRect().height;
+    const sh = wrap.scrollHeight;
+    const dh = document.documentElement.scrollHeight;
+    return Math.ceil(Math.max(b, sh, dh));
   }}
-  window.addEventListener("load", () => setTimeout(resizeFrame, 0));
-  window.addEventListener("resize", () => setTimeout(resizeFrame, 50));
-  new MutationObserver(() => resizeFrame()).observe(wrap, {{ childList: true, subtree: true, characterData: true }});
+
+  let raf = null;
+  function resizeFrame() {{
+    if (raf) cancelAnimationFrame(raf);
+    raf = requestAnimationFrame(() => {{
+      try {{
+        const h = getHeight();
+        if (window.frameElement) {{
+          window.frameElement.style.height = (h + 6) + "px";
+        }}
+      }} catch (e) {{}}
+    }});
+  }}
+
+  // Run on load + after fonts settle + on resize
+  window.addEventListener("load", () => resizeFrame());
+  window.addEventListener("resize", () => setTimeout(resizeFrame, 60));
+
+  // Watch DOM changes (typing updates)
+  new MutationObserver(() => resizeFrame()).observe(wrap, {{
+    childList: true, subtree: true, characterData: true
+  }});
 
   // Typing animation (Unicode-safe for emojis)
-  const staticPrefix = {STATIC_PREFIX!r};   // ends with ONE normal space
+  const staticPrefix = {STATIC_PREFIX!r};
   const words = {ROTATING!r};
 
   const prefixEl = document.getElementById("prefix");
@@ -394,14 +406,18 @@ topbar_html = f"""
     if (!document.hidden) blurActive();
   }});
 
+  // extra passes to catch icon/font load timing
   setTimeout(resizeFrame, 120);
+  setTimeout(resizeFrame, 350);
+  setTimeout(resizeFrame, 700);
 }})();
 </script>
 </body>
 </html>
 """
 
-components.html(topbar_html, height=120)
+# ✅ Start bigger so you never see a clipped second line while JS kicks in
+components.html(topbar_html, height=220)
 
 st.divider()
 
