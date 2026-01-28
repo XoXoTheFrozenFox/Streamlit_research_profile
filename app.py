@@ -48,8 +48,8 @@ html, body, [data-testid="stAppViewContainer"]{
 *{ color: var(--green) !important; }
 
 .block-container{
-  padding-top: 0.6rem !important;
-  padding-bottom: 1.4rem !important;
+  padding-top: 0.55rem !important;
+  padding-bottom: 1.25rem !important;
 }
 
 /* Streamlit overlays that can steal clicks */
@@ -60,11 +60,12 @@ div[data-testid="stDecoration"]{
   pointer-events: none !important;
 }
 
-/* Neon divider */
+/* Neon divider (and make it TIGHT) */
 hr{
   border: none !important;
   border-top: 1px solid var(--border) !important;
   opacity: 1 !important;
+  margin: 0.25rem 0 0.55rem 0 !important; /* ✅ closer to text */
 }
 
 /* Metric cards */
@@ -92,12 +93,11 @@ p, li{
 )
 
 # -----------------------------
-# Topbar component:
-# - Desktop: title + icons on SAME LINE (true alignment)
-# - Tagline below, full width
-# - No giant empty space (safe auto-resize using wrapper height only)
-# - No hover clipping (padding + overflow visible)
-# - "$" never drops on its own line (prompt includes &nbsp;)
+# Topbar component
+# FIXES:
+# - Desktop: NO truncation; title wraps if needed (still shares row with icons)
+# - Divider line sits close (we reduce component bottom padding + hr margins)
+# - Mobile: buttons wrap (no cut off), $ stays glued
 # -----------------------------
 topbar_html = f"""
 <!doctype html>
@@ -112,13 +112,11 @@ topbar_html = f"""
     --border:rgba(57,255,20,0.45);
   }}
 
-  html, body {{
-    overflow: visible !important;
-  }}
+  html, body {{ overflow: visible !important; }}
 
   body {{
     margin: 0;
-    padding: 10px 8px 8px 8px;      /* same padding for text + buttons */
+    padding: 10px 8px 2px 8px; /* ✅ minimal bottom padding so divider can sit close */
     background: transparent;
     color: var(--green);
     font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono",
@@ -128,37 +126,33 @@ topbar_html = f"""
 
   #wrap {{
     width: 100%;
-    display: inline-block;           /* prevents feedback-loop height growth */
+    display: inline-block;
   }}
 
   /* Row 1 = title left, icons right */
   .row1 {{
     display: flex;
-    align-items: center;             /* ✅ perfect vertical alignment */
+    align-items: flex-start;          /* ✅ if title wraps, icons stay aligned to top line */
     justify-content: space-between;
     gap: 12px;
     width: 100%;
   }}
 
   .terminal-title {{
-    font-size: 1.62rem;
+    /* ✅ responsive size so it fits better on desktop without truncation */
+    font-size: clamp(1.10rem, 2.05vw, 1.62rem);
     font-weight: 700;
     line-height: 1.22;
     margin: 0;
     min-width: 0;
-    white-space: nowrap;             /* desktop stays one line */
-    overflow: hidden;
-    text-overflow: ellipsis;
+    white-space: normal;              /* ✅ allow wrap */
+    overflow: visible;                /* ✅ no clipping */
     text-shadow: 0 0 18px rgba(57,255,20,0.12);
   }}
 
   .prompt {{
     display: inline;
-    white-space: nowrap;
-  }}
-
-  #prefix, #word {{
-    white-space: nowrap;
+    white-space: nowrap;              /* ✅ keep "$ " together */
   }}
 
   .cursor {{
@@ -177,6 +171,7 @@ topbar_html = f"""
     align-items:center;
     justify-content:flex-end;
     flex: 0 0 auto;
+    padding-top: 2px;                 /* ✅ tiny nudge to match title baseline */
   }}
 
   a.icon-btn {{
@@ -201,7 +196,7 @@ topbar_html = f"""
     pointer-events:none;
   }}
 
-  /* ✅ tiny lift + smaller glow so nothing ever gets clipped */
+  /* small lift = no clipping */
   a.icon-btn:hover {{
     transform: translateY(-1px);
     background: rgba(57,255,20,0.12);
@@ -214,9 +209,7 @@ topbar_html = f"""
   }}
 
   /* Email icon swap */
-  a.email-btn {{
-    position: relative;
-  }}
+  a.email-btn {{ position: relative; }}
   a.email-btn i {{
     position: absolute;
     inset: 0;
@@ -230,24 +223,22 @@ topbar_html = f"""
   a.email-btn:hover .email-open {{ opacity: 1; }}
   a.email-btn:hover .email-closed {{ opacity: 0; }}
 
-  /* Tagline row */
   .tagline {{
-    margin-top: 8px;
-    font-size: 1.18rem;
+    margin-top: 6px;                  /* ✅ close to title */
+    margin-bottom: 0;                 /* ✅ keep bottom tight */
+    font-size: clamp(1.00rem, 1.45vw, 1.18rem);
     font-weight: 650;
     opacity: 0.95;
-    white-space: nowrap;             /* desktop: single line */
-    overflow: hidden;
-    text-overflow: ellipsis;
+    white-space: normal;              /* ✅ never hide text on desktop */
+    overflow: visible;
+    text-shadow: 0 0 14px rgba(57,255,20,0.10);
   }}
 
   /* -----------------------
-     Mobile formatting (different)
+     Mobile formatting
      ----------------------- */
   @media (max-width: 640px) {{
-    body {{
-      padding: 12px 10px 10px 10px;  /* extra safety so hover/glow never clips */
-    }}
+    body {{ padding: 12px 10px 4px 10px; }}
 
     .row1 {{
       flex-direction: column;
@@ -257,37 +248,22 @@ topbar_html = f"""
 
     .terminal-title {{
       font-size: 1.10rem;
-      white-space: normal;           /* allow wrap */
-      overflow: visible;
-      text-overflow: unset;
       line-height: 1.25;
-    }}
-
-    /* ✅ Keep $ glued to the following text */
-    .prompt {{
-      display: inline-block;
     }}
 
     .icon-row {{
       width: 100%;
-      flex-wrap: wrap;               /* wrap instead of clipping/cutting off */
+      flex-wrap: wrap;                /* ✅ wrap instead of cutting off */
       justify-content: flex-start;
       gap: 8px;
+      padding-top: 0;
     }}
 
-    a.icon-btn {{
-      width: 38px;
-      height: 38px;
-    }}
-    a.icon-btn i {{
-      font-size: 16px;
-    }}
+    a.icon-btn {{ width: 38px; height: 38px; }}
+    a.icon-btn i {{ font-size: 16px; }}
 
     .tagline {{
       font-size: 1.02rem;
-      white-space: normal;           /* show full line if it wraps */
-      overflow: visible;
-      text-overflow: unset;
       line-height: 1.25;
     }}
   }}
@@ -339,7 +315,6 @@ topbar_html = f"""
 (function () {{
   const wrap = document.getElementById("wrap");
 
-  // ✅ Safe auto-resize: measure WRAP only (prevents runaway / huge whitespace)
   function resizeFrame() {{
     try {{
       const h = Math.ceil(wrap.getBoundingClientRect().height);
@@ -353,7 +328,7 @@ topbar_html = f"""
   new MutationObserver(() => resizeFrame()).observe(wrap, {{ childList: true, subtree: true, characterData: true }});
 
   // Typing animation (Unicode-safe for emojis)
-  const staticPrefix = {STATIC_PREFIX!r};  // already ends with NBSP
+  const staticPrefix = {STATIC_PREFIX!r}; // ends with NBSP
   const words = {ROTATING!r};
 
   const prefixEl = document.getElementById("prefix");
@@ -419,9 +394,9 @@ topbar_html = f"""
 </html>
 """
 
-# Starting height only; component auto-resizes to exact content height
 components.html(topbar_html, height=120)
 
+# ✅ Use divider, but it's now tight because we set hr margins above
 st.divider()
 
 # -----------------------------
