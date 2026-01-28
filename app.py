@@ -17,132 +17,107 @@ GITHUB_URL = "https://github.com/XoXoTheFrozenFox"
 EMAIL = "BernardSwanepoel1510@gmail.com"
 UNIVERSITY = "North-West University, Potchefstroom"
 
-# Typed header text (exactly as requested)
-TYPED_FULL = "Hi🌞, my name is Bernard Swanepoel. {MSc student} {Reasearcher} {Computerscientist}"
+# Header text pieces (exactly as requested)
+STATIC_PREFIX = "Hi🌞, my name is Bernard Swanepoel."
+ROTATING = ["{MSc. student}", "{Reasearcher}", "{Computer Scientist}"]
 
 # -----------------------------
-# Terminal aesthetic + typing header + neon green accents
+# Terminal aesthetic + typing (rotating suffix) + neon green everywhere
 # -----------------------------
 st.markdown(
-    f"""
+    """
 <style>
-:root {{
-  --bg: #050505;
-  --panel: rgba(0,0,0,0.55);
-  --text: #f5f5f5;
-  --neon: #39ff14;      /* neon green */
-  --neon2: rgba(57,255,20,0.22);
-  --border: rgba(57,255,20,0.35);
-}}
+:root{
+  --bg:#050505;
+  --panel:rgba(0,0,0,0.55);
+  --green:#39ff14;          /* neon */
+  --greenDim:rgba(57,255,20,0.30);
+  --border:rgba(57,255,20,0.45);
+}
 
-html, body, [data-testid="stAppViewContainer"] {{
+/* Global terminal look */
+html, body, [data-testid="stAppViewContainer"]{
   background: var(--bg) !important;
-  color: var(--text) !important;
-}}
+  color: var(--green) !important;
+}
 
-[data-testid="stSidebar"] {{
-  background: #070707 !important;
-}}
+/* Make basically all text neon green */
+*{
+  color: var(--green) !important;
+}
 
-.block-container {{
+/* Streamlit sidebar */
+[data-testid="stSidebar"]{
+  background:#070707 !important;
+}
+
+/* Container spacing */
+.block-container{
   padding-top: 1.2rem !important;
   padding-bottom: 2rem !important;
-}}
+}
 
-h1, h2, h3, p, li, span, div {{
-  color: var(--text);
-}}
-
-/* Streamlit overlays can steal clicks */
+/* Remove/neutralize Streamlit overlays that can steal clicks */
 header[data-testid="stHeader"],
 div[data-testid="stToolbar"],
-div[data-testid="stDecoration"]{{
+div[data-testid="stDecoration"]{
   background: transparent !important;
   pointer-events: none !important;
-}}
+}
 
-/* Make Streamlit divider neon */
-hr {{
+/* Neon divider */
+hr{
   border: none !important;
   border-top: 1px solid var(--border) !important;
   opacity: 1 !important;
-}}
+}
 
-/* Streamlit captions */
-.stCaption, small {{
-  color: rgba(245,245,245,0.78) !important;
-}}
-
-/* Metric cards: terminal-ish */
-div[data-testid="stMetric"] {{
-  background: rgba(0,0,0,0.35) !important;
-  border: 1px solid var(--border) !important;
-  border-radius: 14px !important;
-  padding: 12px 12px !important;
-  box-shadow: 0 0 0 1px rgba(57,255,20,0.08) inset;
-}}
-div[data-testid="stMetric"] * {{
-  color: var(--text) !important;
-}}
-div[data-testid="stMetric"] [data-testid="stMetricLabel"] {{
-  color: rgba(245,245,245,0.82) !important;
-}}
-div[data-testid="stMetric"] [data-testid="stMetricValue"] {{
-  color: var(--neon) !important;
-}}
-
-/* Info box */
-div[data-testid="stAlert"] {{
-  background: rgba(0,0,0,0.35) !important;
-  border: 1px solid var(--border) !important;
-  color: var(--text) !important;
-}}
-div[data-testid="stAlert"] * {{
-  color: var(--text) !important;
-}}
-
-/* --- Top bar --- */
-.topbar {{
+/* Top bar layout */
+.topbar{
   display:flex;
   align-items:center;
   justify-content:space-between;
   gap:14px;
   flex-wrap:wrap;
-  margin: 0.2rem 0 0.35rem 0;
-}}
+  margin: 0.2rem 0 0.4rem 0;
+}
 
-.terminal-title {{
+/* Typing line */
+.terminal-title{
   font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
-  font-size: 1.55rem;
+  font-size: 1.65rem;
   font-weight: 700;
   line-height: 1.25;
   margin: 0;
-  color: var(--text);
-}}
+  text-shadow: 0 0 18px rgba(57,255,20,0.12);
+}
 
-.terminal-title .prompt {{
-  color: var(--neon);
-  text-shadow: 0 0 18px rgba(57,255,20,0.25);
-}}
+.terminal-title .prompt{
+  margin-right: 10px;
+  text-shadow: 0 0 20px rgba(57,255,20,0.20);
+}
 
-.typed {{
-  white-space: nowrap;
-  overflow: hidden;
-}}
-
-.cursor {{
+.cursor{
   display:inline-block;
   width: 10px;
   margin-left: 2px;
-  color: var(--neon);
   animation: blink 1s steps(1) infinite;
-}}
-@keyframes blink {{
-  50% {{ opacity: 0; }}
-}}
+}
+@keyframes blink{
+  50%{ opacity: 0; }
+}
 
-/* --- Icon row (right side) --- */
-.icon-row {{
+/* Bigger tagline */
+.tagline{
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+  font-size: 1.2rem;          /* bigger */
+  font-weight: 600;
+  opacity: 0.95;
+  margin-top: 0.1rem;
+}
+
+/* Icon row (right side) */
+.icon-row{
   display:flex;
   gap:10px;
   align-items:center;
@@ -151,10 +126,10 @@ div[data-testid="stAlert"] * {{
   padding: 0;
   position: relative;
   z-index: 9999;
-}}
+}
 
 .icon-row a.icon-btn,
-.icon-row a.icon-btn:visited {{
+.icon-row a.icon-btn:visited{
   width:44px;
   height:44px;
   border-radius:999px;
@@ -163,42 +138,41 @@ div[data-testid="stAlert"] * {{
   justify-content:center;
   text-decoration:none !important;
 
-  border: 1px solid var(--border);
-  background: rgba(0,0,0,0.25);
-  color: var(--neon);
-
-  box-shadow: 0 0 0 1px rgba(57,255,20,0.10) inset, 0 10px 22px rgba(0,0,0,0.35);
-  transition: transform 160ms ease, background 160ms ease, color 160ms ease, border-color 160ms ease, box-shadow 160ms ease, filter 160ms ease;
+  border:1px solid var(--border) !important;
+  background: rgba(0,0,0,0.25) !important;
+  box-shadow: 0 0 0 1px rgba(57,255,20,0.12) inset, 0 10px 22px rgba(0,0,0,0.35);
+  transition: transform 160ms ease, background 160ms ease, border-color 160ms ease, box-shadow 160ms ease, filter 160ms ease;
   cursor: pointer !important;
   pointer-events: auto !important;
   -webkit-tap-highlight-color: transparent;
   user-select: none;
-}}
+}
 
-.icon-row a.icon-btn i {{
+/* Icons */
+.icon-row a.icon-btn i{
   font-size: 18px;
   pointer-events: none;
-}}
+}
 
+/* Hover glow */
 .icon-row a.icon-btn:hover,
-.icon-row a.icon-btn:focus-visible {{
+.icon-row a.icon-btn:focus-visible{
   transform: translateY(-2px);
-  background: rgba(57,255,20,0.12);
-  color: var(--neon);
-  border-color: rgba(57,255,20,0.75);
+  background: rgba(57,255,20,0.12) !important;
+  border-color: rgba(57,255,20,0.85) !important;
   box-shadow: 0 0 18px rgba(57,255,20,0.18), 0 12px 26px rgba(0,0,0,0.45);
   outline: none !important;
-}}
+}
 
-.icon-row a.icon-btn:active {{
+.icon-row a.icon-btn:active{
   transform: translateY(0px) scale(0.98);
-}}
+}
 
 /* Email icon swap: closed -> open */
-.icon-row a.email-btn {{
+.icon-row a.email-btn{
   position: relative;
-}}
-.icon-row a.email-btn i {{
+}
+.icon-row a.email-btn i{
   position: absolute;
   inset: 0;
   display:flex;
@@ -206,43 +180,55 @@ div[data-testid="stAlert"] * {{
   justify-content:center;
   pointer-events: none;
   font-size: 18px;
-}}
-.icon-row a.email-btn .email-open {{ opacity: 0; }}
-.icon-row a.email-btn .email-closed {{ opacity: 1; }}
+}
+.icon-row a.email-btn .email-open{ opacity: 0; }
+.icon-row a.email-btn .email-closed{ opacity: 1; }
 
 .icon-row a.email-btn:hover .email-open,
-.icon-row a.email-btn:focus-visible .email-open {{ opacity: 1; }}
+.icon-row a.email-btn:focus-visible .email-open{ opacity: 1; }
 .icon-row a.email-btn:hover .email-closed,
-.icon-row a.email-btn:focus-visible .email-closed {{ opacity: 0; }}
+.icon-row a.email-btn:focus-visible .email-closed{ opacity: 0; }
 
 /* Fix “stuck hover” on touch devices */
-@media (hover: none) and (pointer: coarse) {{
+@media (hover: none) and (pointer: coarse){
   .icon-row a.icon-btn:hover,
-  .icon-row a.icon-btn:focus-visible {{
+  .icon-row a.icon-btn:focus-visible{
     transform:none !important;
     background: rgba(0,0,0,0.25) !important;
     border-color: var(--border) !important;
-    box-shadow: 0 0 0 1px rgba(57,255,20,0.10) inset, 0 10px 22px rgba(0,0,0,0.35) !important;
-  }}
-  .icon-row a.icon-btn:active {{
+    box-shadow: 0 0 0 1px rgba(57,255,20,0.12) inset, 0 10px 22px rgba(0,0,0,0.35) !important;
+  }
+  .icon-row a.icon-btn:active{
     background: rgba(57,255,20,0.12) !important;
-    border-color: rgba(57,255,20,0.75) !important;
+    border-color: rgba(57,255,20,0.85) !important;
     box-shadow: 0 0 18px rgba(57,255,20,0.18), 0 12px 26px rgba(0,0,0,0.45) !important;
-  }}
-}}
+  }
+}
 
-/* Make links/buttons look terminal */
-a {{
-  color: var(--neon) !important;
-}}
-a:hover {{
-  filter: brightness(1.1);
-}}
+/* Streamlit metric cards */
+div[data-testid="stMetric"]{
+  background: rgba(0,0,0,0.35) !important;
+  border: 1px solid var(--border) !important;
+  border-radius: 14px !important;
+  padding: 12px 12px !important;
+  box-shadow: 0 0 0 1px rgba(57,255,20,0.10) inset;
+}
 
-/* Remove extra top spacing from Streamlit title/subheader (we'll render our own header) */
-h1#hi-my-name-is-bernard-swanepoel-msc-student-reasearcher-computerscientist {{
-  margin-top: 0 !important;
-}}
+/* Info box */
+div[data-testid="stAlert"]{
+  background: rgba(0,0,0,0.35) !important;
+  border: 1px solid var(--border) !important;
+}
+
+/* Make lists/p text readable in terminal style */
+p, li{
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+}
+
+/* Make Streamlit default input outlines neon if you add later */
+*:focus{
+  outline-color: rgba(57,255,20,0.7) !important;
+}
 </style>
 
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
@@ -250,76 +236,82 @@ h1#hi-my-name-is-bernard-swanepoel-msc-student-reasearcher-computerscientist {{
     unsafe_allow_html=True,
 )
 
-# JS: typing forward/back with cursor + blur active element when coming back
+# JS: rotating suffix typing animation + mobile focus blur
 st.markdown(
     f"""
 <script>
 (function () {{
-  // --- typing animation (type -> pause -> delete -> pause -> loop) ---
-  const full = {repr(TYPED_FULL)};
-  const elId = "typed_title_target";
+  const staticPrefix = {repr(STATIC_PREFIX)};
+  const words = {repr(ROTATING)};
+  const prefixId = "typed_prefix";
+  const wordId = "typed_word";
 
-  function startTyping() {{
-    const el = document.getElementById(elId);
-    if (!el) return;
-
-    let i = 0;
-    let dir = 1; // 1 = typing forward, -1 = deleting
-    const typeSpeed = 42;     // ms per char typing
-    const deleteSpeed = 24;   // ms per char deleting
-    const pauseEnd = 900;     // pause at full text
-    const pauseStart = 450;   // pause at empty
-
-    function tick() {{
-      // If element disappears (rerun), stop
-      if (!document.getElementById(elId)) return;
-
-      i += dir;
-
-      if (i >= full.length) {{
-        i = full.length;
-        el.textContent = full.slice(0, i);
-        setTimeout(() => {{
-          dir = -1;
-          setTimeout(tick, deleteSpeed);
-        }}, pauseEnd);
-        return;
+  // wait until elements exist (Streamlit reruns)
+  function whenReady(fn) {{
+    let tries = 0;
+    const t = setInterval(() => {{
+      tries++;
+      const p = document.getElementById(prefixId);
+      const w = document.getElementById(wordId);
+      if (p && w) {{
+        clearInterval(t);
+        fn(p, w);
       }}
-
-      if (i <= 0) {{
-        i = 0;
-        el.textContent = "";
-        setTimeout(() => {{
-          dir = 1;
-          setTimeout(tick, typeSpeed);
-        }}, pauseStart);
-        return;
-      }}
-
-      el.textContent = full.slice(0, i);
-      setTimeout(tick, dir === 1 ? typeSpeed : deleteSpeed);
-    }}
-
-    // initialize
-    el.textContent = "";
-    i = 0;
-    dir = 1;
-    tick();
+      if (tries > 120) clearInterval(t);
+    }}, 50);
   }}
 
-  // Streamlit reruns can recreate DOM; try a few times to attach
-  let tries = 0;
-  const iv = setInterval(() => {{
-    tries += 1;
-    const el = document.getElementById(elId);
-    if (el) {{
-      clearInterval(iv);
-      startTyping();
-    }}
-    if (tries > 80) clearInterval(iv);
-  }}, 75);
+  function runTyping(prefixEl, wordEl) {{
+    prefixEl.textContent = staticPrefix + " ";
+    let idx = 0;
+    let char = 0;
+    let deleting = false;
 
-  // --- prevent stuck focus when coming back on mobile ---
+    const typeSpeed = 45;
+    const deleteSpeed = 25;
+    const holdFull = 900;
+    const holdEmpty = 280;
+
+    function step() {{
+      const current = words[idx];
+
+      if (!deleting) {{
+        char++;
+        wordEl.textContent = current.slice(0, char);
+        if (char >= current.length) {{
+          // hold then delete
+          setTimeout(() => {{
+            deleting = true;
+            step();
+          }}, holdFull);
+          return;
+        }}
+        setTimeout(step, typeSpeed);
+      }} else {{
+        char--;
+        wordEl.textContent = current.slice(0, Math.max(0, char));
+        if (char <= 0) {{
+          // move to next word
+          deleting = false;
+          idx = (idx + 1) % words.length;
+          setTimeout(step, holdEmpty);
+          return;
+        }}
+        setTimeout(step, deleteSpeed);
+      }}
+    }}
+
+    // start
+    wordEl.textContent = "";
+    idx = 0;
+    char = 0;
+    deleting = false;
+    step();
+  }}
+
+  whenReady(runTyping);
+
+  // prevent stuck focus on mobile when coming back
   function blurActive() {{
     try {{ document.activeElement && document.activeElement.blur && document.activeElement.blur(); }} catch(e) {{}}
   }}
@@ -334,14 +326,14 @@ st.markdown(
 )
 
 # -----------------------------
-# Header: typing line left, icons right (same line)
+# Header: static prefix always visible + rotating suffix typed, icons right
 # -----------------------------
 st.markdown(
     f"""
 <div class="topbar">
   <div class="terminal-title">
     <span class="prompt">$</span>
-    <span class="typed" id="typed_title_target"></span><span class="cursor">▌</span>
+    <span id="typed_prefix"></span><span id="typed_word"></span><span class="cursor">▌</span>
   </div>
 
   <div class="icon-row">
@@ -367,7 +359,9 @@ st.markdown(
     unsafe_allow_html=True,
 )
 
-st.caption(TAGLINE)
+# Bigger tagline (and green due to global CSS)
+st.markdown(f'<div class="tagline">{TAGLINE}</div>', unsafe_allow_html=True)
+
 st.divider()
 
 # -----------------------------
