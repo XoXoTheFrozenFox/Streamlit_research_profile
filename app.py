@@ -756,6 +756,63 @@ with left:
         "I sing opera, and I enjoy 3D printing—mostly figures and fun prints."
     )
 
+        # -----------------------------
+    # Education section (INSERTED HERE)
+    # -----------------------------
+    st.markdown("## Education")
+    edu_html = """
+<div class="edu-wrap">
+  <div class="edu-item">
+    <div class="edu-top">
+      <div class="edu-title">MSc Computer Science</div>
+      <div class="edu-years">2025–2027</div>
+    </div>
+    <div class="edu-sub">North-West University (NWU)</div>
+  </div>
+
+  <div class="edu-item">
+    <div class="edu-top">
+      <div class="edu-title">TEFL — 300 hours</div>
+      <div class="edu-years">2024–2025</div>
+    </div>
+    <div class="edu-sub">i-to-i</div>
+  </div>
+
+  <div class="edu-item">
+    <div class="edu-top">
+      <div class="edu-title">BSc Hons Computer Science and Information Technology</div>
+      <div class="edu-years">2023–2024</div>
+    </div>
+    <div class="edu-sub">North-West University (NWU)</div>
+  </div>
+
+  <div class="edu-item">
+    <div class="edu-top">
+      <div class="edu-title">BSc Information Technology</div>
+      <div class="edu-years">2021–2023</div>
+    </div>
+    <div class="edu-sub">North-West University (NWU)</div>
+  </div>
+
+  <div class="edu-item">
+    <div class="edu-top">
+      <div class="edu-title">TEFL — 180 hours</div>
+      <div class="edu-years">2023</div>
+    </div>
+    <div class="edu-sub">i-to-i</div>
+  </div>
+
+  <div class="edu-item">
+    <div class="edu-top">
+      <div class="edu-title">Matric certificate</div>
+      <div class="edu-years">2016–2020</div>
+    </div>
+    <div class="edu-sub">Wesvalia</div>
+  </div>
+</div>
+    """.strip()
+    st.markdown(edu_html, unsafe_allow_html=True)
+
     st.markdown("## Research titles")
     st.markdown(
         """
