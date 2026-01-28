@@ -14,24 +14,29 @@ EMAIL = "BernardSwanepoel1510@gmail.com"
 st.markdown(
     """
 <style>
-/* Avoid clipping + reduce padding */
+/* Layout padding */
 .block-container{
   padding-top: 1rem !important;
   padding-left: 1rem !important;
   padding-right: 1rem !important;
 }
 
-/* Sometimes Streamlit elements sit above custom HTML and steal hover.
-   This makes the header non-interactive and ensures our row is on top. */
-header[data-testid="stHeader"]{
+/* Streamlit top overlays can sit above your buttons (blocks top-half clicks).
+   Turn them "transparent to clicks". */
+header[data-testid="stHeader"],
+div[data-testid="stToolbar"],
+div[data-testid="stDecoration"]{
   background: transparent !important;
   pointer-events: none !important;
 }
 
-/* Put our icons above any overlays */
+/* Make sure our icon bar is above everything and fully clickable */
 .icon-wrap{
-  position: relative;
-  z-index: 9999;
+  position: fixed;
+  top: 0.75rem;
+  left: 0.75rem;
+  z-index: 2147483647;
+  pointer-events: auto !important;
 }
 
 /* Tight row */
@@ -40,11 +45,12 @@ header[data-testid="stHeader"]{
   gap:8px;
   align-items:center;
   flex-wrap:wrap;
-  margin: 0 0 0.4rem 0;
+  margin: 0;
   padding: 0;
+  pointer-events: auto !important;
 }
 
-/* Bigger hit area + always clickable */
+/* Full-circle clickable area */
 .icon-row a.icon-btn,
 .icon-row a.icon-btn:visited{
   width:44px;
@@ -54,6 +60,7 @@ header[data-testid="stHeader"]{
   align-items:center;
   justify-content:center;
   text-decoration:none !important;
+  padding:0 !important;
 
   background:#ffffff !important;
   color:#111111 !important;
@@ -63,16 +70,17 @@ header[data-testid="stHeader"]{
   transition: background 120ms ease, color 120ms ease, transform 120ms ease, box-shadow 120ms ease, border-color 120ms ease;
   cursor:pointer !important;
 
-  /* Key: prevents “dead hover” by ensuring the anchor receives pointer events */
   pointer-events: auto !important;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
 }
 
-/* Ensure icon inherits color */
+/* Base icon */
 .icon-row a.icon-btn i{
   color: inherit !important;
   font-size: 17px;
   line-height: 1;
-  pointer-events: none; /* pointer stays on the anchor, not the <i> */
+  pointer-events: none; /* keep clicks on the anchor */
 }
 
 /* Hover + focus invert (desktop/hover devices) */
@@ -90,14 +98,12 @@ header[data-testid="stHeader"]{
   transform: translateY(0px) scale(0.98);
 }
 
-/* -------------------------------
-   Email icon swap: closed -> open
----------------------------------- */
+/* Email icon swap: closed -> open */
 .icon-row a.email-btn{
   position: relative;
 }
 
-/* Override the generic i-rule for email so we can stack two icons */
+/* stack the two email icons exactly centered */
 .icon-row a.email-btn i{
   position: absolute;
   inset: 0;
@@ -122,11 +128,8 @@ header[data-testid="stHeader"]{
   opacity: 0;
 }
 
-/* -----------------------------------------
-   Fix “stuck hover” on touch/mobile devices
-   - disables hover styling when device can't hover
-   - keeps a subtle :active tap feedback
------------------------------------------- */
+/* Fix “stuck hover” on touch devices (tap + back keeps hover on iOS sometimes).
+   On touch devices, disable hover/focus styling and keep only :active feedback. */
 @media (hover: none) and (pointer: coarse){
   .icon-row a.icon-btn:hover,
   .icon-row a.icon-btn:focus-visible{
@@ -152,59 +155,28 @@ header[data-testid="stHeader"]{
     unsafe_allow_html=True,
 )
 
-# Small JS helper: blur links after tap/click so focus styles don't "stick" when coming back on mobile.
-# Also blur when page becomes visible again (back navigation).
-st.markdown(
-    """
-<script>
-(function () {
-  function blurActive() {
-    try { document.activeElement && document.activeElement.blur && document.activeElement.blur(); } catch(e) {}
-  }
-  // When returning to the page (back button, tab switch)
-  document.addEventListener("visibilitychange", function() {
-    if (!document.hidden) blurActive();
-  });
-  window.addEventListener("pageshow", blurActive);
-
-  // Expose for inline handlers if needed
-  window.__stBlurActive = blurActive;
-})();
-</script>
-""",
-    unsafe_allow_html=True,
-)
-
+# IMPORTANT: no leading spaces at the start of lines below (prevents markdown code-block rendering)
 st.markdown(
     f"""
 <div class="icon-wrap">
-  <div class="icon-row">
-    <a class="icon-btn" href="{PORTFOLIO_URL}" target="_blank" rel="noopener" title="Portfolio"
-       onclick="this.blur(); if(window.__stBlurActive) window.__stBlurActive();"
-       ontouchend="this.blur(); if(window.__stBlurActive) window.__stBlurActive();">
-      <i class="fa-solid fa-globe"></i>
-    </a>
+<div class="icon-row">
+<a class="icon-btn" href="{PORTFOLIO_URL}" target="_blank" rel="noopener" title="Portfolio">
+<i class="fa-solid fa-globe"></i>
+</a>
 
-    <a class="icon-btn" href="{GITHUB_URL}" target="_blank" rel="noopener" title="GitHub"
-       onclick="this.blur(); if(window.__stBlurActive) window.__stBlurActive();"
-       ontouchend="this.blur(); if(window.__stBlurActive) window.__stBlurActive();">
-      <i class="fa-brands fa-github"></i>
-    </a>
+<a class="icon-btn" href="{GITHUB_URL}" target="_blank" rel="noopener" title="GitHub">
+<i class="fa-brands fa-github"></i>
+</a>
 
-    <a class="icon-btn" href="{LINKEDIN_URL}" target="_blank" rel="noopener" title="LinkedIn"
-       onclick="this.blur(); if(window.__stBlurActive) window.__stBlurActive();"
-       ontouchend="this.blur(); if(window.__stBlurActive) window.__stBlurActive();">
-      <i class="fa-brands fa-linkedin-in"></i>
-    </a>
+<a class="icon-btn" href="{LINKEDIN_URL}" target="_blank" rel="noopener" title="LinkedIn">
+<i class="fa-brands fa-linkedin-in"></i>
+</a>
 
-    <!-- Email: closed -> open on hover -->
-    <a class="icon-btn email-btn" href="mailto:{EMAIL}" title="Email"
-       onclick="this.blur(); if(window.__stBlurActive) window.__stBlurActive();"
-       ontouchend="this.blur(); if(window.__stBlurActive) window.__stBlurActive();">
-      <i class="fa-solid fa-envelope email-closed"></i>
-      <i class="fa-solid fa-envelope-open email-open"></i>
-    </a>
-  </div>
+<a class="icon-btn email-btn" href="mailto:{EMAIL}" title="Email">
+<i class="fa-solid fa-envelope email-closed"></i>
+<i class="fa-solid fa-envelope-open email-open"></i>
+</a>
+</div>
 </div>
 """,
     unsafe_allow_html=True,
