@@ -8,6 +8,15 @@ import pandas as pd
 import streamlit as st
 import streamlit.components.v1 as components
 
+hide_st_style = """
+            <style>
+            #MainMenu {visibility: hidden;}
+            footer {visibility: hidden;}
+            header {visibility: hidden;}
+            </style>
+            """
+st.markdown(hide_st_style, unsafe_allow_html=True)
+
 st.set_page_config(
     page_title="BS — Research profile",
     page_icon="🧑‍💻",
