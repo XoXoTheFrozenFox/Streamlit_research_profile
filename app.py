@@ -38,12 +38,59 @@ ROTATING = [
 ]
 
 # -----------------------------
+# Theme sync (Python <-> topbar)
+# Uses URL query param: ?theme=orange|green|blue|pink
+# -----------------------------
+THEMES = {
+    "orange": {
+        "color": "rgba(255,122,24,0.95)",
+        "grid": "rgba(255,122,24,0.14)",
+        "axis": "rgba(255,122,24,0.28)",
+        "border": "rgba(255,122,24,0.45)",
+    },
+    "green": {
+        "color": "rgba(57,255,20,0.95)",
+        "grid": "rgba(57,255,20,0.14)",
+        "axis": "rgba(57,255,20,0.28)",
+        "border": "rgba(57,255,20,0.45)",
+    },
+    "blue": {
+        "color": "rgba(0,231,255,0.95)",
+        "grid": "rgba(0,231,255,0.14)",
+        "axis": "rgba(0,231,255,0.28)",
+        "border": "rgba(0,231,255,0.45)",
+    },
+    "pink": {
+        "color": "rgba(255,43,214,0.95)",
+        "grid": "rgba(255,43,214,0.14)",
+        "axis": "rgba(255,43,214,0.28)",
+        "border": "rgba(255,43,214,0.45)",
+    },
+}
+
+def get_theme() -> str:
+    # Streamlit versions differ: support both APIs
+    try:
+        t = st.query_params.get("theme", "orange")
+        if isinstance(t, list):
+            t = t[0] if t else "orange"
+        theme = str(t).strip().lower()
+    except Exception:
+        qp = st.experimental_get_query_params()
+        theme = (qp.get("theme", ["orange"])[0] or "orange").strip().lower()
+
+    return theme if theme in THEMES else "orange"
+
+ACTIVE_THEME = get_theme()
+
+# Ensure the root html has the right theme attribute on load
+st.markdown(
+    f"<script>document.documentElement.setAttribute('data-theme', '{ACTIVE_THEME}');</script>",
+    unsafe_allow_html=True,
+)
+
+# -----------------------------
 # Global terminal aesthetic
-# - 4 color profiles
-# - remove heading link icons
-# - inputs/textarea TRUE black (no grey edges)
-# - remove ANY red focus/invalid ring (wrapper + input)
-# - show "Field empty!" bottom-right inside box (not focused & empty)
 # -----------------------------
 st.markdown(
     """
@@ -134,10 +181,10 @@ p, li, label, div{
 ------------------------------ */
 div[data-testid="stTextInput"],
 div[data-testid="stTextArea"]{
-  position: relative !important; /* for bottom-right hint */
+  position: relative !important;
 }
 
-/* Kill wrapper borders/box-shadows that show as red/grey rings */
+/* Kill wrapper borders/box-shadows */
 div[data-testid="stTextInput"] > div,
 div[data-testid="stTextArea"] > div,
 div[data-testid="stTextInput"] [data-baseweb],
@@ -150,7 +197,6 @@ div[data-testid="stTextArea"] [data-baseweb] *:not(textarea){
   outline: none !important;
 }
 
-/* Also nuke any :focus-within ring on the OUTER containers */
 div[data-testid="stTextInput"]:focus-within,
 div[data-testid="stTextArea"]:focus-within{
   box-shadow: none !important;
@@ -158,7 +204,6 @@ div[data-testid="stTextArea"]:focus-within{
   border-color: transparent !important;
 }
 
-/* Make baseweb textarea container borderless (THIS is usually the red ring) */
 div[data-testid="stTextArea"] [data-baseweb="textarea"],
 div[data-testid="stTextInput"] [data-baseweb="base-input"]{
   background: var(--bg) !important;
@@ -182,7 +227,6 @@ div[data-testid="stTextArea"] textarea{
   background-clip: padding-box !important;
 }
 
-/* Force away any invalid/focus styling (no red ever) */
 div[data-testid="stTextInput"] input:focus,
 div[data-testid="stTextArea"] textarea:focus,
 div[data-testid="stTextInput"] input:focus-visible,
@@ -194,13 +238,12 @@ div[data-testid="stTextArea"] textarea[aria-invalid="true"]{
   outline: none !important;
 }
 
-/* Placeholders */
 div[data-testid="stTextInput"] input::placeholder,
 div[data-testid="stTextArea"] textarea::placeholder{
   color: rgba(255,122,24,0.65) !important;
 }
 
-/* Autofill (Chrome) */
+/* Autofill */
 div[data-testid="stTextInput"] input:-webkit-autofill,
 div[data-testid="stTextInput"] input:-webkit-autofill:hover,
 div[data-testid="stTextInput"] input:-webkit-autofill:focus{
@@ -210,7 +253,7 @@ div[data-testid="stTextInput"] input:-webkit-autofill:focus{
   border: 1px solid var(--border-orange) !important;
 }
 
-/* Bottom-right "Field empty!" INSIDE boxes when empty & NOT focused */
+/* Bottom-right hint */
 div[data-testid="stTextInput"]:has(input:placeholder-shown):not(:focus-within)::after{
   content: "Field empty!";
   position: absolute;
@@ -378,7 +421,7 @@ html[data-theme="pink"] a.send-mailto-btn:hover{ background: rgba(255,43,214,0.0
 )
 
 # -----------------------------
-# Topbar component (cycles: orange -> green -> blue -> pink)
+# Topbar component (cycles theme and writes ?theme=... then reloads)
 # -----------------------------
 topbar_html = f"""
 <!doctype html>
@@ -644,14 +687,24 @@ topbar_html = f"""
     }} catch (e) {{}}
   }}
 
-  setTheme("orange");
+  // init from server (python)
+  const initialTheme = {ACTIVE_THEME!r};
+  setTheme(initialTheme);
 
   const toggleBtn = document.getElementById("themeToggle");
   toggleBtn.addEventListener("click", function () {{
     const cur = document.documentElement.getAttribute("data-theme") || "orange";
     const i = themes.indexOf(cur);
     const next = themes[(i + 1 + themes.length) % themes.length];
-    setTheme(next);
+
+    // write ?theme=next then reload (so Python can match plot colors)
+    try {{
+      const url = new URL(window.parent.location.href);
+      url.searchParams.set("theme", next);
+      window.parent.location.href = url.toString();
+    }} catch (e) {{
+      setTheme(next);
+    }}
   }});
 
   function getHeight() {{
@@ -749,6 +802,122 @@ st.divider()
 def build_mailto(to_email: str, subject: str, body: str) -> str:
     return f"mailto:{to_email}?subject={quote(subject)}&body={quote(body)}"
 
+# -----------------------------
+# Spectrum helpers
+# -----------------------------
+@st.cache_data(show_spinner=False)
+def read_spectrum_csv(folder: str) -> pd.DataFrame:
+    """
+    Expects exactly 1 CSV inside data/<CLASS>/.
+    Columns: wavelength_A, flux, ivar
+    Handles comma / tab / whitespace delimited files.
+    """
+    paths = sorted(glob.glob(os.path.join(folder, "*.csv")))
+    if not paths:
+        raise FileNotFoundError(f"No CSV found in: {folder}")
+    path = paths[0]
+
+    df = None
+    for kwargs in (dict(sep=","), dict(sep="\t"), dict(sep=r"\s+")):
+        try:
+            tmp = pd.read_csv(path, engine="python", **kwargs)
+            if tmp.shape[1] >= 3:
+                df = tmp
+                break
+        except Exception:
+            continue
+
+    if df is None or df.shape[1] < 3:
+        raise ValueError(f"Could not parse CSV: {path}")
+
+    df.columns = [c.strip() for c in df.columns]
+
+    col_w = next((c for c in df.columns if c.lower().startswith("wavelength")), None)
+    col_f = next((c for c in df.columns if c.lower() == "flux"), None)
+    col_i = next((c for c in df.columns if c.lower() == "ivar"), None)
+
+    if not (col_w and col_f and col_i):
+        raise ValueError(f"Expected columns wavelength_A/flux/ivar. Got: {list(df.columns)}")
+
+    out = df[[col_w, col_f, col_i]].rename(columns={col_w: "wavelength_A", col_f: "flux", col_i: "ivar"}).copy()
+
+    out["wavelength_A"] = pd.to_numeric(out["wavelength_A"], errors="coerce")
+    out["flux"] = pd.to_numeric(out["flux"], errors="coerce")
+
+    out = out.dropna(subset=["wavelength_A", "flux"])
+    out = out.sort_values("wavelength_A").reset_index(drop=True)
+    return out
+
+def make_fig(df: pd.DataFrame, n_scatter: int, n_line: int, title: str, theme_key: str) -> go.Figure:
+    theme = THEMES.get(theme_key, THEMES["orange"])
+    line_color = theme["color"]
+    grid_color = theme["grid"]
+    axis_color = theme["axis"]
+
+    x = df["wavelength_A"].to_numpy()
+    y = df["flux"].to_numpy()
+
+    n_scatter = int(np.clip(n_scatter, 2, len(df)))
+    n_line = int(np.clip(n_line, 0, len(df)))
+
+    fig = go.Figure()
+
+    fig.add_trace(
+        go.Scattergl(
+            x=x[:n_scatter],
+            y=y[:n_scatter],
+            mode="markers",
+            marker=dict(size=4, opacity=0.95, color=line_color),
+            hovertemplate="λ=%{x:.1f} Å<br>flux=%{y:.4f}<extra></extra>",
+        )
+    )
+
+    if n_line > 0:
+        fig.add_trace(
+            go.Scattergl(
+                x=x[:n_line],
+                y=y[:n_line],
+                mode="lines",
+                line=dict(width=2.2, color=line_color),
+                hoverinfo="skip",
+            )
+        )
+
+    fig.update_layout(
+        title=dict(text=title, x=0.02, xanchor="left"),
+        paper_bgcolor="#050505",
+        plot_bgcolor="#050505",
+        margin=dict(l=22, r=18, t=52, b=40),
+        font=dict(
+            family='ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace',
+            color=line_color,
+            size=13,
+        ),
+        showlegend=False,
+    )
+
+    fig.update_xaxes(
+        title_text="wavelength (Å)",
+        showgrid=True,
+        gridcolor=grid_color,
+        zeroline=False,
+        ticks="outside",
+        tickcolor=axis_color,
+        linecolor=axis_color,
+        mirror=True,
+    )
+    fig.update_yaxes(
+        title_text="flux",
+        showgrid=True,
+        gridcolor=grid_color,
+        zeroline=False,
+        ticks="outside",
+        tickcolor=axis_color,
+        linecolor=axis_color,
+        mirror=True,
+    )
+
+    return fig
 
 # -----------------------------
 # Main content
@@ -765,28 +934,28 @@ with left:
     )
 
     # -----------------------------
-# Education section (ONE-LINE BULLETS)
-# -----------------------------
+    # Education section (ONE-LINE BULLETS)
+    # -----------------------------
     st.markdown("## Education")
     st.markdown(
         """
-    - **MSc Computer Science** — NWU *(2025–2027)*  
-    - **BSc Hons Computer Science and Information Technology** — NWU *(2023–2024)*  
-    - **BSc Information Technology** — NWU *(2021–2023)*  
-    - **TEFL (180 hours)** — i-to-i *(2023)*  
-    - **Matric certificate** — Wesvalia *(2016–2020)*  
+- **MSc Computer Science** — NWU *(2025–2027)*  
+- **BSc Hons Computer Science and Information Technology** — NWU *(2023–2024)*  
+- **BSc Information Technology** — NWU *(2021–2023)*  
+- **TEFL (180 hours)** — i-to-i *(2023)*  
+- **Matric certificate** — Wesvalia *(2016–2020)*  
         """.strip()
     )
 
     st.markdown("## Research interests")
     st.markdown(
-    "- Machine learning\n"
-    "- Deep learning\n"
-    "- Distributed systems\n"
-    "- Cloud computing\n"
-    "- Cybersecurity\n"
-    "- Astrophysics\n"
-    "- Solar physics\n"
+        "- Machine learning\n"
+        "- Deep learning\n"
+        "- Distributed systems\n"
+        "- Cloud computing\n"
+        "- Cybersecurity\n"
+        "- Astrophysics\n"
+        "- Solar physics\n"
     )
 
     st.markdown("## Research titles")
@@ -829,20 +998,21 @@ with left:
     )
 
     st.markdown("## Hobby project: Star classification")
-    st.write("""
-    The goal of this project was to classify stars from their spectra using the Morgan–Keenan (MK) spectral classification scheme, which defines seven primary spectral classes: **O, B, A, F, G, K, and M** (ordered from **hottest to coolest**).
+    st.write(
+        """
+The goal of this project was to classify stars from their spectra using the Morgan–Keenan (MK) spectral classification scheme, which defines seven primary spectral classes: **O, B, A, F, G, K, and M** (ordered from **hottest to coolest**).
 
-    Spectral data were collected from **SDSS** using a custom Python pipeline built with **Astropy**, resulting in a dataset of **10,955** stellar spectra. The extracted numerical spectral features were first used as input to a **1D Transformer** model. In a subsequent approach, each spectrum was converted into a **2D spectrogram** representation, which was then used to train a **2D Transformer** model.
+Spectral data were collected from **SDSS** using a custom Python pipeline built with **Astropy**, resulting in a dataset of **10,955** stellar spectra. The extracted numerical spectral features were first used as input to a **1D Transformer** model. In a subsequent approach, each spectrum was converted into a **2D spectrogram** representation, which was then used to train a **2D Transformer** model.
 
-    The distribution and characteristics of the seven spectral classes can be visualized below:
-    """
+The distribution and characteristics of the seven spectral classes can be visualized below:
+        """.strip()
     )
 
-# -----------------------------
-# Hobby project: Star classification (Spectrum explorer)
-# -----------------------------
-st.markdown(
-    """
+    # -----------------------------
+    # Hobby project: Spectrum explorer (FIXED + theme-colored)
+    # -----------------------------
+    st.markdown(
+        """
 <style>
 /* Make the selectbox compact */
 div[data-testid="stSelectbox"]{
@@ -858,211 +1028,93 @@ div[data-testid="stSelectbox"] label{
   border-radius: 16px;
   padding: 12px 12px 6px 12px;
   background: rgba(0,0,0,0.28);
-  margin-top: 6px;
+  margin-top: 8px;
+  margin-bottom: 6px;
 }
 </style>
 """,
-    unsafe_allow_html=True,
-)
-
-def _read_spectrum_csv(folder: str) -> pd.DataFrame:
-    """
-    Expects exactly 1 CSV inside data/<CLASS>/.
-    Columns: wavelength_A, flux, ivar
-    Handles comma / tab / whitespace delimited files.
-    """
-    paths = sorted(glob.glob(os.path.join(folder, "*.csv")))
-    if not paths:
-        raise FileNotFoundError(f"No CSV found in: {folder}")
-    path = paths[0]
-
-    # Try common delimiters robustly
-    for kwargs in (
-        dict(sep=","),
-        dict(sep="\t"),
-        dict(sep=r"\s+"),
-    ):
-        try:
-            df = pd.read_csv(path, engine="python", **kwargs)
-            # If it parsed as a single column, try next delimiter
-            if df.shape[1] >= 3:
-                break
-        except Exception:
-            df = None
-
-    if df is None or df.shape[1] < 3:
-        raise ValueError(f"Could not parse CSV: {path}")
-
-    # Normalize column names
-    df.columns = [c.strip() for c in df.columns]
-
-    # Flexible column matching
-    col_w = next((c for c in df.columns if c.lower().startswith("wavelength")), None)
-    col_f = next((c for c in df.columns if c.lower() == "flux"), None)
-    col_i = next((c for c in df.columns if c.lower() == "ivar"), None)
-
-    if not (col_w and col_f and col_i):
-        raise ValueError(f"Expected columns wavelength_A/flux/ivar. Got: {list(df.columns)}")
-
-    df = df[[col_w, col_f, col_i]].rename(columns={col_w: "wavelength_A", col_f: "flux", col_i: "ivar"})
-    df = df.dropna(subset=["wavelength_A", "flux"]).copy()
-    df["wavelength_A"] = pd.to_numeric(df["wavelength_A"], errors="coerce")
-    df["flux"] = pd.to_numeric(df["flux"], errors="coerce")
-    df = df.dropna(subset=["wavelength_A", "flux"])
-    df = df.sort_values("wavelength_A").reset_index(drop=True)
-    return df
-
-def _make_fig(df: pd.DataFrame, n_scatter: int, n_line: int, title: str) -> go.Figure:
-    x = df["wavelength_A"].to_numpy()
-    y = df["flux"].to_numpy()
-
-    # Clamp counts
-    n_scatter = int(np.clip(n_scatter, 2, len(df)))
-    n_line = int(np.clip(n_line, 0, len(df)))
-
-    fig = go.Figure()
-
-    # Phase 1: points appear (markers)
-    fig.add_trace(
-        go.Scattergl(
-            x=x[:n_scatter],
-            y=y[:n_scatter],
-            mode="markers",
-            marker=dict(size=4, opacity=0.95, color="currentColor"),
-            name="Samples",
-            hovertemplate="λ=%{x:.1f} Å<br>flux=%{y:.4f}<extra></extra>",
-        )
+        unsafe_allow_html=True,
     )
 
-    # Phase 2: draw a line through (lines)
-    if n_line > 0:
-        fig.add_trace(
-            go.Scattergl(
-                x=x[:n_line],
-                y=y[:n_line],
-                mode="lines",
-                line=dict(width=2.2, color="currentColor"),
-                name="Trace",
-                hoverinfo="skip",
-            )
+    classes = list("OBAFGKM")
+    default_idx = classes.index("A")
+
+    c1, c2 = st.columns([0.32, 0.68], gap="small")
+    with c1:
+        spec_class = st.selectbox(
+            "Spectral class",
+            options=classes,
+            index=default_idx,
+            label_visibility="collapsed",
+            key="spec_class_select",
         )
 
-    fig.update_layout(
-        title=dict(text=title, x=0.02, xanchor="left"),
-        paper_bgcolor="#050505",
-        plot_bgcolor="#050505",
-        margin=dict(l=22, r=18, t=52, b=40),
-        font=dict(family='ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace',
-                  color="currentColor",
-                  size=13),
-        showlegend=False,
-    )
-
-    fig.update_xaxes(
-        title_text="wavelength (Å)",
-        showgrid=True,
-        gridcolor="rgba(255,255,255,0.08)",
-        zeroline=False,
-        ticks="outside",
-        tickcolor="rgba(255,255,255,0.25)",
-        linecolor="rgba(255,255,255,0.18)",
-        mirror=True,
-    )
-    fig.update_yaxes(
-        title_text="flux",
-        showgrid=True,
-        gridcolor="rgba(255,255,255,0.08)",
-        zeroline=False,
-        ticks="outside",
-        tickcolor="rgba(255,255,255,0.25)",
-        linecolor="rgba(255,255,255,0.18)",
-        mirror=True,
-    )
-
-    return fig
-
-# --- UI row (compact combobox) ---
-classes = list("OBAFGKM")
-default_idx = classes.index("A")
-
-c1, c2 = st.columns([0.32, 0.68], gap="small")
-with c1:
-    spec_class = st.selectbox(
-        "Spectral class",
-        options=classes,
-        index=default_idx,
-        label_visibility="collapsed",
-    )
-with c2:
-    st.markdown(
-        f"""
+    with c2:
+        st.markdown(
+            f"""
 <div class="spectrum-wrap">
   <div style="font-size:12px; opacity:0.85;">
     $ spectrum viewer — MK class <b>{spec_class}</b>
   </div>
 </div>
 """,
-        unsafe_allow_html=True,
-    )
+            unsafe_allow_html=True,
+        )
 
-plot_slot = st.empty()
+    plot_slot = st.empty()
 
-# --- State: no animation on first render; animate only on change ---
-if "prev_spec_class" not in st.session_state:
-    st.session_state.prev_spec_class = spec_class
-    st.session_state.spec_initialized = False
+    # No animation on first render; animate only when selection changes
+    if "prev_spec_class" not in st.session_state:
+        st.session_state.prev_spec_class = spec_class
+        st.session_state.spec_initialized = False
 
-changed = (spec_class != st.session_state.prev_spec_class)
+    changed = (spec_class != st.session_state.prev_spec_class)
 
-# Load data
-data_root = "data"
-class_dir = os.path.join(data_root, spec_class)
+    data_root = "data"
+    class_dir = os.path.join(data_root, spec_class)
 
-try:
-    df_spec = _read_spectrum_csv(class_dir)
-except Exception as e:
-    plot_slot.error(f"Could not load spectrum for class '{spec_class}' from '{class_dir}': {e}")
-    df_spec = None
+    try:
+        df_spec = read_spectrum_csv(class_dir)
+    except Exception as e:
+        plot_slot.error(f"Could not load spectrum for class '{spec_class}' from '{class_dir}': {e}")
+        df_spec = None
 
-if df_spec is not None:
-    title = f"$ MK spectral class {spec_class} — spectrum"
-
-    # First ever plot: render instantly (no animation)
-    if not st.session_state.spec_initialized:
-        fig = _make_fig(df_spec, n_scatter=len(df_spec), n_line=len(df_spec), title=title)
-        plot_slot.plotly_chart(fig, use_container_width=True, config={"displayModeBar": False})
-        st.session_state.spec_initialized = True
-
-    # Subsequent changes: animate
-    elif changed:
+    if df_spec is not None:
+        title = f"$ MK spectral class {spec_class} — spectrum"
         N = len(df_spec)
 
-        # Keep animation smooth + not too slow
-        frames = 64
-        sleep_s = 0.016  # ~60fps-ish (Streamlit will be slower, but smooth enough)
-
-        # Phase 1: reveal points
-        for k in range(2, frames + 1):
-            n_scatter = int(np.interp(k, [2, frames], [max(10, N * 0.05), N]))
-            fig = _make_fig(df_spec, n_scatter=n_scatter, n_line=0, title=title)
+        if not st.session_state.spec_initialized:
+            fig = make_fig(df_spec, n_scatter=N, n_line=N, title=title, theme_key=ACTIVE_THEME)
             plot_slot.plotly_chart(fig, use_container_width=True, config={"displayModeBar": False})
-            time.sleep(sleep_s)
+            st.session_state.spec_initialized = True
 
-        # Phase 2: draw the line through
-        for k in range(2, frames + 1):
-            n_line = int(np.interp(k, [2, frames], [2, N]))
-            fig = _make_fig(df_spec, n_scatter=N, n_line=n_line, title=title)
+        elif changed:
+            frames = 56
+            sleep_s = 0.016
+
+            # Phase 1: reveal points
+            for k in range(2, frames + 1):
+                n_scatter = int(np.interp(k, [2, frames], [max(16, N * 0.06), N]))
+                fig = make_fig(df_spec, n_scatter=n_scatter, n_line=0, title=title, theme_key=ACTIVE_THEME)
+                plot_slot.plotly_chart(fig, use_container_width=True, config={"displayModeBar": False})
+                time.sleep(sleep_s)
+
+            # Phase 2: draw the line through
+            for k in range(2, frames + 1):
+                n_line = int(np.interp(k, [2, frames], [2, N]))
+                fig = make_fig(df_spec, n_scatter=N, n_line=n_line, title=title, theme_key=ACTIVE_THEME)
+                plot_slot.plotly_chart(fig, use_container_width=True, config={"displayModeBar": False})
+                time.sleep(sleep_s)
+
+        else:
+            fig = make_fig(df_spec, n_scatter=N, n_line=N, title=title, theme_key=ACTIVE_THEME)
             plot_slot.plotly_chart(fig, use_container_width=True, config={"displayModeBar": False})
-            time.sleep(sleep_s)
 
-    # No change: keep static
-    else:
-        fig = _make_fig(df_spec, n_scatter=len(df_spec), n_line=len(df_spec), title=title)
-        plot_slot.plotly_chart(fig, use_container_width=True, config={"displayModeBar": False})
-
-    # Update previous selection
     st.session_state.prev_spec_class = spec_class
 
+    # -----------------------------
+    # Rest of your content
+    # -----------------------------
     st.markdown("## Hobby project: Metrics and visualisation")
     m1, m2, m3, m4 = st.columns(4)
     m1.metric("Best Macro-F1", "—")
@@ -1075,7 +1127,6 @@ if df_spec is not None:
     st.markdown("## Contact")
     st.write("Send me a message directly from this page:")
 
-    # Inputs (no red errors; hints are handled via CSS overlay)
     name = st.text_input("Name", placeholder="Your name")
     subject = st.text_input("Subject", placeholder="What is this about?")
     message = st.text_area("Message", placeholder="Type your message here...", height=160)
