@@ -1,5 +1,6 @@
-import urllib.parse
-
+import re
+import json
+import requests
 import streamlit as st
 import streamlit.components.v1 as components
 
@@ -19,7 +20,7 @@ LINKEDIN_URL = "https://www.linkedin.com/in/bernard-swanepoel-a2777322b/"
 GITHUB_URL = "https://github.com/XoXoTheFrozenFox"
 EMAIL = "BernardSwanepoel1510@gmail.com"
 
-STATIC_PREFIX = "Hi🌞, my name is Bernard Swanepoel. "  # ends with ONE normal space
+STATIC_PREFIX = "Hi🌞, my name is Bernard Swanepoel. "
 
 ROTATING = [
     "Masters student✏️",
@@ -30,14 +31,13 @@ ROTATING = [
 ]
 
 # -----------------------------
-# Global terminal aesthetic (whole Streamlit page)
-# + HIDE Streamlit chrome (menu/footer/header)
-# Default theme = ORANGE; toggle => GREEN (driven by HTML component)
+# Global terminal aesthetic + hide Streamlit chrome
+# + form widgets styled dark
 # -----------------------------
 st.markdown(
     """
 <style>
-/* Hide Streamlit default UI (menu/footer/header) */
+/* Hide Streamlit default UI */
 #MainMenu {visibility: hidden;}
 footer {visibility: hidden;}
 header {visibility: hidden;}
@@ -49,6 +49,8 @@ header {visibility: hidden;}
   --green:#39ff14;
   --border-orange:rgba(255,122,24,0.45);
   --border-green:rgba(57,255,20,0.45);
+  --panel: rgba(0,0,0,0.35);
+  --panel2: rgba(0,0,0,0.45);
 }
 
 /* Default theme = ORANGE */
@@ -63,6 +65,7 @@ html, body, [data-testid="stAppViewContainer"]{
   padding-bottom: 1.25rem !important;
 }
 
+/* Divider */
 hr{
   border: none !important;
   border-top: 1px solid var(--border-orange) !important;
@@ -71,7 +74,7 @@ hr{
 }
 
 div[data-testid="stMetric"]{
-  background: rgba(0,0,0,0.35) !important;
+  background: var(--panel) !important;
   border: 1px solid var(--border-orange) !important;
   border-radius: 14px !important;
   padding: 12px 12px !important;
@@ -79,7 +82,7 @@ div[data-testid="stMetric"]{
 }
 
 div[data-testid="stAlert"]{
-  background: rgba(0,0,0,0.35) !important;
+  background: var(--panel) !important;
   border: 1px solid var(--border-orange) !important;
 }
 
@@ -87,30 +90,33 @@ p, li{
   font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
 }
 
-/* Inputs / textareas in terminal style */
-div[data-testid="stTextInput"] input,
-div[data-testid="stTextArea"] textarea{
-  background: rgba(0,0,0,0.35) !important;
+/* -----------------------------
+   Form widgets: dark background + orange border/text
+------------------------------ */
+[data-testid="stTextInput"] input,
+[data-testid="stTextArea"] textarea{
+  background: var(--panel2) !important;
+  color: var(--orange) !important;
   border: 1px solid var(--border-orange) !important;
   border-radius: 14px !important;
   box-shadow: 0 0 0 1px rgba(255,122,24,0.10) inset !important;
-  caret-color: var(--orange) !important;
 }
-div[data-testid="stTextInput"] input:focus,
-div[data-testid="stTextArea"] textarea:focus{
-  outline: none !important;
+[data-testid="stTextInput"] input::placeholder,
+[data-testid="stTextArea"] textarea::placeholder{
+  color: rgba(255,122,24,0.65) !important;
 }
 
-/* Buttons in terminal style */
-button[kind="primary"], button[kind="secondary"]{
-  border-radius: 999px !important;
+/* Streamlit buttons */
+.stButton > button{
+  background: var(--panel2) !important;
+  color: var(--orange) !important;
   border: 1px solid var(--border-orange) !important;
-  background: rgba(0,0,0,0.25) !important;
-  box-shadow: 0 0 0 1px rgba(255,122,24,0.12) inset, 0 10px 22px rgba(0,0,0,0.35) !important;
+  border-radius: 14px !important;
+  padding: 0.55rem 0.95rem !important;
+  box-shadow: 0 0 0 1px rgba(255,122,24,0.10) inset !important;
 }
-button[kind="primary"]:hover, button[kind="secondary"]:hover{
-  background: rgba(255,122,24,0.12) !important;
-  box-shadow: 0 0 12px rgba(255,122,24,0.18), 0 10px 18px rgba(0,0,0,0.45) !important;
+.stButton > button:hover{
+  background: rgba(255,122,24,0.10) !important;
 }
 
 /* Green theme (set by JS) */
@@ -131,19 +137,23 @@ html[data-theme="green"] div[data-testid="stMetric"]{
 html[data-theme="green"] div[data-testid="stAlert"]{
   border: 1px solid var(--border-green) !important;
 }
-html[data-theme="green"] div[data-testid="stTextInput"] input,
-html[data-theme="green"] div[data-testid="stTextArea"] textarea{
+html[data-theme="green"] [data-testid="stTextInput"] input,
+html[data-theme="green"] [data-testid="stTextArea"] textarea{
+  color: var(--green) !important;
   border: 1px solid var(--border-green) !important;
   box-shadow: 0 0 0 1px rgba(57,255,20,0.10) inset !important;
-  caret-color: var(--green) !important;
 }
-html[data-theme="green"] button[kind="primary"], html[data-theme="green"] button[kind="secondary"]{
+html[data-theme="green"] [data-testid="stTextInput"] input::placeholder,
+html[data-theme="green"] [data-testid="stTextArea"] textarea::placeholder{
+  color: rgba(57,255,20,0.65) !important;
+}
+html[data-theme="green"] .stButton > button{
+  color: var(--green) !important;
   border: 1px solid var(--border-green) !important;
-  box-shadow: 0 0 0 1px rgba(57,255,20,0.12) inset, 0 10px 22px rgba(0,0,0,0.35) !important;
+  box-shadow: 0 0 0 1px rgba(57,255,20,0.10) inset !important;
 }
-html[data-theme="green"] button[kind="primary"]:hover, html[data-theme="green"] button[kind="secondary"]:hover{
-  background: rgba(57,255,20,0.12) !important;
-  box-shadow: 0 0 12px rgba(57,255,20,0.18), 0 10px 18px rgba(0,0,0,0.45) !important;
+html[data-theme="green"] .stButton > button:hover{
+  background: rgba(57,255,20,0.10) !important;
 }
 </style>
 """,
@@ -151,9 +161,7 @@ html[data-theme="green"] button[kind="primary"]:hover, html[data-theme="green"] 
 )
 
 # -----------------------------
-# Topbar component
-# - DEFAULT ALWAYS ORANGE (no saved theme on load)
-# - Theme toggle button left of portfolio button
+# Topbar component (orange default; toggle to green)
 # -----------------------------
 topbar_html = f"""
 <!doctype html>
@@ -236,7 +244,7 @@ topbar_html = f"""
     align-items:center;
     justify-content:flex-end;
     flex-wrap: wrap;
-    padding: 10px 8px 8px 8px;
+    padding: 10px 8px 10px 8px;
     overflow: visible;
   }}
 
@@ -317,13 +325,35 @@ topbar_html = f"""
 
   @media (max-width: 640px) {{
     body {{ padding: 12px 10px 14px 10px; }}
-    .row1 {{ grid-template-columns: 1fr; gap: 8px; }}
+
+    .row1 {{
+      grid-template-columns: 1fr;
+      gap: 8px;
+    }}
+
     .text-col {{ padding: 0; }}
-    .terminal-title {{ font-size: 1.10rem; line-height: 1.25; padding-top: 0; }}
-    .icon-row {{ justify-content: flex-start; gap: 8px; padding: 0 0 10px 0; overflow: visible; }}
+
+    .terminal-title {{
+      font-size: 1.10rem;
+      line-height: 1.25;
+      padding-top: 0;
+    }}
+
+    .icon-row {{
+      justify-content: flex-start;
+      gap: 8px;
+      padding: 0 0 12px 0;
+      overflow: visible;
+    }}
+
     a.icon-btn, button.icon-btn {{ width: 38px; height: 38px; }}
     a.icon-btn i, button.icon-btn i {{ font-size: 16px; }}
-    .tagline {{ font-size: 1.02rem; line-height: 1.25; margin-top: 6px; }}
+
+    .tagline {{
+      font-size: 1.02rem;
+      line-height: 1.25;
+      margin-top: 6px;
+    }}
   }}
 </style>
 </head>
@@ -338,6 +368,7 @@ topbar_html = f"""
             <span id="prefix"></span><span id="word"></span><span class="cursor">▌</span>
           </span>
         </div>
+
         <div class="tagline">{TAGLINE}</div>
       </div>
 
@@ -383,7 +414,7 @@ topbar_html = f"""
     setTheme(cur === "green" ? "orange" : "green");
   }});
 
-  // Resize iframe nicely
+  // Resize without infinite growth
   function getHeight() {{
     const b = wrap.getBoundingClientRect().height;
     const sh = wrap.scrollHeight;
@@ -471,9 +502,87 @@ topbar_html = f"""
 </body>
 </html>
 """
-
 components.html(topbar_html, height=93)
 st.divider()
+
+# -----------------------------
+# Email sending (Brevo Transactional API)
+# -----------------------------
+def _is_valid_email(addr: str) -> bool:
+    if not addr:
+        return False
+    return re.match(r"^[^@\s]+@[^@\s]+\.[^@\s]+$", addr.strip()) is not None
+
+def send_contact_email_brevo(
+    *,
+    from_name: str,
+    from_email: str,
+    subject: str,
+    message: str,
+) -> tuple[bool, str]:
+    """
+    Sends email to YOU using Brevo Transactional Email API (HTTPS).
+    Requires st.secrets["BREVO_API_KEY"] and a verified sender email in Brevo.
+    """
+    api_key = st.secrets.get("BREVO_API_KEY", "")
+    sender_email = st.secrets.get("BREVO_SENDER_EMAIL", "")
+    sender_name = st.secrets.get("BREVO_SENDER_NAME", "Website Contact Form")
+    to_email = EMAIL
+
+    if not api_key:
+        return False, "Missing BREVO_API_KEY in Streamlit secrets."
+    if not sender_email:
+        return False, "Missing BREVO_SENDER_EMAIL in Streamlit secrets."
+    if not _is_valid_email(sender_email):
+        return False, "BREVO_SENDER_EMAIL is not a valid email address."
+
+    # Build a clean body (avoid weird wrapping)
+    safe_from_name = (from_name or "").strip()
+    safe_from_email = (from_email or "").strip()
+    safe_subject = (subject or "").strip()
+    safe_message = (message or "").strip()
+
+    if not safe_message:
+        return False, "Message cannot be empty."
+
+    html_content = f"""
+    <div style="font-family: ui-monospace, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace;">
+      <h3>New website message</h3>
+      <p><b>Name:</b> {safe_from_name}</p>
+      <p><b>Email:</b> {safe_from_email}</p>
+      <p><b>Subject:</b> {safe_subject}</p>
+      <hr/>
+      <pre style="white-space: pre-wrap;">{safe_message}</pre>
+    </div>
+    """
+
+    payload = {
+        "sender": {"name": sender_name, "email": sender_email},
+        "to": [{"email": to_email, "name": "Bernard Swanepoel"}],
+        "replyTo": {"email": safe_from_email or sender_email, "name": safe_from_name or "Website Visitor"},
+        "subject": f"[Website] {safe_subject}" if safe_subject else "[Website] New message",
+        "htmlContent": html_content,
+    }
+
+    url = "https://api.brevo.com/v3/smtp/email"
+    headers = {
+        "accept": "application/json",
+        "api-key": api_key,
+        "content-type": "application/json",
+    }
+
+    try:
+        r = requests.post(url, headers=headers, data=json.dumps(payload), timeout=20)
+        if 200 <= r.status_code < 300:
+            return True, "Sent ✅"
+        # show a readable error
+        try:
+            err = r.json()
+        except Exception:
+            err = {"error": r.text}
+        return False, f"Brevo error ({r.status_code}): {err}"
+    except Exception as e:
+        return False, f"Request failed: {e}"
 
 # -----------------------------
 # Main content
@@ -483,8 +592,10 @@ left, right = st.columns([1.35, 1.0], gap="large")
 with left:
     st.markdown("## Background about me")
     st.write(
-        "I’m Bernard Swanepoel, a Computer Science master’s student focused on applying deep learning to solar physics—especially automated sunspot detection and McIntosh classification. "
-        "Outside of research, I’m into gaming (Destiny, League of Legends, and pretty much anything Nintendo), I sing opera, and I enjoy 3D printing—mostly figures and fun prints."
+        "I’m Bernard Swanepoel, a Computer Science master’s student focused on applying deep learning to solar physics—"
+        "especially automated sunspot detection and McIntosh classification. "
+        "Outside of research, I’m into gaming (Destiny, League of Legends, and pretty much anything Nintendo), "
+        "I sing opera, and I enjoy 3D printing—mostly figures and fun prints."
     )
 
     st.markdown("## Research titles")
@@ -497,12 +608,17 @@ with left:
 
     st.markdown("## Research summary")
     st.write(
-        "Higher sunspot numbers on the Sun usually mean higher solar activity and a greater chance of space-weather events that can disrupt power grids, telecommunications, and other critical electronic systems. "
-        "Some complex McIntosh sunspot group types are linked to higher probabilities of solar flares and coronal mass ejections (CMEs), which motivates the need for automated, reliable classification. "
-        "For my dissertation, I built a dataset from Solar Dynamics Observatory (SDO) images accessed via the Joint Science Operations Center (JSOC): 3,501 full-disk solar photos containing 14,014 sunspots. "
-        "I created four datasets—one for detection and three for classification using the McIntosh–Zurich Zpc scheme (Zurich class Z, leading-spot penumbra p, and interior compactness c)—and split them into 85% training, 10% validation, and 5% testing. "
+        "Higher sunspot numbers on the Sun usually mean higher solar activity and a greater chance of space-weather events "
+        "that can disrupt power grids, telecommunications, and other critical electronic systems. "
+        "Some complex McIntosh sunspot group types are linked to higher probabilities of solar flares and coronal mass ejections (CMEs), "
+        "which motivates the need for automated, reliable classification. "
+        "For my dissertation, I built a dataset from Solar Dynamics Observatory (SDO) images accessed via the Joint Science Operations Center (JSOC): "
+        "3,501 full-disk solar photos containing 14,014 sunspots. "
+        "I created four datasets—one for detection and three for classification using the McIntosh–Zurich Zpc scheme "
+        "(Zurich class Z, leading-spot penumbra p, and interior compactness c)—and split them into 85% training, 10% validation, and 5% testing. "
         "I evaluated multiple detection models (YOLO, RT-DETR, Faster R-CNN), with YOLOv8 performing best (83.30% precision, 76.00% recall). "
-        "For classification, transformer-based models (ViT, Swin) generally outperformed traditional CNNs, and ConvNeXt achieved the best overall accuracy (70.27%) across the Z, p, and c subclassifications."
+        "For classification, transformer-based models (ViT, Swin) generally outperformed traditional CNNs, and ConvNeXt achieved the best overall accuracy "
+        "(70.27%) across the Z, p, and c subclassifications."
     )
 
     st.markdown("## Tools and technologies used")
@@ -514,7 +630,7 @@ with left:
 - **Visualization:** Matplotlib, Seaborn  
 - **Detection:** YOLOv8, RT-DETR, Faster R-CNN  
 - **Classification:** ViT, Swin, ResNet, EfficientNet, ConvNeXt  
-- **Evaluation:** Precision/Recall, Confusion Matrices, ROC/PR analysis  
+- **Evaluation:** Precision/Recall, Confusion matrices, ROC/PR analysis  
 - **UI / Apps:** Streamlit, Tkinter  
 - **Dev tools:** Visual Studio Code, Jupyter Notebooks, PyCharm  
 - **Environments:** Conda, Windows Subsystem for Linux (WSL)
@@ -532,41 +648,35 @@ with left:
 
     st.divider()
 
-    # -----------------------------
-    # Contact (mailto only — no extra/honeypot textbox, no extra messages)
-    # -----------------------------
     st.markdown("## Contact")
+    st.write("Send me a message directly from this page:")
 
-    with st.form("contact_form", clear_on_submit=False):
-        name = st.text_input("Your name", placeholder="e.g., Jane Doe")
-        from_email = st.text_input("Your email", placeholder="e.g., jane@example.com")
-        subject = st.text_input("Subject", placeholder="e.g., Research collaboration")
-        message = st.text_area("Message", placeholder="Write your message here...", height=160)
-        submitted = st.form_submit_button("Create email draft")
+    with st.form("contact_form", clear_on_submit=True):
+        name = st.text_input("Name", placeholder="Your name")
+        email = st.text_input("Email", placeholder="you@example.com")
+        subject = st.text_input("Subject", placeholder="What is this about?")
+        message = st.text_area("Message", placeholder="Type your message here...", height=160)
+
+        submitted = st.form_submit_button("Send message")
 
     if submitted:
-        if not name.strip() or not from_email.strip() or not subject.strip() or not message.strip():
-            st.warning("Please complete all fields.")
-        elif "@" not in from_email or "." not in from_email:
-            st.warning("Please enter a valid email address.")
+        if not name.strip():
+            st.error("Please enter your name.")
+        elif not _is_valid_email(email):
+            st.error("Please enter a valid email address.")
+        elif not message.strip():
+            st.error("Please enter a message.")
         else:
-            body = (
-                f"Name: {name.strip()}\n"
-                f"Email: {from_email.strip()}\n\n"
-                f"{message.strip()}"
+            ok, info = send_contact_email_brevo(
+                from_name=name,
+                from_email=email,
+                subject=subject,
+                message=message,
             )
-
-            mailto_url = (
-                f"mailto:{EMAIL}"
-                f"?subject={urllib.parse.quote(subject.strip())}"
-                f"&body={urllib.parse.quote(body)}"
-            )
-
-            # Single clean button only
-            try:
-                st.link_button("Open email draft", mailto_url)
-            except Exception:
-                st.markdown(f"[Open email draft]({mailto_url})")
+            if ok:
+                st.success("Message sent successfully ✅")
+            else:
+                st.error(info)
 
 st.divider()
 st.caption("© 2026 Bernard Swanepoel")
