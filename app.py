@@ -6,7 +6,15 @@ st.set_page_config(
     page_icon="🌞",
     layout="wide",
 )
-
+st.markdown(
+    """
+    <style>
+    #MainMenu {visibility: hidden;}
+    footer {visibility: hidden;}
+    header {visibility: hidden;}
+    </style>
+    """,
+)
 # -----------------------------
 # Links / info
 # -----------------------------
@@ -31,21 +39,27 @@ ROTATING = [
 
 # -----------------------------
 # Global terminal aesthetic (whole Streamlit page)
+# - Default site text = neon ORANGE
+# - Clicking the toggle button switches to neon GREEN (the current color you had)
+# - Buttons follow the current text color automatically
 # -----------------------------
 st.markdown(
     """
 <style>
 :root{
   --bg:#050505;
+  --orange:#ff7a18;
   --green:#39ff14;
-  --border:rgba(57,255,20,0.45);
+  --border-orange:rgba(255,122,24,0.45);
+  --border-green:rgba(57,255,20,0.45);
 }
 
+/* Default theme = ORANGE */
 html, body, [data-testid="stAppViewContainer"]{
   background: var(--bg) !important;
-  color: var(--green) !important;
+  color: var(--orange) !important;
 }
-*{ color: var(--green) !important; }
+*{ color: var(--orange) !important; }
 
 .block-container{
   padding-top: 0.55rem !important;
@@ -59,28 +73,48 @@ div[data-testid="stDecoration"]{
   pointer-events: none !important;
 }
 
+/* Divider tight to content */
 hr{
   border: none !important;
-  border-top: 1px solid var(--border) !important;
+  border-top: 1px solid var(--border-orange) !important;
   opacity: 1 !important;
   margin: 0.18rem 0 0.55rem 0 !important;
 }
 
 div[data-testid="stMetric"]{
   background: rgba(0,0,0,0.35) !important;
-  border: 1px solid var(--border) !important;
+  border: 1px solid var(--border-orange) !important;
   border-radius: 14px !important;
   padding: 12px 12px !important;
-  box-shadow: 0 0 0 1px rgba(57,255,20,0.10) inset;
+  box-shadow: 0 0 0 1px rgba(255,122,24,0.10) inset;
 }
 
 div[data-testid="stAlert"]{
   background: rgba(0,0,0,0.35) !important;
-  border: 1px solid var(--border) !important;
+  border: 1px solid var(--border-orange) !important;
 }
 
 p, li{
   font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+}
+
+/* When green theme is active (set by JS) */
+html[data-theme="green"] body,
+html[data-theme="green"] [data-testid="stAppViewContainer"]{
+  color: var(--green) !important;
+}
+html[data-theme="green"] *{
+  color: var(--green) !important;
+}
+html[data-theme="green"] hr{
+  border-top: 1px solid var(--border-green) !important;
+}
+html[data-theme="green"] div[data-testid="stMetric"]{
+  border: 1px solid var(--border-green) !important;
+  box-shadow: 0 0 0 1px rgba(57,255,20,0.10) inset;
+}
+html[data-theme="green"] div[data-testid="stAlert"]{
+  border: 1px solid var(--border-green) !important;
 }
 </style>
 """,
@@ -88,7 +122,12 @@ p, li{
 )
 
 # -----------------------------
-# Topbar component (DESKTOP TEXT PADDING ADDED)
+# Topbar component
+# FIXES:
+# - No infinite scrolling: remove documentElement.scrollHeight feedback loop, clamp heights, update only on change
+# - Add theme toggle button left of portfolio button:
+#   default ORANGE, click => GREEN
+# - Icon button colors follow current theme (orange/green)
 # -----------------------------
 topbar_html = f"""
 <!doctype html>
@@ -99,8 +138,10 @@ topbar_html = f"""
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 <style>
   :root {{
+    --orange:#ff7a18;
     --green:#39ff14;
-    --border:rgba(57,255,20,0.45);
+    --border-orange:rgba(255,122,24,0.45);
+    --border-green:rgba(57,255,20,0.45);
   }}
 
   html, body {{
@@ -108,22 +149,25 @@ topbar_html = f"""
     height: auto !important;
   }}
 
+  /* Default theme in iframe = ORANGE */
   body {{
     margin: 0;
     padding: 10px 8px 6px 8px;
     background: transparent;
-    color: var(--green);
+    color: var(--orange);
     font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono",
                  "Courier New", "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", monospace;
     box-sizing: border-box;
   }}
+
+  /* Theme switch inside iframe (syncs with parent) */
+  html[data-theme="green"] body {{ color: var(--green); }}
 
   #wrap {{
     width: 100%;
     display: block;
   }}
 
-  /* ✅ GRID: title + icons */
   .row1 {{
     display: grid;
     grid-template-columns: 1fr auto;
@@ -132,9 +176,8 @@ topbar_html = f"""
     width: 100%;
   }}
 
-  /* ✅ Desktop-only padding for TEXT column (title + tagline) */
   .text-col {{
-    padding: 15px 16px 8px 16px;   /* <-- increase/decrease as you like */
+    padding: 15px 16px 8px 16px;
   }}
 
   .terminal-title {{
@@ -147,22 +190,18 @@ topbar_html = f"""
     overflow: visible;
     overflow-wrap: anywhere;
     word-break: break-word;
-    text-shadow: 0 0 18px rgba(57,255,20,0.12);
+    text-shadow: 0 0 18px rgba(0,0,0,0.0);
     padding-top: 2px;
   }}
 
-  .typing-line {{
-    display: inline;
-  }}
+  .typing-line {{ display: inline; }}
 
   .prompt {{
     display: inline;
     white-space: nowrap;
   }}
 
-  #prefix, #word {{
-    display: inline;
-  }}
+  #prefix, #word {{ display: inline; }}
 
   .cursor {{
     display:inline-block;
@@ -181,13 +220,13 @@ topbar_html = f"""
     align-items:center;
     justify-content:flex-end;
     flex-wrap: wrap;
-    padding-top: 0px;
-    padding-right: 8px;            /* small right breathing room */
-    padding-left: 8px;             /* keeps spacing when wrapped */
-    padding-top: 10px;             /* aligns nicely with padded text */
+    padding-right: 8px;
+    padding-left: 8px;
+    padding-top: 10px;
   }}
 
-  a.icon-btn {{
+  /* Buttons inherit the CURRENT text color (orange/green) */
+  a.icon-btn, button.icon-btn {{
     width:44px;
     height:44px;
     border-radius:999px;
@@ -195,28 +234,44 @@ topbar_html = f"""
     align-items:center;
     justify-content:center;
     text-decoration:none;
-    color: var(--green);
-    border:1px solid var(--border);
+    color: currentColor;
+    border:1px solid rgba(255,255,255,0.0); /* placeholder, overwritten below */
     background: rgba(0,0,0,0.25);
-    box-shadow: 0 0 0 1px rgba(57,255,20,0.12) inset, 0 10px 22px rgba(0,0,0,0.35);
+    box-shadow: 0 0 0 1px rgba(255,255,255,0.0) inset, 0 10px 22px rgba(0,0,0,0.35);
     transition: transform 140ms ease, background 140ms ease, border-color 140ms ease, box-shadow 140ms ease;
     -webkit-tap-highlight-color: transparent;
     user-select:none;
+    cursor: pointer;
   }}
 
-  a.icon-btn i {{
+  /* Border + inset shadow depend on theme */
+  a.icon-btn, button.icon-btn {{
+    border-color: var(--border-orange);
+    box-shadow: 0 0 0 1px rgba(255,122,24,0.12) inset, 0 10px 22px rgba(0,0,0,0.35);
+  }}
+  html[data-theme="green"] a.icon-btn,
+  html[data-theme="green"] button.icon-btn {{
+    border-color: var(--border-green);
+    box-shadow: 0 0 0 1px rgba(57,255,20,0.12) inset, 0 10px 22px rgba(0,0,0,0.35);
+  }}
+
+  a.icon-btn i, button.icon-btn i {{
     font-size: 18px;
     pointer-events:none;
   }}
 
-  a.icon-btn:hover {{
+  a.icon-btn:hover, button.icon-btn:hover {{
     transform: translateY(-1px);
+    background: rgba(255,122,24,0.12);
+    box-shadow: 0 0 12px rgba(255,122,24,0.18), 0 10px 18px rgba(0,0,0,0.45);
+  }}
+  html[data-theme="green"] a.icon-btn:hover,
+  html[data-theme="green"] button.icon-btn:hover {{
     background: rgba(57,255,20,0.12);
-    border-color: rgba(57,255,20,0.85);
     box-shadow: 0 0 12px rgba(57,255,20,0.18), 0 10px 18px rgba(0,0,0,0.45);
   }}
 
-  a.icon-btn:active {{
+  a.icon-btn:active, button.icon-btn:active {{
     transform: translateY(0px) scale(0.98);
   }}
 
@@ -236,7 +291,7 @@ topbar_html = f"""
   a.email-btn:hover .email-closed {{ opacity: 0; }}
 
   .tagline {{
-    margin-top: 10px;              /* a bit more breathing room under title */
+    margin-top: 10px;
     margin-bottom: 0;
     font-size: clamp(1.00rem, 1.45vw, 1.18rem);
     font-weight: 650;
@@ -244,10 +299,8 @@ topbar_html = f"""
     white-space: normal;
     overflow: visible;
     overflow-wrap: anywhere;
-    text-shadow: 0 0 14px rgba(57,255,20,0.10);
   }}
 
-  /* ✅ Mobile: remove desktop text padding + stack icons */
   @media (max-width: 640px) {{
     body {{ padding: 12px 10px 8px 10px; }}
 
@@ -256,9 +309,7 @@ topbar_html = f"""
       gap: 8px;
     }}
 
-    .text-col {{
-      padding: 0;                  /* ✅ no extra padding on mobile */
-    }}
+    .text-col {{ padding: 0; }}
 
     .terminal-title {{
       font-size: 1.10rem;
@@ -269,11 +320,11 @@ topbar_html = f"""
     .icon-row {{
       justify-content: flex-start;
       gap: 8px;
-      padding: 0;                  /* ✅ keep tight on mobile */
+      padding: 0;
     }}
 
-    a.icon-btn {{ width: 38px; height: 38px; }}
-    a.icon-btn i {{ font-size: 16px; }}
+    a.icon-btn, button.icon-btn {{ width: 38px; height: 38px; }}
+    a.icon-btn i, button.icon-btn i {{ font-size: 16px; }}
 
     .tagline {{
       font-size: 1.02rem;
@@ -282,18 +333,18 @@ topbar_html = f"""
     }}
   }}
 
-  /* Touch devices: avoid stuck hover */
   @media (hover: none) and (pointer: coarse) {{
-    a.icon-btn:hover {{
+    a.icon-btn:hover, button.icon-btn:hover {{
       transform:none;
       background: rgba(0,0,0,0.25);
-      border-color: var(--border);
+      box-shadow: 0 0 0 1px rgba(255,122,24,0.12) inset, 0 10px 22px rgba(0,0,0,0.35);
+    }}
+    html[data-theme="green"] a.icon-btn:hover,
+    html[data-theme="green"] button.icon-btn:hover {{
       box-shadow: 0 0 0 1px rgba(57,255,20,0.12) inset, 0 10px 22px rgba(0,0,0,0.35);
     }}
-    a.icon-btn:active {{
-      background: rgba(57,255,20,0.12);
-      border-color: rgba(57,255,20,0.85);
-      box-shadow: 0 0 12px rgba(57,255,20,0.18), 0 10px 18px rgba(0,0,0,0.45);
+
+    a.icon-btn:active, button.icon-btn:active {{
       transform: scale(0.98);
     }}
   }}
@@ -315,6 +366,11 @@ topbar_html = f"""
       </div>
 
       <div class="icon-row">
+        <!-- ✅ Theme toggle button (left of portfolio) -->
+        <button class="icon-btn" id="themeToggle" type="button" title="Toggle theme (Orange/Green)">
+          <i class="fa-solid fa-palette"></i>
+        </button>
+
         <a class="icon-btn" href="{PORTFOLIO_URL}" target="_blank" rel="noopener" title="Portfolio"><i class="fa-solid fa-globe"></i></a>
         <a class="icon-btn" href="{GITHUB_URL}" target="_blank" rel="noopener" title="GitHub"><i class="fa-brands fa-github"></i></a>
         <a class="icon-btn" href="{LINKEDIN_URL}" target="_blank" rel="noopener" title="LinkedIn"><i class="fa-brands fa-linkedin-in"></i></a>
@@ -333,21 +389,60 @@ topbar_html = f"""
 (function () {{
   const wrap = document.getElementById("wrap");
 
+  // ---------- THEME (default ORANGE, click => GREEN; sync to parent) ----------
+  function setTheme(theme) {{
+    const t = (theme === "green") ? "green" : "orange";
+    document.documentElement.setAttribute("data-theme", t);
+    try {{
+      // set theme on parent document (Streamlit page)
+      if (window.parent && window.parent.document) {{
+        window.parent.document.documentElement.setAttribute("data-theme", t);
+      }}
+    }} catch (e) {{}}
+
+    try {{
+      localStorage.setItem("siteTheme", t);
+    }} catch (e) {{}}
+  }}
+
+  function getSavedTheme() {{
+    try {{
+      return localStorage.getItem("siteTheme") || "orange";
+    }} catch (e) {{
+      return "orange";
+    }}
+  }}
+
+  const toggleBtn = document.getElementById("themeToggle");
+  setTheme(getSavedTheme());
+
+  toggleBtn.addEventListener("click", function () {{
+    const cur = document.documentElement.getAttribute("data-theme") || "orange";
+    setTheme(cur === "green" ? "orange" : "green");
+  }});
+
+  // ---------- RESIZE (FIX: prevent infinite growth) ----------
   function getHeight() {{
+    // ✅ only measure the actual content wrapper (no documentElement/body feedback loop)
     const b = wrap.getBoundingClientRect().height;
     const sh = wrap.scrollHeight;
-    const dh = document.documentElement.scrollHeight;
-    return Math.ceil(Math.max(b, sh, dh));
+    return Math.ceil(Math.max(b, sh));
   }}
 
   let raf = null;
+  let lastH = 0;
+
   function resizeFrame() {{
     if (raf) cancelAnimationFrame(raf);
     raf = requestAnimationFrame(() => {{
       try {{
-        const h = getHeight();
-        if (window.frameElement) {{
-          window.frameElement.style.height = (h + 10) + "px";
+        // ✅ clamp height so it can never explode
+        const h = Math.min(260, Math.max(70, getHeight() + 10));
+
+        // ✅ update only when it changes (prevents jitter loops)
+        if (Math.abs(h - lastH) > 1 && window.frameElement) {{
+          lastH = h;
+          window.frameElement.style.height = h + "px";
         }}
       }} catch (e) {{}}
     }});
@@ -360,6 +455,7 @@ topbar_html = f"""
     childList: true, subtree: true, characterData: true
   }});
 
+  // ---------- TYPING ----------
   const staticPrefix = {STATIC_PREFIX!r};
   const words = {ROTATING!r};
 
@@ -410,6 +506,7 @@ topbar_html = f"""
   wordEl.textContent = "";
   step();
 
+  // Prevent stuck focus when coming back (mobile)
   function blurActive() {{
     try {{ document.activeElement && document.activeElement.blur && document.activeElement.blur(); }} catch(e) {{}}
   }}
@@ -427,7 +524,7 @@ topbar_html = f"""
 </html>
 """
 
-# Give enough initial height so nothing clips while JS measures
+# Initial height; JS will clamp and auto-fit without infinite scrolling
 components.html(topbar_html, height=93)
 
 st.divider()
