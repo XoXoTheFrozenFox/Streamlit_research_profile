@@ -16,50 +16,54 @@ PORTFOLIO_URL = "https://xoxothefrozenfox.github.io/react-personal-portfolio/"
 LINKEDIN_URL = "https://www.linkedin.com/in/bernard-swanepoel-a2777322b/"
 GITHUB_URL = "https://github.com/XoXoTheFrozenFox"
 EMAIL = "BernardSwanepoel1510@gmail.com"
-UNIVERSITY = "North-West University, Potchefstroom"
 
 # -----------------------------
-# CSS (icon buttons + hover invert)
+# CSS (tight spacing + fully visible + white base, invert on hover)
 # -----------------------------
 st.markdown(
     """
 <style>
-.block-container { padding-top: 2.2rem; padding-bottom: 2rem; }
-h1, h2, h3 { letter-spacing: -0.02em; }
-
-/* Top-left icon row */
-.icon-row{
-  display:flex;
-  gap:14px;
-  align-items:center;
-  flex-wrap:wrap;
-  margin-top: 0.25rem;
-  margin-bottom: 0.75rem;
+/* Pull content up a bit and reduce side padding so icons don't get clipped */
+.block-container{
+  padding-top: 1.25rem;
+  padding-left: 1.2rem;
+  padding-right: 1.2rem;
 }
 
+/* Tight icon row aligned left */
+.icon-row{
+  display:flex;
+  gap:8px;               /* closer together */
+  align-items:center;
+  flex-wrap:wrap;
+  margin: 0 0 0.4rem 0;  /* less vertical space */
+  padding: 0;
+}
+
+/* White circle, black icon */
 .icon-btn{
-  width:46px;
-  height:46px;
+  width:40px;            /* slightly smaller so always fits */
+  height:40px;
   border-radius:999px;
   display:inline-flex;
   align-items:center;
   justify-content:center;
   text-decoration:none !important;
-  border: 1px solid rgba(255,255,255,0.22);
-  background: rgba(20, 20, 20, 0.55);
-  color: rgba(255,255,255,0.92);
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
-  transition: transform 160ms ease, background 160ms ease, color 160ms ease, border-color 160ms ease, box-shadow 160ms ease;
-  box-shadow: 0 6px 18px rgba(0,0,0,0.25);
+
+  background:#ffffff;
+  color:#111111;
+
+  border: 1px solid rgba(0,0,0,0.18);
+  transition: transform 140ms ease, background 140ms ease, color 140ms ease, box-shadow 140ms ease, border-color 140ms ease;
+  box-shadow: 0 6px 14px rgba(0,0,0,0.10);
 }
 
 .icon-btn:hover{
-  transform: translateY(-2px);
-  background: rgba(255,255,255,0.92);
-  color: rgba(10,10,10,0.95);
-  border-color: rgba(0,0,0,0.18);
-  box-shadow: 0 10px 26px rgba(0,0,0,0.30);
+  background:#111111;    /* invert */
+  color:#ffffff;
+  border-color: rgba(255,255,255,0.22);
+  transform: translateY(-1px);
+  box-shadow: 0 10px 20px rgba(0,0,0,0.16);
 }
 
 .icon-btn:active{
@@ -67,7 +71,13 @@ h1, h2, h3 { letter-spacing: -0.02em; }
 }
 
 .icon-btn i{
-  font-size: 18px;
+  font-size: 16px;
+  line-height: 1;
+}
+
+/* Optional: make the very top toolbar area less likely to overlap content */
+header[data-testid="stHeader"]{
+  background: transparent;
 }
 </style>
 
@@ -77,7 +87,7 @@ h1, h2, h3 { letter-spacing: -0.02em; }
 )
 
 # -----------------------------
-# Header (top-left buttons only, no extra text)
+# Top-left icon buttons (no extra text)
 # -----------------------------
 st.markdown(
     f"""
@@ -94,54 +104,11 @@ st.markdown(
   <a class="icon-btn" href="mailto:{EMAIL}" title="Email">
     <i class="fa-solid fa-envelope"></i>
   </a>
-  <a class="icon-btn" href="https://www.nwu.ac.za/" target="_blank" rel="noopener" title="North-West University">
-    <i class="fa-solid fa-building-columns"></i>
-  </a>
 </div>
 """,
     unsafe_allow_html=True,
 )
 
-# Keep your name/title (minimal, not jargon)
+# Minimal header text (remove if you want ONLY buttons)
 st.title(NAME)
 st.subheader(TAGLINE)
-
-# Optional minimal line (remove if you want *only* buttons + title)
-st.caption(UNIVERSITY)
-
-st.divider()
-
-# -----------------------------
-# Main content (unchanged)
-# -----------------------------
-left, right = st.columns([1.35, 1.0], gap="large")
-
-with left:
-    st.markdown("## Research overview")
-    st.write(
-        "My research explores deep learning methods for classifying sunspot groups from solar imagery, "
-        "with emphasis on robust generalization, handling class imbalance, and producing interpretable predictions."
-    )
-
-    st.markdown("## What I’m building")
-    st.markdown(
-        """
-- **End-to-end classification pipeline** (data → training → evaluation → deployment)
-- **Model families:** CNN/ViT-style backbones for image-based classification
-- **Imbalance handling:** class weights, focal loss, oversampling, calibrated thresholds
-- **Evaluation:** macro-F1, per-class metrics, confusion matrices, ROC/PR curves
-        """.strip()
-    )
-
-    st.markdown("## Highlights")
-    m1, m2, m3, m4 = st.columns(4)
-    m1.metric("Best Macro-F1", "—")
-    m2.metric("Classes", "—")
-    m3.metric("Images", "—")
-    m4.metric("Backbone", "—")
-
-with right:
-    st.empty()  # keep right column blank / clean
-
-st.divider()
-st.caption("© 2026 Bernard Swanepoel • Built with Streamlit")
