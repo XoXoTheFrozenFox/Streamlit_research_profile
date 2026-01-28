@@ -10,7 +10,9 @@ st.set_page_config(
 # -----------------------------
 # Links / info
 # -----------------------------
-TAGLINE = "Masters dissertation: Sunspot classification using deep learning techniques"
+#Masters dissertation: Sunspot classification using deep learning techniques
+#Honours project: Assessing the cybersecurity awareness of staff members in a higher educational institution
+TAGLINE = ""
 
 PORTFOLIO_URL = "https://xoxothefrozenfox.github.io/react-personal-portfolio/"
 LINKEDIN_URL = "https://www.linkedin.com/in/bernard-swanepoel-a2777322b/"
