@@ -417,7 +417,7 @@ topbar_html = f"""
 """
 
 # ✅ Start bigger so you never see a clipped second line while JS kicks in
-components.html(topbar_html, height=220)
+components.html(topbar_html, height=120)
 
 st.divider()
 
