@@ -8,6 +8,12 @@ import pandas as pd
 import streamlit as st
 import streamlit.components.v1 as components
 
+st.set_page_config(
+    page_title="BS — Research profile",
+    page_icon="🧑‍💻",
+    layout="wide",
+)
+
 hide_st_style = """
             <style>
             #MainMenu {visibility: hidden;}
@@ -16,12 +22,6 @@ hide_st_style = """
             </style>
             """
 st.markdown(hide_st_style, unsafe_allow_html=True)
-
-st.set_page_config(
-    page_title="BS — Research profile",
-    page_icon="🧑‍💻",
-    layout="wide",
-)
 
 TAGLINE = ""
 
@@ -206,21 +206,27 @@ div[data-testid="stTextInput"] input:-webkit-autofill:focus{
   border: 1px solid var(--border-green) !important;
 }
 
+/* ✅ Align "Field empty!" to bottom-right inside each Streamlit input */
 div[data-testid="stTextInput"]:has(input:placeholder-shown):not(:focus-within)::after{
+  content: "Field empty!";
   position: absolute;
   right: 14px;
-  top: 44px;
+  top: auto;
+  bottom: 10px;
   font-size: 12px;
   opacity: 0.75;
+  line-height: 1;
   pointer-events: none;
 }
 div[data-testid="stTextArea"]:has(textarea:placeholder-shown):not(:focus-within)::after{
   content: "Field empty!";
   position: absolute;
   right: 14px;
-  top: 44px;
+  top: auto;
+  bottom: 10px;
   font-size: 12px;
   opacity: 0.75;
+  line-height: 1;
   pointer-events: none;
 }
 
@@ -383,7 +389,7 @@ html[data-theme="pink"] .stButton > button:hover,
 html[data-theme="pink"] div[data-testid="stFormSubmitButton"] button:hover,
 html[data-theme="pink"] a.send-mailto-btn:hover{ background: rgba(255,43,214,0.08) !important; }
 html[data-theme="pink"] div[data-testid="stCheckbox"]{ border: 1px solid var(--border-pink) !important; }
-html[data-theme="pink"] div[data-testid="stCheckbox"] input{ accent-color: var(--pink) !important; }
+html[data-theme="pink"] div[data-theme="pink"] div[data-testid="stCheckbox"] input{ accent-color: var(--pink) !important; }
 html[data-theme="pink"] div[data-testid="stSelectbox"] [data-baseweb="select"] > div{ border: 1px solid var(--border-pink) !important; }
 html[data-theme="pink"] div[data-testid="stSelectbox"] [role="listbox"]{ border: 1px solid var(--border-pink) !important; }
 </style>
@@ -1363,7 +1369,7 @@ def confusion_matrix_plot_html(
     )
 
 # -----------------------------
-# UPDATED: nicer EmailJS contact form (keeps your theme + no red borders)
+# UPDATED: EmailJS contact form (no badge, no subtext, "Field empty!" bottom-right)
 # -----------------------------
 EMAILJS_CONTACT_TEMPLATE = r"""
 <!doctype html>
@@ -1377,7 +1383,6 @@ EMAILJS_CONTACT_TEMPLATE = r"""
     --bg:#050505;
     --panel: rgba(0,0,0,0.35);
 
-    /* theme defaults (green) */
     --accent: rgba(57,255,20,0.95);
     --border: rgba(57,255,20,0.45);
     --placeholder: rgba(57,255,20,0.65);
@@ -1417,38 +1422,11 @@ EMAILJS_CONTACT_TEMPLATE = r"""
     margin-bottom: 10px;
   }
 
-  .hdr-left{
-    display:flex;
-    align-items:flex-start;
-    gap: 10px;
-    min-width:0;
-  }
-
-  .badge{
-    width: 36px;
-    height: 36px;
-    border-radius: 12px;
-    border: 1px solid var(--chipBorder);
-    background: var(--chip);
-    display:flex;
-    align-items:center;
-    justify-content:center;
-    flex: 0 0 auto;
-    user-select:none;
-  }
-
   .title{
     margin:0;
     font-size: 14px;
     font-weight: 800;
     line-height: 1.15;
-  }
-
-  .sub{
-    margin-top: 4px;
-    font-size: 12px;
-    opacity: 0.92;
-    line-height: 1.25;
   }
 
   .hint{
@@ -1502,14 +1480,28 @@ EMAILJS_CONTACT_TEMPLATE = r"""
     border: 1px solid var(--border) !important;
   }
 
-  .field:has(input:placeholder-shown):not(:focus-within)::after,
+  /* ✅ Align "Field empty!" perfectly bottom-right in each field */
+  .field:has(input:placeholder-shown):not(:focus-within)::after{
+    content: "Field empty!";
+    position:absolute;
+    right: 14px;
+    top: auto;
+    bottom: 10px;
+    font-size: 12px;
+    opacity: 0.75;
+    line-height: 1;
+    pointer-events:none;
+    color: var(--accent);
+  }
   .field:has(textarea:placeholder-shown):not(:focus-within)::after{
     content: "Field empty!";
     position:absolute;
     right: 14px;
-    top: 44px;
+    top: auto;
+    bottom: 12px;
     font-size: 12px;
     opacity: 0.75;
+    line-height: 1;
     pointer-events:none;
     color: var(--accent);
   }
@@ -1581,9 +1573,6 @@ EMAILJS_CONTACT_TEMPLATE = r"""
     opacity: 0.95;
   }
 
-  .pill.ok{ }
-  .pill.err{ }
-
   @media (max-width: 640px){
     .grid{ grid-template-columns: 1fr; gap: 10px; }
     .hint{ display:none; }
@@ -1597,13 +1586,7 @@ EMAILJS_CONTACT_TEMPLATE = r"""
   <div class="outer">
     <div class="panel">
       <div class="hdr">
-        <div class="hdr-left">
-          <div class="badge" aria-hidden="true">✉️</div>
-          <div style="min-width:0;">
-            <p class="title">Send me a message</p>
-            <div class="sub">Replies go to your email address. No red borders. Just clean fields.</div>
-          </div>
-        </div>
+        <p class="title">Send me a message</p>
         <div class="hint" aria-hidden="true">Secure via EmailJS</div>
       </div>
 
