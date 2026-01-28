@@ -770,6 +770,18 @@ with left:
         """.strip()
     )
 
+    st.markdown("## Research interests")
+    st.markdown(
+        """
+    - Machine learning  
+    - Deep learning  
+    - Distributed systems  
+    - Cloud computing  
+    - Cybersecurity  
+    - Astrophysics  
+    - Solar physics  
+        """.strip()
+    )
 
     st.markdown("## Research titles")
     st.markdown(
