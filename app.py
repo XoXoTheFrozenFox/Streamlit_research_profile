@@ -165,7 +165,7 @@ topbar_html = f"""
   }}
 
   .text-col {{
-    padding: 15px 16px 8px 16px;
+    padding: 16px 16px 8px 16px;
   }}
 
   .terminal-title {{
