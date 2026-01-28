@@ -772,7 +772,6 @@ with left:
 
     st.markdown("## Research interests")
     st.markdown(
-        """
     "- Machine learning\n"
     "- Deep learning\n"
     "- Distributed systems\n"
@@ -780,7 +779,6 @@ with left:
     "- Cybersecurity\n"
     "- Astrophysics\n"
     "- Solar physics\n"
-        """.strip()
     )
 
     st.markdown("## Research titles")
