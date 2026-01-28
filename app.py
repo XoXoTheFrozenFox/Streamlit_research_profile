@@ -31,9 +31,11 @@ ROTATING = [
 
 # -----------------------------
 # Global terminal aesthetic + hide Streamlit chrome
-# + add 2 more color profiles (neon blue, neon pink)
-# + remove header link icons next to titles
-# + make the INFO block with placeholder text exactly #050505
+# + 4 color profiles
+# + remove heading link icons
+# + make input/textarea TRUE black (no grey edges)
+# + no red validation borders
+# + show "Field empty!" inside inputs (bottom-right) when empty & not focused
 # -----------------------------
 st.markdown(
     """
@@ -60,8 +62,8 @@ h1 a, h2 a, h3 a, h4 a, h5 a, h6 a {
 
   --orange:#ff7a18;
   --green:#39ff14;
-  --blue:#00e7ff;     /* neon blue */
-  --pink:#ff2bd6;     /* neon pink */
+  --blue:#00e7ff;
+  --pink:#ff2bd6;
 
   --border-orange:rgba(255,122,24,0.45);
   --border-green:rgba(57,255,20,0.45);
@@ -97,17 +99,17 @@ div[data-testid="stMetric"]{
   border: 1px solid var(--border-orange) !important;
   border-radius: 14px !important;
   padding: 12px 12px !important;
-  box-shadow: 0 0 0 1px rgba(255,122,24,0.10) inset;
+  box-shadow: none !important;
 }
 
-/* Alerts default */
+/* Alerts */
 div[data-testid="stAlert"]{
   background: var(--panel) !important;
   border: 1px solid var(--border-orange) !important;
   border-radius: 14px !important;
 }
 
-/* The st.info block background (your placeholder message) -> EXACTLY #050505 */
+/* Make INFO block background EXACTLY #050505 (if you ever re-add st.info) */
 div[data-testid="stAlert"][data-baseweb="notification"]{
   background: #050505 !important;
 }
@@ -119,23 +121,90 @@ p, li, label, div{
   font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
 }
 
-/* PURE BLACK form widgets */
+/* -----------------------------
+   TRUE BLACK inputs (kill grey halos + baseweb defaults)
+------------------------------ */
+div[data-testid="stTextInput"],
+div[data-testid="stTextArea"]{
+  position: relative !important;     /* for bottom-right hint overlay */
+}
+
+/* Nuke any baseweb wrapper background/halo */
+div[data-testid="stTextInput"] > div,
+div[data-testid="stTextArea"] > div,
+div[data-testid="stTextInput"] [data-baseweb],
+div[data-testid="stTextArea"] [data-baseweb]{
+  background: var(--bg) !important;
+  box-shadow: none !important;
+  outline: none !important;
+}
+
+/* Actual input/textarea */
 div[data-testid="stTextInput"] input,
 div[data-testid="stTextArea"] textarea{
   background: var(--bg) !important;
   color: var(--orange) !important;
+
   border: 1px solid var(--border-orange) !important;
   border-radius: 14px !important;
-  box-shadow: 0 0 0 1px rgba(255,122,24,0.10) inset !important;
+
+  box-shadow: none !important;
+  outline: none !important;
+
+  background-clip: padding-box !important;
 }
+
+/* Prevent any red/blue invalid/focus styling Streamlit/BaseWeb might inject */
+div[data-testid="stTextInput"] input:focus,
+div[data-testid="stTextArea"] textarea:focus,
+div[data-testid="stTextInput"] input:focus-visible,
+div[data-testid="stTextArea"] textarea:focus-visible{
+  border: 1px solid var(--border-orange) !important;
+  box-shadow: none !important;
+  outline: none !important;
+}
+
+/* If Streamlit sets aria-invalid, force it back to theme border (no red) */
+div[data-testid="stTextInput"] input[aria-invalid="true"],
+div[data-testid="stTextArea"] textarea[aria-invalid="true"]{
+  border: 1px solid var(--border-orange) !important;
+  box-shadow: none !important;
+  outline: none !important;
+}
+
 div[data-testid="stTextInput"] input::placeholder,
 div[data-testid="stTextArea"] textarea::placeholder{
   color: rgba(255,122,24,0.65) !important;
 }
-div[data-testid="stTextInput"] input:focus,
-div[data-testid="stTextArea"] textarea:focus{
-  outline: none !important;
-  box-shadow: 0 0 0 1px rgba(255,122,24,0.25) inset, 0 0 0 2px rgba(255,122,24,0.15) !important;
+
+/* Autofill (Chrome) */
+div[data-testid="stTextInput"] input:-webkit-autofill,
+div[data-testid="stTextInput"] input:-webkit-autofill:hover,
+div[data-testid="stTextInput"] input:-webkit-autofill:focus{
+  -webkit-box-shadow: 0 0 0 1000px var(--bg) inset !important;
+  -webkit-text-fill-color: var(--orange) !important;
+  caret-color: var(--orange) !important;
+  border: 1px solid var(--border-orange) !important;
+}
+
+/* Bottom-right "Field empty!" INSIDE inputs when empty and not focused */
+div[data-testid="stTextInput"]:has(input:placeholder-shown):not(:focus-within)::after{
+  content: "Field empty!";
+  position: absolute;
+  right: 14px;
+  top: 44px;                  /* aligns into the input box area */
+  font-size: 12px;
+  opacity: 0.75;
+  pointer-events: none;
+}
+div[data-testid="stTextArea"]:has(textarea:placeholder-shown):not(:focus-within)::after{
+  content: "Field empty!";
+  position: absolute;
+  right: 14px;
+  top: 44px;                  /* aligns into the textarea box area */
+  font-size: 12px;
+  opacity: 0.75;
+  pointer-events: none;
 }
 
 /* Streamlit buttons */
@@ -145,7 +214,7 @@ div[data-testid="stTextArea"] textarea:focus{
   border: 1px solid var(--border-orange) !important;
   border-radius: 14px !important;
   padding: 0.55rem 0.95rem !important;
-  box-shadow: 0 0 0 1px rgba(255,122,24,0.10) inset !important;
+  box-shadow: none !important;
 }
 .stButton > button:hover, div[data-testid="stFormSubmitButton"] button:hover{
   background: rgba(255,122,24,0.08) !important;
@@ -162,7 +231,7 @@ a.send-mailto-btn{
   border: 1px solid var(--border-orange) !important;
   border-radius: 14px !important;
   padding: 0.55rem 0.95rem !important;
-  box-shadow: 0 0 0 1px rgba(255,122,24,0.10) inset !important;
+  box-shadow: none !important;
   transition: transform 140ms ease, background 140ms ease;
   user-select: none;
   cursor: pointer;
@@ -191,20 +260,28 @@ html[data-theme="green"] *{ color: var(--green) !important; }
 html[data-theme="green"] hr{ border-top: 1px solid var(--border-green) !important; }
 html[data-theme="green"] div[data-testid="stMetric"],
 html[data-theme="green"] div[data-testid="stAlert"]{ border: 1px solid var(--border-green) !important; }
+
 html[data-theme="green"] div[data-testid="stTextInput"] input,
 html[data-theme="green"] div[data-testid="stTextArea"] textarea{
   color: var(--green) !important;
   border: 1px solid var(--border-green) !important;
-  box-shadow: 0 0 0 1px rgba(57,255,20,0.10) inset !important;
 }
+html[data-theme="green"] div[data-testid="stTextInput"] input:focus,
+html[data-theme="green"] div[data-testid="stTextArea"] textarea:focus,
+html[data-theme="green"] div[data-testid="stTextInput"] input[aria-invalid="true"],
+html[data-theme="green"] div[data-testid="stTextArea"] textarea[aria-invalid="true"]{
+  border: 1px solid var(--border-green) !important;
+  box-shadow: none !important;
+}
+
 html[data-theme="green"] div[data-testid="stTextInput"] input::placeholder,
 html[data-theme="green"] div[data-testid="stTextArea"] textarea::placeholder{ color: rgba(57,255,20,0.65) !important; }
+
 html[data-theme="green"] .stButton > button,
 html[data-theme="green"] div[data-testid="stFormSubmitButton"] button,
 html[data-theme="green"] a.send-mailto-btn{
   color: var(--green) !important;
   border: 1px solid var(--border-green) !important;
-  box-shadow: 0 0 0 1px rgba(57,255,20,0.10) inset !important;
 }
 html[data-theme="green"] .stButton > button:hover,
 html[data-theme="green"] div[data-testid="stFormSubmitButton"] button:hover,
@@ -217,21 +294,28 @@ html[data-theme="blue"] *{ color: var(--blue) !important; }
 html[data-theme="blue"] hr{ border-top: 1px solid var(--border-blue) !important; }
 html[data-theme="blue"] div[data-testid="stMetric"],
 html[data-theme="blue"] div[data-testid="stAlert"]{ border: 1px solid var(--border-blue) !important; }
-html[data-theme="blue"] div[data-testid="stMetric"]{ box-shadow: 0 0 0 1px rgba(0,231,255,0.10) inset; }
+
 html[data-theme="blue"] div[data-testid="stTextInput"] input,
 html[data-theme="blue"] div[data-testid="stTextArea"] textarea{
   color: var(--blue) !important;
   border: 1px solid var(--border-blue) !important;
-  box-shadow: 0 0 0 1px rgba(0,231,255,0.10) inset !important;
 }
+html[data-theme="blue"] div[data-testid="stTextInput"] input:focus,
+html[data-theme="blue"] div[data-testid="stTextArea"] textarea:focus,
+html[data-theme="blue"] div[data-testid="stTextInput"] input[aria-invalid="true"],
+html[data-theme="blue"] div[data-testid="stTextArea"] textarea[aria-invalid="true"]{
+  border: 1px solid var(--border-blue) !important;
+  box-shadow: none !important;
+}
+
 html[data-theme="blue"] div[data-testid="stTextInput"] input::placeholder,
 html[data-theme="blue"] div[data-testid="stTextArea"] textarea::placeholder{ color: rgba(0,231,255,0.65) !important; }
+
 html[data-theme="blue"] .stButton > button,
 html[data-theme="blue"] div[data-testid="stFormSubmitButton"] button,
 html[data-theme="blue"] a.send-mailto-btn{
   color: var(--blue) !important;
   border: 1px solid var(--border-blue) !important;
-  box-shadow: 0 0 0 1px rgba(0,231,255,0.10) inset !important;
 }
 html[data-theme="blue"] .stButton > button:hover,
 html[data-theme="blue"] div[data-testid="stFormSubmitButton"] button:hover,
@@ -244,21 +328,28 @@ html[data-theme="pink"] *{ color: var(--pink) !important; }
 html[data-theme="pink"] hr{ border-top: 1px solid var(--border-pink) !important; }
 html[data-theme="pink"] div[data-testid="stMetric"],
 html[data-theme="pink"] div[data-testid="stAlert"]{ border: 1px solid var(--border-pink) !important; }
-html[data-theme="pink"] div[data-testid="stMetric"]{ box-shadow: 0 0 0 1px rgba(255,43,214,0.10) inset; }
+
 html[data-theme="pink"] div[data-testid="stTextInput"] input,
 html[data-theme="pink"] div[data-testid="stTextArea"] textarea{
   color: var(--pink) !important;
   border: 1px solid var(--border-pink) !important;
-  box-shadow: 0 0 0 1px rgba(255,43,214,0.10) inset !important;
 }
+html[data-theme="pink"] div[data-testid="stTextInput"] input:focus,
+html[data-theme="pink"] div[data-testid="stTextArea"] textarea:focus,
+html[data-theme="pink"] div[data-testid="stTextInput"] input[aria-invalid="true"],
+html[data-theme="pink"] div[data-testid="stTextArea"] textarea[aria-invalid="true"]{
+  border: 1px solid var(--border-pink) !important;
+  box-shadow: none !important;
+}
+
 html[data-theme="pink"] div[data-testid="stTextInput"] input::placeholder,
 html[data-theme="pink"] div[data-testid="stTextArea"] textarea::placeholder{ color: rgba(255,43,214,0.65) !important; }
+
 html[data-theme="pink"] .stButton > button,
 html[data-theme="pink"] div[data-testid="stFormSubmitButton"] button,
 html[data-theme="pink"] a.send-mailto-btn{
   color: var(--pink) !important;
   border: 1px solid var(--border-pink) !important;
-  box-shadow: 0 0 0 1px rgba(255,43,214,0.10) inset !important;
 }
 html[data-theme="pink"] .stButton > button:hover,
 html[data-theme="pink"] div[data-testid="stFormSubmitButton"] button:hover,
@@ -523,7 +614,6 @@ topbar_html = f"""
 <script>
 (function () {{
   const wrap = document.getElementById("wrap");
-
   const themes = ["orange", "green", "blue", "pink"];
 
   function setTheme(theme) {{
@@ -536,7 +626,6 @@ topbar_html = f"""
     }} catch (e) {{}}
   }}
 
-  // ALWAYS start ORANGE
   setTheme("orange");
 
   const toggleBtn = document.getElementById("themeToggle");
@@ -547,7 +636,6 @@ topbar_html = f"""
     setTheme(next);
   }});
 
-  // Resize without infinite growth
   function getHeight() {{
     const b = wrap.getBoundingClientRect().height;
     const sh = wrap.scrollHeight;
@@ -576,7 +664,6 @@ topbar_html = f"""
     childList: true, subtree: true, characterData: true
   }});
 
-  // Typing
   const staticPrefix = {STATIC_PREFIX!r};
   const words = {ROTATING!r};
 
@@ -639,7 +726,7 @@ components.html(topbar_html, height=93)
 st.divider()
 
 # -----------------------------
-# Mailto builder (FREE)
+# Mailto builder
 # -----------------------------
 def build_mailto(to_email: str, subject: str, body: str) -> str:
     return f"mailto:{to_email}?subject={quote(subject)}&body={quote(body)}"
@@ -698,7 +785,6 @@ with left:
     )
 
     st.markdown("## Highlights")
-    # Removed the placeholder info block entirely (as requested)
     m1, m2, m3, m4 = st.columns(4)
     m1.metric("Best Macro-F1", "—")
     m2.metric("Classes", "—")
@@ -710,7 +796,7 @@ with left:
     st.markdown("## Contact")
     st.write("Send me a message directly from this page:")
 
-    # Inputs (no email field, as requested)
+    # Inputs (no red errors; hints are handled via CSS overlay)
     name = st.text_input("Name", placeholder="Your name")
     subject = st.text_input("Subject", placeholder="What is this about?")
     message = st.text_area("Message", placeholder="Type your message here...", height=160)
@@ -743,14 +829,6 @@ with left:
             '<a class="send-mailto-btn is-disabled" href="#">Send message</a>',
             unsafe_allow_html=True,
         )
-
-        if name or subject or message:
-            if not name_s:
-                st.error("Please enter your name.")
-            elif not subject_s:
-                st.error("Please enter a subject.")
-            elif not message_s:
-                st.error("Please enter a message.")
 
 st.divider()
 st.caption("© 2026 Bernard Swanepoel")
