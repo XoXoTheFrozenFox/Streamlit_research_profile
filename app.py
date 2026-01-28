@@ -7,6 +7,37 @@ import numpy as np
 import pandas as pd
 import streamlit as st
 import streamlit.components.v1 as components
+from bs4 import BeautifulSoup
+
+def strip_profile_badges(html: str) -> str:
+    """
+    Removes the specific avatar <img> and the specific svg wrapper <div class="_link_gzau3_10">...</div>
+    from the provided HTML string (if present). Returns cleaned HTML.
+    """
+    soup = BeautifulSoup(html, "html.parser")
+
+    # 1) Remove the avatar <img ... data-testid="appCreatorAvatar">
+    for img in soup.find_all("img", attrs={"data-testid": "appCreatorAvatar"}):
+        img.decompose()
+
+    # 2) Remove <div class="_link_gzau3_10"> that contains an <svg> (your badge blob)
+    for div in soup.find_all("div", class_="_link_gzau3_10"):
+        if div.find("svg") is not None:
+            div.decompose()
+
+    return str(soup)
+
+
+# ---- call it ----
+page_html = """<html><body>
+<img src="https://avatars.githubusercontent.com/u/104361159?v=4" alt="App Creator Avatar"
+class="_profileImage_gzau3_78 _darkThemeShadow_gzau3_91" data-testid="appCreatorAvatar">
+<div class="_link_gzau3_10"><svg width="303" height="165" viewBox="0 0 303 165" fill="none"
+xmlns="http://www.w3.org/2000/svg"><path d="..." /></svg></div>
+<div>Keep me</div>
+</body></html>"""
+
+cleaned_html = strip_profile_badges(page_html)
 
 hide_st_style = """
             <style>
@@ -1363,6 +1394,9 @@ def confusion_matrix_plot_html(
         .replace("__PAYLOAD__", json.dumps(payload))
     )
 
+# -----------------------------
+# UPDATED: nicer EmailJS contact form (keeps your theme + no red borders)
+# -----------------------------
 EMAILJS_CONTACT_TEMPLATE = r"""
 <!doctype html>
 <html>
@@ -1373,57 +1407,113 @@ EMAILJS_CONTACT_TEMPLATE = r"""
 <style>
   :root{
     --bg:#050505;
+    --panel: rgba(0,0,0,0.35);
 
-    --orange:#ff7a18;
-    --green:#39ff14;
-    --blue:#00e7ff;
-    --pink:#ff2bd6;
-
-    --border-orange:rgba(255,122,24,0.45);
-    --border-green:rgba(57,255,20,0.45);
-    --border-blue:rgba(0,231,255,0.45);
-    --border-pink:rgba(255,43,214,0.45);
+    /* theme defaults (green) */
+    --accent: rgba(57,255,20,0.95);
+    --border: rgba(57,255,20,0.45);
+    --placeholder: rgba(57,255,20,0.65);
+    --hover: rgba(57,255,20,0.08);
+    --chip: rgba(57,255,20,0.10);
+    --chipBorder: rgba(57,255,20,0.32);
   }
 
   html, body{
     margin:0;
     padding:0;
     background: transparent;
-    color: var(--green);
+    color: var(--accent);
     font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
   }
 
-  .wrap{
+  *{ box-sizing:border-box; }
+
+  .outer{
     width:100%;
-    box-sizing:border-box;
     padding: 6px 0 2px 0;
+  }
+
+  .panel{
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 14px 14px 12px 14px;
+    box-shadow: none;
+  }
+
+  .hdr{
+    display:flex;
+    align-items:flex-start;
+    justify-content:space-between;
+    gap: 10px;
+    margin-bottom: 10px;
+  }
+
+  .hdr-left{
+    display:flex;
+    align-items:flex-start;
+    gap: 10px;
+    min-width:0;
+  }
+
+  .badge{
+    width: 36px;
+    height: 36px;
+    border-radius: 12px;
+    border: 1px solid var(--chipBorder);
+    background: var(--chip);
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    flex: 0 0 auto;
+    user-select:none;
+  }
+
+  .title{
+    margin:0;
+    font-size: 14px;
+    font-weight: 800;
+    line-height: 1.15;
+  }
+
+  .sub{
+    margin-top: 4px;
+    font-size: 12px;
+    opacity: 0.92;
+    line-height: 1.25;
+  }
+
+  .hint{
+    font-size: 11px;
+    opacity: 0.82;
+    padding-top: 2px;
+    white-space:nowrap;
+    user-select:none;
   }
 
   .grid{
     display:grid;
     grid-template-columns: 1fr 1fr;
-    gap: 12px;
+    gap: 10px;
   }
 
-  .field{
-    position:relative;
-    width:100%;
-  }
-
+  .field{ position:relative; width:100%; }
   .full{ grid-column: 1 / -1; }
 
   input, textarea{
     width:100%;
-    box-sizing:border-box;
     background: var(--bg);
-    color: currentColor;
-    border: 1px solid var(--border-green);
+    color: var(--accent);
+    border: 1px solid var(--border);
     border-radius: 14px;
     padding: 12px 14px;
     outline: none;
     box-shadow: none;
     font-size: 14px;
     line-height: 1.25;
+    appearance: none;
+    -webkit-appearance: none;
+    background-clip: padding-box;
   }
 
   textarea{
@@ -1432,7 +1522,16 @@ EMAILJS_CONTACT_TEMPLATE = r"""
   }
 
   input::placeholder, textarea::placeholder{
-    color: rgba(57,255,20,0.65);
+    color: var(--placeholder);
+  }
+
+  input:-webkit-autofill,
+  input:-webkit-autofill:hover,
+  input:-webkit-autofill:focus{
+    -webkit-box-shadow: 0 0 0 1000px var(--bg) inset !important;
+    -webkit-text-fill-color: var(--accent) !important;
+    caret-color: var(--accent) !important;
+    border: 1px solid var(--border) !important;
   }
 
   .field:has(input:placeholder-shown):not(:focus-within)::after,
@@ -1444,75 +1543,130 @@ EMAILJS_CONTACT_TEMPLATE = r"""
     font-size: 12px;
     opacity: 0.75;
     pointer-events:none;
-    color: currentColor;
+    color: var(--accent);
   }
 
   .btn-row{
     display:flex;
     gap: 10px;
     align-items:center;
-    justify-content:flex-start;
+    justify-content:space-between;
     margin-top: 12px;
+    flex-wrap: wrap;
   }
 
-  button{
-    appearance:none;
-    border: 1px solid var(--border-green);
+  .btn{
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    gap: 8px;
+
+    border: 1px solid var(--border);
     background: var(--bg);
-    color: currentColor;
+    color: var(--accent);
     border-radius: 14px;
     padding: 0.55rem 0.95rem;
     cursor:pointer;
     box-shadow:none;
     outline:none;
     font-size: 14px;
+    user-select:none;
+    transition: transform 140ms ease, background 140ms ease;
+    white-space:nowrap;
   }
 
-  button:hover{
-    background: rgba(57,255,20,0.08);
+  .btn:hover{
+    background: var(--hover);
+    transform: translateY(-1px);
   }
 
-  button[disabled]{
+  .btn[disabled]{
     opacity: 0.55;
     cursor: not-allowed;
+    transform: none !important;
   }
 
   .status{
-    margin-top: 10px;
-    font-size: 13px;
-    opacity: 0.92;
     min-height: 18px;
+    font-size: 12px;
+    opacity: 0.92;
+    display:flex;
+    align-items:center;
+    justify-content:flex-end;
+    gap: 8px;
+    flex: 1 1 auto;
   }
 
-  .status.ok{ opacity: 0.95; }
-  .status.err{ opacity: 0.95; }
+  .pill{
+    display:inline-flex;
+    align-items:center;
+    gap: 8px;
+    padding: 6px 10px;
+    border-radius: 999px;
+    border: 1px solid var(--chipBorder);
+    background: var(--chip);
+    line-height: 1;
+  }
+
+  .pill small{
+    font-size: 11px;
+    opacity: 0.95;
+  }
+
+  .pill.ok{ }
+  .pill.err{ }
 
   @media (max-width: 640px){
     .grid{ grid-template-columns: 1fr; gap: 10px; }
-    input, textarea{ font-size: 14px; }
+    .hint{ display:none; }
+    .btn-row{ flex-direction: column; align-items: stretch; }
+    .btn{ width:100%; }
+    .status{ justify-content:flex-start; width:100%; }
   }
 </style>
 </head>
 <body>
-  <div class="wrap">
-    <div class="grid">
-      <div class="field">
-        <input id="from_name" type="text" placeholder="Your name" autocomplete="name" />
+  <div class="outer">
+    <div class="panel">
+      <div class="hdr">
+        <div class="hdr-left">
+          <div class="badge" aria-hidden="true">✉️</div>
+          <div style="min-width:0;">
+            <p class="title">Send me a message</p>
+            <div class="sub">Replies go to your email address. No red borders. Just clean fields.</div>
+          </div>
+        </div>
+        <div class="hint" aria-hidden="true">Secure via EmailJS</div>
       </div>
-      <div class="field">
-        <input id="reply_to" type="email" placeholder="Your email" autocomplete="email" />
-      </div>
-      <div class="field full">
-        <input id="subject" type="text" placeholder="What is this about?" />
-      </div>
-      <div class="field full">
-        <textarea id="message" placeholder="Type your message here..."></textarea>
-      </div>
-    </div>
 
-    <div class="btn-row">
-      <button id="sendBtn" type="button">Send message</button>
-      <div class="status" id="status"></div>
+      <div class="grid">
+        <div class="field">
+          <input id="from_name" type="text" placeholder="Your name" autocomplete="name" />
+        </div>
+        <div class="field">
+          <input id="reply_to" type="email" placeholder="Your email" autocomplete="email" />
+        </div>
+        <div class="field full">
+          <input id="subject" type="text" placeholder="What is this about?" />
+        </div>
+        <div class="field full">
+          <textarea id="message" placeholder="Type your message here..."></textarea>
+        </div>
+      </div>
+
+      <div class="btn-row">
+        <button class="btn" id="sendBtn" type="button" disabled>
+          <span aria-hidden="true">➤</span>
+          <span>Send message</span>
+        </button>
+
+        <div class="status" id="statusWrap">
+          <span class="pill" id="statusPill" style="display:none;">
+            <span id="statusIcon" aria-hidden="true">…</span>
+            <small id="statusText">…</small>
+          </span>
+        </div>
+      </div>
     </div>
   </div>
 
@@ -1526,24 +1680,24 @@ EMAILJS_CONTACT_TEMPLATE = r"""
   const STORAGE_KEY = "bs_theme";
   const THEMES = ["green","blue","pink","orange"];
 
-  function themeToVars(t){
+  function themeVars(t){
     switch(t){
       case "orange":
-        return { color: "var(--orange)", border: "var(--border-orange)", ph: "rgba(255,122,24,0.65)", hover: "rgba(255,122,24,0.08)" };
+        return { accent:"rgba(255,122,24,0.95)", border:"rgba(255,122,24,0.45)", ph:"rgba(255,122,24,0.65)", hover:"rgba(255,122,24,0.08)", chip:"rgba(255,122,24,0.10)", chipB:"rgba(255,122,24,0.32)" };
       case "blue":
-        return { color: "var(--blue)", border: "var(--border-blue)", ph: "rgba(0,231,255,0.65)", hover: "rgba(0,231,255,0.08)" };
+        return { accent:"rgba(0,231,255,0.95)", border:"rgba(0,231,255,0.45)", ph:"rgba(0,231,255,0.65)", hover:"rgba(0,231,255,0.08)", chip:"rgba(0,231,255,0.10)", chipB:"rgba(0,231,255,0.32)" };
       case "pink":
-        return { color: "var(--pink)", border: "var(--border-pink)", ph: "rgba(255,43,214,0.65)", hover: "rgba(255,43,214,0.08)" };
+        return { accent:"rgba(255,43,214,0.95)", border:"rgba(255,43,214,0.45)", ph:"rgba(255,43,214,0.65)", hover:"rgba(255,43,214,0.08)", chip:"rgba(255,43,214,0.10)", chipB:"rgba(255,43,214,0.32)" };
       default:
-        return { color: "var(--green)", border: "var(--border-green)", ph: "rgba(57,255,20,0.65)", hover: "rgba(57,255,20,0.08)" };
+        return { accent:"rgba(57,255,20,0.95)", border:"rgba(57,255,20,0.45)", ph:"rgba(57,255,20,0.65)", hover:"rgba(57,255,20,0.08)", chip:"rgba(57,255,20,0.10)", chipB:"rgba(57,255,20,0.32)" };
     }
   }
 
   function getTheme(){
-    try {
+    try{
       const t = localStorage.getItem(STORAGE_KEY);
       if (t && THEMES.includes(t)) return t;
-    } catch(e) {}
+    }catch(e){}
     const t2 = document.documentElement.getAttribute("data-theme");
     if (t2 && THEMES.includes(t2)) return t2;
     return "green";
@@ -1552,23 +1706,14 @@ EMAILJS_CONTACT_TEMPLATE = r"""
   function applyTheme(){
     const t = getTheme();
     document.documentElement.setAttribute("data-theme", t);
-    const V = themeToVars(t);
-
-    document.body.style.color = V.color;
-
-    const borderColor = getComputedStyle(document.documentElement).getPropertyValue(V.border.replace("var(", "").replace(")", "")).trim();
-    const placeholderColor = V.ph;
-
-    const css = document.createElement("style");
-    css.id = "dynTheme";
-    css.textContent = `
-      input, textarea, button { border-color: ${borderColor} !important; }
-      input::placeholder, textarea::placeholder { color: ${placeholderColor} !important; }
-      button:hover { background: ${V.hover} !important; }
-    `;
-    const old = document.getElementById("dynTheme");
-    if (old) old.remove();
-    document.head.appendChild(css);
+    const V = themeVars(t);
+    const root = document.documentElement.style;
+    root.setProperty("--accent", V.accent);
+    root.setProperty("--border", V.border);
+    root.setProperty("--placeholder", V.ph);
+    root.setProperty("--hover", V.hover);
+    root.setProperty("--chip", V.chip);
+    root.setProperty("--chipBorder", V.chipB);
   }
 
   function updateFrameHeight(){
@@ -1594,12 +1739,30 @@ EMAILJS_CONTACT_TEMPLATE = r"""
   const subjEl = qs("subject");
   const msgEl  = qs("message");
   const btnEl  = qs("sendBtn");
-  const stEl   = qs("status");
 
-  function setStatus(txt, kind){
-    stEl.textContent = txt || "";
-    stEl.className = "status" + (kind ? (" " + kind) : "");
+  const pill = qs("statusPill");
+  const icon = qs("statusIcon");
+  const text = qs("statusText");
+
+  function setStatus(kind, msg){
+    if (!msg){
+      pill.style.display = "none";
+      updateFrameHeight();
+      return;
+    }
+    pill.style.display = "inline-flex";
+    pill.className = "pill" + (kind ? (" " + kind) : "");
+    if (kind === "ok"){ icon.textContent = "✓"; }
+    else if (kind === "err"){ icon.textContent = "✕"; }
+    else { icon.textContent = "…"; }
+    text.textContent = msg;
     updateFrameHeight();
+  }
+
+  function validEmail(v){
+    const s = String(v || "").trim();
+    if (!s) return false;
+    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(s);
   }
 
   function isReady(){
@@ -1607,7 +1770,7 @@ EMAILJS_CONTACT_TEMPLATE = r"""
     const r = (replyEl.value || "").trim();
     const s = (subjEl.value || "").trim();
     const m = (msgEl.value || "").trim();
-    return Boolean(n && r && s && m);
+    return Boolean(n && r && s && m && validEmail(r));
   }
 
   function setButtonState(){
@@ -1623,19 +1786,13 @@ EMAILJS_CONTACT_TEMPLATE = r"""
 
   setButtonState();
 
-  function validEmail(v){
-    const s = String(v || "").trim();
-    if (!s) return false;
-    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(s);
-  }
-
   function ensureConfig(){
     return Boolean(PUBLIC_KEY && SERVICE_ID && TEMPLATE_ID);
   }
 
   async function send(){
     if (!ensureConfig()){
-      setStatus("EmailJS is not configured on this app.", "err");
+      setStatus("err", "EmailJS not configured.");
       return;
     }
 
@@ -1645,16 +1802,16 @@ EMAILJS_CONTACT_TEMPLATE = r"""
     const message = (msgEl.value || "").trim();
 
     if (!(from_name && reply_to && subject && message)){
-      setStatus("Please fill in all fields.", "err");
+      setStatus("err", "Please fill in all fields.");
       return;
     }
     if (!validEmail(reply_to)){
-      setStatus("Please enter a valid email.", "err");
+      setStatus("err", "Enter a valid email.");
       return;
     }
 
     btnEl.disabled = true;
-    setStatus("Sending...", "");
+    setStatus("", "Sending…");
 
     try{
       emailjs.init({ publicKey: PUBLIC_KEY });
@@ -1669,14 +1826,14 @@ EMAILJS_CONTACT_TEMPLATE = r"""
 
       await emailjs.send(SERVICE_ID, TEMPLATE_ID, params);
 
-      setStatus("Sent ✓", "ok");
+      setStatus("ok", "Sent.");
       nameEl.value = "";
       replyEl.value = "";
       subjEl.value = "";
       msgEl.value = "";
       setButtonState();
     }catch(e){
-      setStatus("Failed to send. Please try again.", "err");
+      setStatus("err", "Failed to send. Try again.");
       setButtonState();
     }
   }
@@ -1914,7 +2071,7 @@ Spectral data were collected from **SDSS** using a custom Python pipeline built 
             template_id=EMAILJS_TEMPLATE_ID,
             to_email=EMAIL,
         ),
-        height=340,
+        height=420,
         scrolling=False,
     )
 
