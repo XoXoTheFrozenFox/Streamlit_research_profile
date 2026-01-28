@@ -30,8 +30,8 @@ ROTATING = [
 ]
 
 # -----------------------------
-# Global terminal aesthetic + hide Streamlit chrome
-# + form widgets styled PURE black like background
+# Global aesthetic + hide Streamlit chrome
+# Dark-blue neon base + neon pink accent
 # -----------------------------
 st.markdown(
     """
@@ -41,22 +41,37 @@ st.markdown(
 footer {visibility: hidden;}
 header {visibility: hidden;}
 
+/* Remove the little "link" icon Streamlit shows next to headers on hover */
+h1 a, h2 a, h3 a, h4 a, h5 a, h6 a { display:none !important; }
+/* Newer Streamlit adds an anchor icon element; hide it too */
+[data-testid="stHeader"] a,
+[data-testid="stHeader"] svg,
+a[data-testid="stHeaderLink"],
+a.stMarkdownHeaderLink { display:none !important; opacity:0 !important; }
+
 /* Theme vars */
 :root{
-  --bg:#050505;
-  --orange:#ff7a18;
-  --green:#39ff14;
-  --border-orange:rgba(255,122,24,0.45);
-  --border-green:rgba(57,255,20,0.45);
-  --panel: rgba(0,0,0,0.35);
+  --bg:#050A1A;                 /* deep dark blue */
+  --panel: rgba(2, 10, 28, 0.62);
+  --text:#CDE7FF;               /* icy blue text */
+  --muted: rgba(205,231,255,0.70);
+
+  --pink:#FF2BD6;               /* neon pink */
+  --cyan:#00E7FF;               /* neon cyan */
+  --border: rgba(255,43,214,0.55);
+
+  --shadowPink: 0 0 16px rgba(255,43,214,0.18);
+  --shadowCyan: 0 0 16px rgba(0,231,255,0.14);
 }
 
-/* Default theme = ORANGE */
+/* App background + default text */
 html, body, [data-testid="stAppViewContainer"]{
-  background: var(--bg) !important;
-  color: var(--orange) !important;
+  background: radial-gradient(1200px 700px at 15% 0%, rgba(0,231,255,0.10), transparent 55%),
+              radial-gradient(900px 600px at 85% 10%, rgba(255,43,214,0.10), transparent 55%),
+              var(--bg) !important;
+  color: var(--text) !important;
 }
-*{ color: var(--orange) !important; }
+*{ color: var(--text) !important; }
 
 .block-container{
   padding-top: 0.55rem !important;
@@ -66,81 +81,92 @@ html, body, [data-testid="stAppViewContainer"]{
 /* Divider */
 hr{
   border: none !important;
-  border-top: 1px solid var(--border-orange) !important;
+  border-top: 1px solid rgba(255,43,214,0.35) !important;
   opacity: 1 !important;
   margin: 0.18rem 0 0.55rem 0 !important;
 }
 
+/* Typography */
+p, li, label, div, span{
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+}
+small, .stCaption { color: var(--muted) !important; }
+
+/* Markdown headings a little brighter */
+h1, h2, h3 { text-shadow: var(--shadowCyan); }
+
 /* Metrics & alerts */
 div[data-testid="stMetric"]{
-  background: var(--panel) !important;
-  border: 1px solid var(--border-orange) !important;
+  background: linear-gradient(180deg, rgba(2, 10, 28, 0.65), rgba(2, 10, 28, 0.45)) !important;
+  border: 1px solid rgba(0,231,255,0.22) !important;
   border-radius: 14px !important;
   padding: 12px 12px !important;
-  box-shadow: 0 0 0 1px rgba(255,122,24,0.10) inset;
+  box-shadow: 0 0 0 1px rgba(0,231,255,0.10) inset, var(--shadowCyan);
 }
 div[data-testid="stAlert"]{
   background: var(--panel) !important;
-  border: 1px solid var(--border-orange) !important;
+  border: 1px solid rgba(255,43,214,0.28) !important;
   border-radius: 14px !important;
-}
-
-p, li, label, div{
-  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+  box-shadow: var(--shadowPink);
 }
 
 /* -----------------------------
-   PURE BLACK form widgets (match background exactly)
+   Neon form widgets
 ------------------------------ */
 div[data-testid="stTextInput"] input,
 div[data-testid="stTextArea"] textarea{
-  background: var(--bg) !important;
-  color: var(--orange) !important;
-  border: 1px solid var(--border-orange) !important;
+  background: rgba(3, 10, 26, 0.85) !important;
+  color: var(--text) !important;
+  border: 1px solid rgba(255,43,214,0.45) !important;
   border-radius: 14px !important;
-  box-shadow: 0 0 0 1px rgba(255,122,24,0.10) inset !important;
+  box-shadow: 0 0 0 1px rgba(255,43,214,0.10) inset, var(--shadowPink) !important;
 }
 div[data-testid="stTextInput"] input::placeholder,
 div[data-testid="stTextArea"] textarea::placeholder{
-  color: rgba(255,122,24,0.65) !important;
+  color: rgba(205,231,255,0.55) !important;
 }
 div[data-testid="stTextInput"] input:focus,
 div[data-testid="stTextArea"] textarea:focus{
   outline: none !important;
-  box-shadow: 0 0 0 1px rgba(255,122,24,0.25) inset, 0 0 0 2px rgba(255,122,24,0.15) !important;
+  border: 1px solid rgba(0,231,255,0.55) !important;
+  box-shadow: 0 0 0 1px rgba(0,231,255,0.16) inset, var(--shadowCyan) !important;
 }
 
-/* Streamlit buttons */
+/* Streamlit buttons (kept, even though we use mailto <a>) */
 .stButton > button, div[data-testid="stFormSubmitButton"] button{
-  background: var(--bg) !important;
-  color: var(--orange) !important;
-  border: 1px solid var(--border-orange) !important;
+  background: rgba(3, 10, 26, 0.80) !important;
+  color: var(--text) !important;
+  border: 1px solid rgba(0,231,255,0.35) !important;
   border-radius: 14px !important;
   padding: 0.55rem 0.95rem !important;
-  box-shadow: 0 0 0 1px rgba(255,122,24,0.10) inset !important;
+  box-shadow: 0 0 0 1px rgba(0,231,255,0.10) inset, var(--shadowCyan) !important;
 }
 .stButton > button:hover, div[data-testid="stFormSubmitButton"] button:hover{
-  background: rgba(255,122,24,0.08) !important;
+  background: rgba(0,231,255,0.07) !important;
+  border-color: rgba(255,43,214,0.55) !important;
+  box-shadow: 0 0 0 1px rgba(255,43,214,0.12) inset, var(--shadowPink) !important;
 }
 
-/* Mailto "Send message" link styled EXACTLY like button */
+/* Mailto "Send message" link styled like a neon button */
 a.send-mailto-btn{
   display: inline-flex;
   align-items: center;
   justify-content: center;
   text-decoration: none !important;
-  background: var(--bg) !important;
-  color: var(--orange) !important;
-  border: 1px solid var(--border-orange) !important;
+  background: rgba(3, 10, 26, 0.80) !important;
+  color: var(--text) !important;
+  border: 1px solid rgba(255,43,214,0.55) !important;
   border-radius: 14px !important;
   padding: 0.55rem 0.95rem !important;
-  box-shadow: 0 0 0 1px rgba(255,122,24,0.10) inset !important;
-  transition: transform 140ms ease, background 140ms ease;
+  box-shadow: 0 0 0 1px rgba(255,43,214,0.10) inset, var(--shadowPink) !important;
+  transition: transform 140ms ease, background 140ms ease, border-color 140ms ease, box-shadow 140ms ease;
   user-select: none;
   cursor: pointer;
 }
 a.send-mailto-btn:hover{
-  background: rgba(255,122,24,0.08) !important;
+  background: rgba(255,43,214,0.08) !important;
+  border-color: rgba(0,231,255,0.55) !important;
+  box-shadow: 0 0 0 1px rgba(0,231,255,0.12) inset, var(--shadowCyan) !important;
   transform: translateY(-1px);
 }
 
@@ -150,44 +176,8 @@ a.send-mailto-btn.is-disabled{
   cursor: not-allowed;
   pointer-events: none;
   transform: none !important;
-}
-
-/* Green theme (set by JS) */
-html[data-theme="green"] body,
-html[data-theme="green"] [data-testid="stAppViewContainer"]{
-  color: var(--green) !important;
-}
-html[data-theme="green"] *{
-  color: var(--green) !important;
-}
-html[data-theme="green"] hr{
-  border-top: 1px solid var(--border-green) !important;
-}
-html[data-theme="green"] div[data-testid="stMetric"],
-html[data-theme="green"] div[data-testid="stAlert"]{
-  border: 1px solid var(--border-green) !important;
-}
-html[data-theme="green"] div[data-testid="stTextInput"] input,
-html[data-theme="green"] div[data-testid="stTextArea"] textarea{
-  color: var(--green) !important;
-  border: 1px solid var(--border-green) !important;
-  box-shadow: 0 0 0 1px rgba(57,255,20,0.10) inset !important;
-}
-html[data-theme="green"] div[data-testid="stTextInput"] input::placeholder,
-html[data-theme="green"] div[data-testid="stTextArea"] textarea::placeholder{
-  color: rgba(57,255,20,0.65) !important;
-}
-html[data-theme="green"] .stButton > button,
-html[data-theme="green"] div[data-testid="stFormSubmitButton"] button,
-html[data-theme="green"] a.send-mailto-btn{
-  color: var(--green) !important;
-  border: 1px solid var(--border-green) !important;
-  box-shadow: 0 0 0 1px rgba(57,255,20,0.10) inset !important;
-}
-html[data-theme="green"] .stButton > button:hover,
-html[data-theme="green"] div[data-testid="stFormSubmitButton"] button:hover,
-html[data-theme="green"] a.send-mailto-btn:hover{
-  background: rgba(57,255,20,0.08) !important;
+  box-shadow: none !important;
+  border-color: rgba(205,231,255,0.18) !important;
 }
 </style>
 """,
@@ -195,7 +185,7 @@ html[data-theme="green"] a.send-mailto-btn:hover{
 )
 
 # -----------------------------
-# Topbar component (orange default; toggle to green)
+# Topbar component (keep same layout; now neon cyan/pink)
 # -----------------------------
 topbar_html = f"""
 <!doctype html>
@@ -206,10 +196,11 @@ topbar_html = f"""
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 <style>
   :root {{
-    --orange:#ff7a18;
-    --green:#39ff14;
-    --border-orange:rgba(255,122,24,0.45);
-    --border-green:rgba(57,255,20,0.45);
+    --text:#CDE7FF;
+    --pink:#FF2BD6;
+    --cyan:#00E7FF;
+    --borderP: rgba(255,43,214,0.55);
+    --borderC: rgba(0,231,255,0.40);
   }}
 
   html, body {{
@@ -221,13 +212,11 @@ topbar_html = f"""
     margin: 0;
     padding: 10px 8px 12px 8px;
     background: transparent;
-    color: var(--orange);
+    color: var(--text);
     font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono",
                  "Courier New", "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", monospace;
     box-sizing: border-box;
   }}
-
-  html[data-theme="green"] body {{ color: var(--green); }}
 
   #wrap {{
     width: 100%;
@@ -258,16 +247,18 @@ topbar_html = f"""
     overflow-wrap: anywhere;
     word-break: break-word;
     padding-top: 2px;
+    text-shadow: 0 0 14px rgba(0,231,255,0.18);
   }}
 
   .typing-line {{ display: inline; }}
-  .prompt {{ display: inline; white-space: nowrap; }}
+  .prompt {{ display: inline; white-space: nowrap; color: var(--cyan); }}
   #prefix, #word {{ display: inline; }}
 
   .cursor {{
     display:inline-block;
     width: 10px;
     margin-left: 2px;
+    color: var(--cyan);
     animation: blink 1s steps(1) infinite;
   }}
   @keyframes blink {{ 50% {{ opacity: 0; }} }}
@@ -290,12 +281,12 @@ topbar_html = f"""
     align-items:center;
     justify-content:center;
     text-decoration:none;
-    color: currentColor;
+    color: var(--text);
 
     box-sizing: border-box;
-    border:1px solid var(--border-orange);
-    background: rgba(0,0,0,0.25);
-    box-shadow: 0 0 0 1px rgba(255,122,24,0.12) inset, 0 10px 22px rgba(0,0,0,0.35);
+    border:1px solid var(--borderC);
+    background: rgba(3, 10, 26, 0.45);
+    box-shadow: 0 0 0 1px rgba(0,231,255,0.10) inset, 0 0 16px rgba(0,231,255,0.10), 0 10px 22px rgba(0,0,0,0.35);
     transition: transform 140ms ease, background 140ms ease, border-color 140ms ease, box-shadow 140ms ease;
     -webkit-tap-highlight-color: transparent;
     user-select:none;
@@ -306,12 +297,6 @@ topbar_html = f"""
     padding: 0;
   }}
 
-  html[data-theme="green"] a.icon-btn,
-  html[data-theme="green"] button.icon-btn {{
-    border-color: var(--border-green);
-    box-shadow: 0 0 0 1px rgba(57,255,20,0.12) inset, 0 10px 22px rgba(0,0,0,0.35);
-  }}
-
   a.icon-btn i, button.icon-btn i {{
     font-size: 18px;
     pointer-events:none;
@@ -319,13 +304,9 @@ topbar_html = f"""
 
   a.icon-btn:hover, button.icon-btn:hover {{
     transform: translateY(-1px);
-    background: rgba(255,122,24,0.12);
-    box-shadow: 0 0 12px rgba(255,122,24,0.18), 0 10px 18px rgba(0,0,0,0.45);
-  }}
-  html[data-theme="green"] a.icon-btn:hover,
-  html[data-theme="green"] button.icon-btn:hover {{
-    background: rgba(57,255,20,0.12);
-    box-shadow: 0 0 12px rgba(57,255,20,0.18), 0 10px 18px rgba(0,0,0,0.45);
+    background: rgba(255,43,214,0.10);
+    border-color: var(--borderP);
+    box-shadow: 0 0 0 1px rgba(255,43,214,0.12) inset, 0 0 18px rgba(255,43,214,0.16), 0 10px 18px rgba(0,0,0,0.45);
   }}
 
   a.icon-btn:active, button.icon-btn:active {{
@@ -407,10 +388,6 @@ topbar_html = f"""
       </div>
 
       <div class="icon-row">
-        <button class="icon-btn" id="themeToggle" type="button" title="Toggle theme (Orange/Green)">
-          <i class="fa-solid fa-palette"></i>
-        </button>
-
         <a class="icon-btn" href="{PORTFOLIO_URL}" target="_blank" rel="noopener" title="Portfolio"><i class="fa-solid fa-globe"></i></a>
         <a class="icon-btn" href="{GITHUB_URL}" target="_blank" rel="noopener" title="GitHub"><i class="fa-brands fa-github"></i></a>
         <a class="icon-btn" href="{LINKEDIN_URL}" target="_blank" rel="noopener" title="LinkedIn"><i class="fa-brands fa-linkedin-in"></i></a>
@@ -428,25 +405,6 @@ topbar_html = f"""
 <script>
 (function () {{
   const wrap = document.getElementById("wrap");
-
-  function setTheme(theme) {{
-    const t = (theme === "green") ? "green" : "orange";
-    document.documentElement.setAttribute("data-theme", t);
-    try {{
-      if (window.parent && window.parent.document) {{
-        window.parent.document.documentElement.setAttribute("data-theme", t);
-      }}
-    }} catch (e) {{}}
-  }}
-
-  // ALWAYS start ORANGE
-  setTheme("orange");
-
-  const toggleBtn = document.getElementById("themeToggle");
-  toggleBtn.addEventListener("click", function () {{
-    const cur = document.documentElement.getAttribute("data-theme") || "orange";
-    setTheme(cur === "green" ? "orange" : "green");
-  }});
 
   // Resize without infinite growth
   function getHeight() {{
@@ -640,13 +598,11 @@ with left:
             unsafe_allow_html=True,
         )
     else:
-        # Disabled-look button (same UI, but not clickable)
         st.markdown(
             '<a class="send-mailto-btn is-disabled" href="#">Send message</a>',
             unsafe_allow_html=True,
         )
 
-        # Only show errors when user typed something (avoid noisy red on empty initial)
         if name or subject or message:
             if not name_s:
                 st.error("Please enter your name.")
