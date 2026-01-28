@@ -6,23 +6,30 @@ st.set_page_config(
     layout="wide",
 )
 
+# -----------------------------
+# Your links / info
+# -----------------------------
+NAME = "🌞 Bernard Swanepoel"
+TAGLINE = "MSc Computer Science — Sunspot Classification with Deep Learning"
+
 PORTFOLIO_URL = "https://xoxothefrozenfox.github.io/react-personal-portfolio/"
 LINKEDIN_URL = "https://www.linkedin.com/in/bernard-swanepoel-a2777322b/"
 GITHUB_URL = "https://github.com/XoXoTheFrozenFox"
 EMAIL = "BernardSwanepoel1510@gmail.com"
+UNIVERSITY = "North-West University, Potchefstroom"
 
+# -----------------------------
+# CSS (icon buttons + hover invert + email icon swap + mobile hover reset)
+# -----------------------------
 st.markdown(
     """
 <style>
-/* Layout padding */
-.block-container{
-  padding-top: 1rem !important;
-  padding-left: 1rem !important;
-  padding-right: 1rem !important;
-}
+/* Make Streamlit a touch cleaner */
+.block-container { padding-top: 2.2rem; padding-bottom: 2rem; }
+h1, h2, h3 { letter-spacing: -0.02em; }
+small, .stCaption { opacity: 0.85; }
 
-/* Streamlit top overlays can sit above your buttons (blocks top-half clicks).
-   Turn them "transparent to clicks". */
+/* Kill Streamlit overlays that can steal clicks */
 header[data-testid="stHeader"],
 div[data-testid="stToolbar"],
 div[data-testid="stDecoration"]{
@@ -30,67 +37,54 @@ div[data-testid="stDecoration"]{
   pointer-events: none !important;
 }
 
-/* Make sure our icon bar is above everything and fully clickable */
-.icon-wrap{
-  position: fixed;
-  top: 0.75rem;
-  left: 0.75rem;
-  z-index: 2147483647;
-  pointer-events: auto !important;
-}
-
-/* Tight row */
+/* Icon row */
 .icon-row{
   display:flex;
-  gap:8px;
+  gap:14px;
   align-items:center;
   flex-wrap:wrap;
-  margin: 0;
-  padding: 0;
-  pointer-events: auto !important;
+  margin-top: 0.25rem;
+  position: relative;
+  z-index: 9999;
 }
 
-/* Full-circle clickable area */
+/* Round icon button with hover invert */
 .icon-row a.icon-btn,
 .icon-row a.icon-btn:visited{
-  width:44px;
-  height:44px;
+  width:46px;
+  height:46px;
   border-radius:999px;
   display:inline-flex;
   align-items:center;
   justify-content:center;
   text-decoration:none !important;
-  padding:0 !important;
-
-  background:#ffffff !important;
-  color:#111111 !important;
-  border:1px solid rgba(0,0,0,0.22) !important;
-
-  box-shadow: 0 6px 14px rgba(0,0,0,0.12);
-  transition: background 120ms ease, color 120ms ease, transform 120ms ease, box-shadow 120ms ease, border-color 120ms ease;
-  cursor:pointer !important;
-
+  border: 1px solid rgba(255,255,255,0.22);
+  background: rgba(20, 20, 20, 0.55);
+  color: rgba(255,255,255,0.92);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  transition: transform 160ms ease, background 160ms ease, color 160ms ease, border-color 160ms ease, box-shadow 160ms ease;
+  box-shadow: 0 6px 18px rgba(0,0,0,0.25);
+  cursor: pointer !important;
   pointer-events: auto !important;
-  user-select: none;
   -webkit-tap-highlight-color: transparent;
+  user-select: none;
 }
 
-/* Base icon */
+/* Icons don't steal pointer events (so whole circle is clickable) */
 .icon-row a.icon-btn i{
-  color: inherit !important;
-  font-size: 17px;
-  line-height: 1;
-  pointer-events: none; /* keep clicks on the anchor */
+  font-size: 18px;
+  pointer-events: none;
 }
 
-/* Hover + focus invert (desktop/hover devices) */
+/* Hover invert (desktop/hover devices) */
 .icon-row a.icon-btn:hover,
 .icon-row a.icon-btn:focus-visible{
-  background:#111111 !important;
-  color:#ffffff !important;
-  border-color: rgba(255,255,255,0.22) !important;
-  transform: translateY(-1px);
-  box-shadow: 0 10px 20px rgba(0,0,0,0.18);
+  transform: translateY(-2px);
+  background: rgba(255,255,255,0.92);
+  color: rgba(10,10,10,0.95);
+  border-color: rgba(0,0,0,0.18);
+  box-shadow: 0 10px 26px rgba(0,0,0,0.30);
   outline: none !important;
 }
 
@@ -98,7 +92,9 @@ div[data-testid="stDecoration"]{
   transform: translateY(0px) scale(0.98);
 }
 
-/* Email icon swap: closed -> open */
+/* -------------------------------
+   Email icon swap: closed -> open
+---------------------------------- */
 .icon-row a.email-btn{
   position: relative;
 }
@@ -111,73 +107,224 @@ div[data-testid="stDecoration"]{
   align-items:center;
   justify-content:center;
   pointer-events: none;
-  color: inherit !important;
-  font-size: 17px;
-  line-height: 1;
+  font-size: 18px;
 }
 
 .icon-row a.email-btn .email-open{ opacity: 0; }
 .icon-row a.email-btn .email-closed{ opacity: 1; }
 
 .icon-row a.email-btn:hover .email-open,
-.icon-row a.email-btn:focus-visible .email-open{
-  opacity: 1;
-}
-.icon-row a.email-btn:hover .email-closed,
-.icon-row a.email-btn:focus-visible .email-closed{
-  opacity: 0;
-}
+.icon-row a.email-btn:focus-visible .email-open{ opacity: 1; }
 
-/* Fix “stuck hover” on touch devices (tap + back keeps hover on iOS sometimes).
-   On touch devices, disable hover/focus styling and keep only :active feedback. */
+.icon-row a.email-btn:hover .email-closed,
+.icon-row a.email-btn:focus-visible .email-closed{ opacity: 0; }
+
+/* -----------------------------------------
+   Fix “stuck hover” on touch/mobile devices
+------------------------------------------ */
 @media (hover: none) and (pointer: coarse){
   .icon-row a.icon-btn:hover,
   .icon-row a.icon-btn:focus-visible{
-    background:#ffffff !important;
-    color:#111111 !important;
-    border:1px solid rgba(0,0,0,0.22) !important;
     transform:none !important;
-    box-shadow: 0 6px 14px rgba(0,0,0,0.12) !important;
+    background: rgba(20, 20, 20, 0.55) !important;
+    color: rgba(255,255,255,0.92) !important;
+    border: 1px solid rgba(255,255,255,0.22) !important;
+    box-shadow: 0 6px 18px rgba(0,0,0,0.25) !important;
   }
-
   .icon-row a.icon-btn:active{
-    background:#111111 !important;
-    color:#ffffff !important;
-    border-color: rgba(255,255,255,0.22) !important;
     transform: translateY(0px) scale(0.98) !important;
-    box-shadow: 0 10px 20px rgba(0,0,0,0.18) !important;
+    background: rgba(255,255,255,0.92) !important;
+    color: rgba(10,10,10,0.95) !important;
+    border-color: rgba(0,0,0,0.18) !important;
+    box-shadow: 0 10px 26px rgba(0,0,0,0.30) !important;
   }
 }
+
+/* Label chips (optional) */
+.chip-row{
+  display:flex;
+  gap:10px;
+  flex-wrap:wrap;
+  margin-top: 0.6rem;
+}
+.chip{
+  display:inline-flex;
+  align-items:center;
+  gap:8px;
+  padding: 8px 12px;
+  border-radius: 999px;
+  border: 1px solid rgba(255,255,255,0.18);
+  background: rgba(255,255,255,0.06);
+  color: rgba(255,255,255,0.92);
+  text-decoration:none !important;
+  transition: background 160ms ease, color 160ms ease, transform 160ms ease, border-color 160ms ease;
+  pointer-events: auto !important;
+  cursor: pointer !important;
+}
+.chip:hover{
+  background: rgba(255,255,255,0.92);
+  color: rgba(10,10,10,0.95);
+  border-color: rgba(0,0,0,0.18);
+  transform: translateY(-1px);
+}
+.chip i{ font-size: 14px; pointer-events:none; }
+
+/* Reduce padding inside info boxes a bit */
+div[data-testid="stAlert"]{ padding-top: 0.8rem; padding-bottom: 0.8rem; }
 </style>
 
+<!-- Font Awesome for icons -->
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 """,
     unsafe_allow_html=True,
 )
 
-# IMPORTANT: no leading spaces at the start of lines below (prevents markdown code-block rendering)
+# JS: blur active element when coming back (prevents “stuck focus/hover” on mobile)
 st.markdown(
-    f"""
-<div class="icon-wrap">
-<div class="icon-row">
-<a class="icon-btn" href="{PORTFOLIO_URL}" target="_blank" rel="noopener" title="Portfolio">
-<i class="fa-solid fa-globe"></i>
-</a>
-
-<a class="icon-btn" href="{GITHUB_URL}" target="_blank" rel="noopener" title="GitHub">
-<i class="fa-brands fa-github"></i>
-</a>
-
-<a class="icon-btn" href="{LINKEDIN_URL}" target="_blank" rel="noopener" title="LinkedIn">
-<i class="fa-brands fa-linkedin-in"></i>
-</a>
-
-<a class="icon-btn email-btn" href="mailto:{EMAIL}" title="Email">
-<i class="fa-solid fa-envelope email-closed"></i>
-<i class="fa-solid fa-envelope-open email-open"></i>
-</a>
-</div>
-</div>
+    """
+<script>
+(function () {
+  function blurActive() {
+    try { document.activeElement && document.activeElement.blur && document.activeElement.blur(); } catch(e) {}
+  }
+  window.addEventListener("pageshow", blurActive);
+  document.addEventListener("visibilitychange", function() {
+    if (!document.hidden) blurActive();
+  });
+})();
+</script>
 """,
     unsafe_allow_html=True,
 )
+
+# -----------------------------
+# Header
+# -----------------------------
+st.title(NAME)
+st.subheader(TAGLINE)
+
+col1, col2, col3 = st.columns([1.25, 1.0, 1.0], gap="large")
+
+with col1:
+    st.markdown(
+        f"""
+**Focus:** Automated sunspot classification using deep learning  
+**Interests:** Solar physics • Computer vision • Imbalanced learning • Explainability  
+**University:** {UNIVERSITY}  
+""".strip()
+    )
+
+    # Optional "chip" buttons
+    st.markdown(
+        f"""
+<div class="chip-row">
+  <a class="chip" href="{PORTFOLIO_URL}" target="_blank" rel="noopener">
+    <i class="fa-solid fa-globe"></i><span>Portfolio</span>
+  </a>
+  <a class="chip" href="{GITHUB_URL}" target="_blank" rel="noopener">
+    <i class="fa-brands fa-github"></i><span>GitHub</span>
+  </a>
+  <a class="chip" href="{LINKEDIN_URL}" target="_blank" rel="noopener">
+    <i class="fa-brands fa-linkedin-in"></i><span>LinkedIn</span>
+  </a>
+  <a class="chip" href="mailto:{EMAIL}">
+    <i class="fa-solid fa-envelope"></i><span>Email</span>
+  </a>
+</div>
+""",
+        unsafe_allow_html=True,
+    )
+
+with col2:
+    st.markdown("### Quick links")
+
+    # Icon-only buttons + email hover open-envelope
+    st.markdown(
+        f"""
+<div class="icon-row">
+  <a class="icon-btn" href="{PORTFOLIO_URL}" target="_blank" rel="noopener" title="Portfolio" onclick="this.blur();">
+    <i class="fa-solid fa-globe"></i>
+  </a>
+  <a class="icon-btn" href="{GITHUB_URL}" target="_blank" rel="noopener" title="GitHub" onclick="this.blur();">
+    <i class="fa-brands fa-github"></i>
+  </a>
+  <a class="icon-btn" href="{LINKEDIN_URL}" target="_blank" rel="noopener" title="LinkedIn" onclick="this.blur();">
+    <i class="fa-brands fa-linkedin-in"></i>
+  </a>
+
+  <a class="icon-btn email-btn" href="mailto:{EMAIL}" title="Email" onclick="this.blur();">
+    <i class="fa-solid fa-envelope email-closed"></i>
+    <i class="fa-solid fa-envelope-open email-open"></i>
+  </a>
+
+  <a class="icon-btn" href="https://www.nwu.ac.za/" target="_blank" rel="noopener" title="North-West University" onclick="this.blur();">
+    <i class="fa-solid fa-building-columns"></i>
+  </a>
+</div>
+""",
+        unsafe_allow_html=True,
+    )
+
+    st.caption("Hover to invert colors ✨")
+
+with col3:
+    st.markdown("### Contact")
+    st.markdown(f"**Email:** {EMAIL}")
+    st.markdown(f"**University:** {UNIVERSITY}")
+
+st.divider()
+
+# -----------------------------
+# Main content
+# -----------------------------
+left, right = st.columns([1.35, 1.0], gap="large")
+
+with left:
+    st.markdown("## Research overview")
+    st.write(
+        "My research explores deep learning methods for classifying sunspot groups from solar imagery, "
+        "with emphasis on robust generalization, handling class imbalance, and producing interpretable predictions."
+    )
+
+    st.markdown("## What I’m building")
+    st.markdown(
+        """
+- **End-to-end classification pipeline** (data → training → evaluation → deployment)
+- **Model families:** CNN/ViT-style backbones for image-based classification
+- **Imbalance handling:** class weights, focal loss, oversampling, calibrated thresholds
+- **Evaluation:** macro-F1, per-class metrics, confusion matrices, ROC/PR curves
+        """.strip()
+    )
+
+    st.markdown("## Highlights")
+    st.info("Replace these placeholders with your real results (macro-F1, dataset size, best model, key findings).")
+
+    m1, m2, m3, m4 = st.columns(4)
+    m1.metric("Best Macro-F1", "—")
+    m2.metric("Classes", "—")
+    m3.metric("Images", "—")
+    m4.metric("Backbone", "—")
+
+with right:
+    st.markdown("## Live profile")
+    st.write("If an embed gets blocked by headers, these buttons always work:")
+
+    r1, r2 = st.columns(2)
+    with r1:
+        st.link_button("🌍 Portfolio", PORTFOLIO_URL, use_container_width=True)
+        st.link_button("💼 LinkedIn", LINKEDIN_URL, use_container_width=True)
+    with r2:
+        st.link_button("💻 GitHub", GITHUB_URL, use_container_width=True)
+        st.link_button("✉️ Email me", f"mailto:{EMAIL}", use_container_width=True)
+
+    st.markdown("## Repo / artifacts")
+    st.markdown(
+        """
+- Paper / thesis draft: *(add link)*  
+- Dataset: *(add link)*  
+- Demo notebook: *(add link)*  
+        """.strip()
+    )
+
+st.divider()
+st.caption("© 2026 Bernard Swanepoel • Built with Streamlit")
