@@ -1,4 +1,5 @@
 import streamlit as st
+import streamlit.components.v1 as components
 
 st.set_page_config(
     page_title="Bernard Swanepoel — Research Profile",
@@ -17,47 +18,36 @@ GITHUB_URL = "https://github.com/XoXoTheFrozenFox"
 EMAIL = "BernardSwanepoel1510@gmail.com"
 UNIVERSITY = "North-West University, Potchefstroom"
 
-# Header text pieces (exactly as requested)
 STATIC_PREFIX = "Hi🌞, my name is Bernard Swanepoel."
 ROTATING = ["{MSc. student}", "{Reasearcher}", "{Computer Scientist}"]
 
 # -----------------------------
-# Terminal aesthetic + typing (rotating suffix) + neon green everywhere
+# Global terminal aesthetic (applies to whole Streamlit page)
 # -----------------------------
 st.markdown(
     """
 <style>
 :root{
   --bg:#050505;
-  --panel:rgba(0,0,0,0.55);
-  --green:#39ff14;          /* neon */
-  --greenDim:rgba(57,255,20,0.30);
+  --green:#39ff14;
   --border:rgba(57,255,20,0.45);
 }
 
-/* Global terminal look */
+/* Global: neon green everywhere */
 html, body, [data-testid="stAppViewContainer"]{
   background: var(--bg) !important;
   color: var(--green) !important;
 }
+*{ color: var(--green) !important; }
 
-/* Make basically all text neon green */
-*{
-  color: var(--green) !important;
-}
+[data-testid="stSidebar"]{ background:#070707 !important; }
 
-/* Streamlit sidebar */
-[data-testid="stSidebar"]{
-  background:#070707 !important;
-}
-
-/* Container spacing */
 .block-container{
   padding-top: 1.2rem !important;
   padding-bottom: 2rem !important;
 }
 
-/* Remove/neutralize Streamlit overlays that can steal clicks */
+/* Streamlit overlays that can steal clicks */
 header[data-testid="stHeader"],
 div[data-testid="stToolbar"],
 div[data-testid="stDecoration"]{
@@ -72,140 +62,7 @@ hr{
   opacity: 1 !important;
 }
 
-/* Top bar layout */
-.topbar{
-  display:flex;
-  align-items:center;
-  justify-content:space-between;
-  gap:14px;
-  flex-wrap:wrap;
-  margin: 0.2rem 0 0.4rem 0;
-}
-
-/* Typing line */
-.terminal-title{
-  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
-  font-size: 1.65rem;
-  font-weight: 700;
-  line-height: 1.25;
-  margin: 0;
-  text-shadow: 0 0 18px rgba(57,255,20,0.12);
-}
-
-.terminal-title .prompt{
-  margin-right: 10px;
-  text-shadow: 0 0 20px rgba(57,255,20,0.20);
-}
-
-.cursor{
-  display:inline-block;
-  width: 10px;
-  margin-left: 2px;
-  animation: blink 1s steps(1) infinite;
-}
-@keyframes blink{
-  50%{ opacity: 0; }
-}
-
-/* Bigger tagline */
-.tagline{
-  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
-  font-size: 1.2rem;          /* bigger */
-  font-weight: 600;
-  opacity: 0.95;
-  margin-top: 0.1rem;
-}
-
-/* Icon row (right side) */
-.icon-row{
-  display:flex;
-  gap:10px;
-  align-items:center;
-  flex-wrap:wrap;
-  margin: 0;
-  padding: 0;
-  position: relative;
-  z-index: 9999;
-}
-
-.icon-row a.icon-btn,
-.icon-row a.icon-btn:visited{
-  width:44px;
-  height:44px;
-  border-radius:999px;
-  display:inline-flex;
-  align-items:center;
-  justify-content:center;
-  text-decoration:none !important;
-
-  border:1px solid var(--border) !important;
-  background: rgba(0,0,0,0.25) !important;
-  box-shadow: 0 0 0 1px rgba(57,255,20,0.12) inset, 0 10px 22px rgba(0,0,0,0.35);
-  transition: transform 160ms ease, background 160ms ease, border-color 160ms ease, box-shadow 160ms ease, filter 160ms ease;
-  cursor: pointer !important;
-  pointer-events: auto !important;
-  -webkit-tap-highlight-color: transparent;
-  user-select: none;
-}
-
-/* Icons */
-.icon-row a.icon-btn i{
-  font-size: 18px;
-  pointer-events: none;
-}
-
-/* Hover glow */
-.icon-row a.icon-btn:hover,
-.icon-row a.icon-btn:focus-visible{
-  transform: translateY(-2px);
-  background: rgba(57,255,20,0.12) !important;
-  border-color: rgba(57,255,20,0.85) !important;
-  box-shadow: 0 0 18px rgba(57,255,20,0.18), 0 12px 26px rgba(0,0,0,0.45);
-  outline: none !important;
-}
-
-.icon-row a.icon-btn:active{
-  transform: translateY(0px) scale(0.98);
-}
-
-/* Email icon swap: closed -> open */
-.icon-row a.email-btn{
-  position: relative;
-}
-.icon-row a.email-btn i{
-  position: absolute;
-  inset: 0;
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  pointer-events: none;
-  font-size: 18px;
-}
-.icon-row a.email-btn .email-open{ opacity: 0; }
-.icon-row a.email-btn .email-closed{ opacity: 1; }
-
-.icon-row a.email-btn:hover .email-open,
-.icon-row a.email-btn:focus-visible .email-open{ opacity: 1; }
-.icon-row a.email-btn:hover .email-closed,
-.icon-row a.email-btn:focus-visible .email-closed{ opacity: 0; }
-
-/* Fix “stuck hover” on touch devices */
-@media (hover: none) and (pointer: coarse){
-  .icon-row a.icon-btn:hover,
-  .icon-row a.icon-btn:focus-visible{
-    transform:none !important;
-    background: rgba(0,0,0,0.25) !important;
-    border-color: var(--border) !important;
-    box-shadow: 0 0 0 1px rgba(57,255,20,0.12) inset, 0 10px 22px rgba(0,0,0,0.35) !important;
-  }
-  .icon-row a.icon-btn:active{
-    background: rgba(57,255,20,0.12) !important;
-    border-color: rgba(57,255,20,0.85) !important;
-    box-shadow: 0 0 18px rgba(57,255,20,0.18), 0 12px 26px rgba(0,0,0,0.45) !important;
-  }
-}
-
-/* Streamlit metric cards */
+/* Metric cards */
 div[data-testid="stMetric"]{
   background: rgba(0,0,0,0.35) !important;
   border: 1px solid var(--border) !important;
@@ -220,98 +77,238 @@ div[data-testid="stAlert"]{
   border: 1px solid var(--border) !important;
 }
 
-/* Make lists/p text readable in terminal style */
+/* Terminal text feel */
 p, li{
   font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
 }
-
-/* Make Streamlit default input outlines neon if you add later */
-*:focus{
-  outline-color: rgba(57,255,20,0.7) !important;
-}
 </style>
-
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 """,
     unsafe_allow_html=True,
 )
 
-# JS: rotating suffix typing animation + mobile focus blur
-st.markdown(
-    f"""
+# -----------------------------
+# IMPORTANT: Typing animation must be done inside components.html
+# because Streamlit often strips/doesn't execute <script> in st.markdown.
+# This block renders the whole topbar (typing + icons) as one unit.
+# -----------------------------
+topbar_html = f"""
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+<style>
+  :root {{
+    --green:#39ff14;
+    --border:rgba(57,255,20,0.45);
+  }}
+
+  body {{
+    margin: 0;
+    background: transparent;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+    color: var(--green);
+  }}
+
+  .topbar {{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap: 14px;
+    flex-wrap:wrap;
+    width: 100%;
+    box-sizing: border-box;
+  }}
+
+  .terminal-title {{
+    font-size: 1.65rem;
+    font-weight: 700;
+    line-height: 1.25;
+    margin: 0;
+    display:flex;
+    align-items:center;
+    flex-wrap:wrap;
+    gap: 0.15rem;
+    text-shadow: 0 0 18px rgba(57,255,20,0.12);
+  }}
+
+  .prompt {{
+    margin-right: 10px;
+  }}
+
+  .cursor {{
+    display:inline-block;
+    width: 10px;
+    margin-left: 2px;
+    animation: blink 1s steps(1) infinite;
+  }}
+  @keyframes blink {{
+    50% {{ opacity: 0; }}
+  }}
+
+  .tagline {{
+    margin-top: 0.35rem;
+    font-size: 1.25rem;
+    font-weight: 650;
+    opacity: 0.95;
+  }}
+
+  .icon-row {{
+    display:flex;
+    gap:10px;
+    align-items:center;
+    flex-wrap:wrap;
+  }}
+
+  a.icon-btn {{
+    width:44px;
+    height:44px;
+    border-radius:999px;
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    text-decoration:none;
+    color: var(--green);
+    border:1px solid var(--border);
+    background: rgba(0,0,0,0.25);
+    box-shadow: 0 0 0 1px rgba(57,255,20,0.12) inset, 0 10px 22px rgba(0,0,0,0.35);
+    transition: transform 160ms ease, background 160ms ease, border-color 160ms ease, box-shadow 160ms ease, filter 160ms ease;
+    -webkit-tap-highlight-color: transparent;
+    user-select:none;
+  }}
+
+  a.icon-btn i {{
+    font-size: 18px;
+    pointer-events:none;
+  }}
+
+  a.icon-btn:hover {{
+    transform: translateY(-2px);
+    background: rgba(57,255,20,0.12);
+    border-color: rgba(57,255,20,0.85);
+    box-shadow: 0 0 18px rgba(57,255,20,0.18), 0 12px 26px rgba(0,0,0,0.45);
+  }}
+
+  a.icon-btn:active {{
+    transform: translateY(0px) scale(0.98);
+  }}
+
+  /* Email icon swap */
+  a.email-btn {{
+    position: relative;
+  }}
+  a.email-btn i {{
+    position: absolute;
+    inset: 0;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    pointer-events:none;
+  }}
+  a.email-btn .email-open {{ opacity: 0; }}
+  a.email-btn .email-closed {{ opacity: 1; }}
+
+  a.email-btn:hover .email-open {{ opacity: 1; }}
+  a.email-btn:hover .email-closed {{ opacity: 0; }}
+
+  /* On touch devices: avoid "stuck hover" */
+  @media (hover: none) and (pointer: coarse) {{
+    a.icon-btn:hover {{
+      transform:none;
+      background: rgba(0,0,0,0.25);
+      border-color: var(--border);
+      box-shadow: 0 0 0 1px rgba(57,255,20,0.12) inset, 0 10px 22px rgba(0,0,0,0.35);
+    }}
+    a.icon-btn:active {{
+      background: rgba(57,255,20,0.12);
+      border-color: rgba(57,255,20,0.85);
+      box-shadow: 0 0 18px rgba(57,255,20,0.18), 0 12px 26px rgba(0,0,0,0.45);
+    }}
+  }}
+</style>
+</head>
+
+<body>
+  <div class="topbar">
+    <div class="terminal-title">
+      <span class="prompt">$</span>
+      <span id="prefix"></span>
+      <span id="word"></span>
+      <span class="cursor">▌</span>
+    </div>
+
+    <div class="icon-row">
+      <a class="icon-btn" href="{PORTFOLIO_URL}" target="_blank" rel="noopener" title="Portfolio"><i class="fa-solid fa-globe"></i></a>
+      <a class="icon-btn" href="{GITHUB_URL}" target="_blank" rel="noopener" title="GitHub"><i class="fa-brands fa-github"></i></a>
+      <a class="icon-btn" href="{LINKEDIN_URL}" target="_blank" rel="noopener" title="LinkedIn"><i class="fa-brands fa-linkedin-in"></i></a>
+
+      <a class="icon-btn email-btn" href="mailto:{EMAIL}" title="Email">
+        <i class="fa-solid fa-envelope email-closed"></i>
+        <i class="fa-solid fa-envelope-open email-open"></i>
+      </a>
+
+      <a class="icon-btn" href="https://www.nwu.ac.za/" target="_blank" rel="noopener" title="North-West University"><i class="fa-solid fa-building-columns"></i></a>
+    </div>
+  </div>
+
+  <div class="tagline">{TAGLINE}</div>
+
 <script>
 (function () {{
-  const staticPrefix = {repr(STATIC_PREFIX)};
-  const words = {repr(ROTATING)};
-  const prefixId = "typed_prefix";
-  const wordId = "typed_word";
+  const staticPrefix = {STATIC_PREFIX!r} + " ";
+  const words = {ROTATING!r};
 
-  // wait until elements exist (Streamlit reruns)
-  function whenReady(fn) {{
-    let tries = 0;
-    const t = setInterval(() => {{
-      tries++;
-      const p = document.getElementById(prefixId);
-      const w = document.getElementById(wordId);
-      if (p && w) {{
-        clearInterval(t);
-        fn(p, w);
+  const prefixEl = document.getElementById("prefix");
+  const wordEl = document.getElementById("word");
+
+  prefixEl.textContent = staticPrefix;
+
+  let idx = 0;
+  let char = 0;
+  let deleting = false;
+
+  const typeSpeed = 45;
+  const deleteSpeed = 25;
+  const holdFull = 900;
+  const holdEmpty = 260;
+
+  function step() {{
+    const current = words[idx];
+
+    if (!deleting) {{
+      char++;
+      wordEl.textContent = current.slice(0, char);
+
+      if (char >= current.length) {{
+        setTimeout(() => {{
+          deleting = true;
+          step();
+        }}, holdFull);
+        return;
       }}
-      if (tries > 120) clearInterval(t);
-    }}, 50);
-  }}
 
-  function runTyping(prefixEl, wordEl) {{
-    prefixEl.textContent = staticPrefix + " ";
-    let idx = 0;
-    let char = 0;
-    let deleting = false;
+      setTimeout(step, typeSpeed);
+    }} else {{
+      char--;
+      wordEl.textContent = current.slice(0, Math.max(0, char));
 
-    const typeSpeed = 45;
-    const deleteSpeed = 25;
-    const holdFull = 900;
-    const holdEmpty = 280;
-
-    function step() {{
-      const current = words[idx];
-
-      if (!deleting) {{
-        char++;
-        wordEl.textContent = current.slice(0, char);
-        if (char >= current.length) {{
-          // hold then delete
-          setTimeout(() => {{
-            deleting = true;
-            step();
-          }}, holdFull);
-          return;
-        }}
-        setTimeout(step, typeSpeed);
-      }} else {{
-        char--;
-        wordEl.textContent = current.slice(0, Math.max(0, char));
-        if (char <= 0) {{
-          // move to next word
-          deleting = false;
-          idx = (idx + 1) % words.length;
-          setTimeout(step, holdEmpty);
-          return;
-        }}
-        setTimeout(step, deleteSpeed);
+      if (char <= 0) {{
+        deleting = false;
+        idx = (idx + 1) % words.length;
+        setTimeout(step, holdEmpty);
+        return;
       }}
+
+      setTimeout(step, deleteSpeed);
     }}
-
-    // start
-    wordEl.textContent = "";
-    idx = 0;
-    char = 0;
-    deleting = false;
-    step();
   }}
 
-  whenReady(runTyping);
+  // Kick off
+  wordEl.textContent = "";
+  step();
 
-  // prevent stuck focus on mobile when coming back
+  // Prevent stuck focus when coming back (mobile)
   function blurActive() {{
     try {{ document.activeElement && document.activeElement.blur && document.activeElement.blur(); }} catch(e) {{}}
   }}
@@ -321,46 +318,12 @@ st.markdown(
   }});
 }})();
 </script>
-""",
-    unsafe_allow_html=True,
-)
+</body>
+</html>
+"""
 
-# -----------------------------
-# Header: static prefix always visible + rotating suffix typed, icons right
-# -----------------------------
-st.markdown(
-    f"""
-<div class="topbar">
-  <div class="terminal-title">
-    <span class="prompt">$</span>
-    <span id="typed_prefix"></span><span id="typed_word"></span><span class="cursor">▌</span>
-  </div>
-
-  <div class="icon-row">
-    <a class="icon-btn" href="{PORTFOLIO_URL}" target="_blank" rel="noopener" title="Portfolio" onclick="this.blur();">
-      <i class="fa-solid fa-globe"></i>
-    </a>
-    <a class="icon-btn" href="{GITHUB_URL}" target="_blank" rel="noopener" title="GitHub" onclick="this.blur();">
-      <i class="fa-brands fa-github"></i>
-    </a>
-    <a class="icon-btn" href="{LINKEDIN_URL}" target="_blank" rel="noopener" title="LinkedIn" onclick="this.blur();">
-      <i class="fa-brands fa-linkedin-in"></i>
-    </a>
-    <a class="icon-btn email-btn" href="mailto:{EMAIL}" title="Email" onclick="this.blur();">
-      <i class="fa-solid fa-envelope email-closed"></i>
-      <i class="fa-solid fa-envelope-open email-open"></i>
-    </a>
-    <a class="icon-btn" href="https://www.nwu.ac.za/" target="_blank" rel="noopener" title="North-West University" onclick="this.blur();">
-      <i class="fa-solid fa-building-columns"></i>
-    </a>
-  </div>
-</div>
-""",
-    unsafe_allow_html=True,
-)
-
-# Bigger tagline (and green due to global CSS)
-st.markdown(f'<div class="tagline">{TAGLINE}</div>', unsafe_allow_html=True)
+# Height needs to fit title + tagline
+components.html(topbar_html, height=120)
 
 st.divider()
 
