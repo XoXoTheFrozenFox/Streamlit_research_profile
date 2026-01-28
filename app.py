@@ -10,16 +10,20 @@ st.set_page_config(
 # -----------------------------
 # Links / info
 # -----------------------------
-TAGLINE = "Masters dissertation: Sunspot classification using deep learning techniques"
+TAGLINE = (
+    "Masters dissertation: Sunspot classification using deep learning techniques\n"
+    "Honours project: Assessing the cybersecurity awareness of staff members in a higher educational institution"
+)
 
 PORTFOLIO_URL = "https://xoxothefrozenfox.github.io/react-personal-portfolio/"
 LINKEDIN_URL = "https://www.linkedin.com/in/bernard-swanepoel-a2777322b/"
 GITHUB_URL = "https://github.com/XoXoTheFrozenFox"
 EMAIL = "BernardSwanepoel1510@gmail.com"
 
-# Prefix must end with exactly ONE space (NBSP)
+# Prefix must end with exactly ONE space (NBSP) and nothing else
 STATIC_PREFIX = "Hi🌞, my name is Bernard Swanepoel.\u00A0"
 
+# IMPORTANT: no leading spaces here (prefix already provides the one space)
 ROTATING = [
     "Masters student✏️",
     "Researcher🥸",
@@ -47,9 +51,11 @@ html, body, [data-testid="stAppViewContainer"]{
 }
 *{ color: var(--green) !important; }
 
+[data-testid="stSidebar"]{ background:#070707 !important; }
+
 .block-container{
-  padding-top: 0.8rem !important;
-  padding-bottom: 1.4rem !important;
+  padding-top: 1.2rem !important;
+  padding-bottom: 2rem !important;
 }
 
 /* Streamlit overlays that can steal clicks */
@@ -92,10 +98,7 @@ p, li{
 )
 
 # -----------------------------
-# Topbar as a component:
-# - Auto-resizes iframe height (fixes desktop extra space + mobile clipping)
-# - Separate desktop vs mobile formatting
-# - Title + buttons aligned with same padding
+# Topbar (typing must be in components.html so JS runs reliably)
 # -----------------------------
 topbar_html = f"""
 <!doctype html>
@@ -110,56 +113,43 @@ topbar_html = f"""
     --border:rgba(57,255,20,0.45);
   }}
 
-  html, body {{
-    overflow: visible !important;
-  }}
-
   body {{
     margin: 0;
-    padding: 10px 8px 6px 8px; /* same padding for text + buttons */
     background: transparent;
     color: var(--green);
+    /* Include emoji-capable fonts to reduce odd fallback behavior */
     font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono",
                  "Courier New", "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", monospace;
-    box-sizing: border-box;
   }}
 
-  /* -----------------------
-     Desktop layout (default)
-     ----------------------- */
   .topbar {{
     display:flex;
-    align-items:center;          /* vertical align text + buttons */
+    align-items:center;
     justify-content:space-between;
-    gap: 12px;
+    gap: 14px;
+    flex-wrap:wrap;
     width: 100%;
     box-sizing: border-box;
   }}
 
-  .left {{
-    display:flex;
-    flex-direction:column;
-    gap: 6px;
-    min-width: 0;
-    flex: 1 1 auto;
-  }}
-
   .terminal-title {{
-    font-size: 1.62rem;
+    font-size: 1.65rem;
     font-weight: 700;
     line-height: 1.25;
     margin: 0;
-    white-space: nowrap;         /* keep "$" + prefix together on desktop */
-    overflow: hidden;
-    text-overflow: ellipsis;
+    display:flex;
+    align-items:center;
+    flex-wrap:wrap;
+    gap: 0; /* IMPORTANT: no extra spacing beyond our NBSP */
     text-shadow: 0 0 18px rgba(57,255,20,0.12);
-    padding-top: 1px;            /* micro nudge to match button center */
   }}
 
   .prompt {{
     margin-right: 10px;
-    white-space: nowrap;
-    display:inline;
+  }}
+
+  #prefix {{
+    margin-right: 0;
   }}
 
   .cursor {{
@@ -173,22 +163,19 @@ topbar_html = f"""
   }}
 
   .tagline {{
-    font-size: 1.18rem;
+    margin-top: 0.35rem;
+    font-size: 1.25rem;
     font-weight: 650;
     opacity: 0.95;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
+    white-space: pre-line;
   }}
 
   .icon-row {{
     display:flex;
     gap:10px;
     align-items:center;
-    flex-wrap:nowrap;
+    flex-wrap:wrap;
     justify-content:flex-end;
-    padding-top: 1px;            /* match title nudge */
-    flex: 0 0 auto;
   }}
 
   a.icon-btn {{
@@ -203,7 +190,7 @@ topbar_html = f"""
     border:1px solid var(--border);
     background: rgba(0,0,0,0.25);
     box-shadow: 0 0 0 1px rgba(57,255,20,0.12) inset, 0 10px 22px rgba(0,0,0,0.35);
-    transition: transform 140ms ease, background 140ms ease, border-color 140ms ease, box-shadow 140ms ease;
+    transition: transform 160ms ease, background 160ms ease, border-color 160ms ease, box-shadow 160ms ease, filter 160ms ease;
     -webkit-tap-highlight-color: transparent;
     user-select:none;
   }}
@@ -213,12 +200,11 @@ topbar_html = f"""
     pointer-events:none;
   }}
 
-  /* Smaller lift prevents any edge clipping */
   a.icon-btn:hover {{
-    transform: translateY(-1px);
+    transform: translateY(-2px);
     background: rgba(57,255,20,0.12);
     border-color: rgba(57,255,20,0.85);
-    box-shadow: 0 0 14px rgba(57,255,20,0.18), 0 12px 22px rgba(0,0,0,0.45);
+    box-shadow: 0 0 18px rgba(57,255,20,0.18), 0 12px 26px rgba(0,0,0,0.45);
   }}
 
   a.icon-btn:active {{
@@ -239,58 +225,21 @@ topbar_html = f"""
   }}
   a.email-btn .email-open {{ opacity: 0; }}
   a.email-btn .email-closed {{ opacity: 1; }}
+
   a.email-btn:hover .email-open {{ opacity: 1; }}
   a.email-btn:hover .email-closed {{ opacity: 0; }}
 
-  /* -----------------------
-     Mobile layout (stacked)
-     ----------------------- */
+  /* Responsive: shrink title + buttons so they don't clip on mobile */
   @media (max-width: 640px) {{
-    body {{
-      padding: 10px 8px 8px 8px;
-    }}
-
-    .topbar {{
-      flex-direction: column;
-      align-items: flex-start;
-      gap: 10px;
-    }}
-
-    .terminal-title {{
-      font-size: 1.10rem;
-      white-space: normal;     /* allow wrap, but keep "$" with prefix */
-      overflow: visible;
-      text-overflow: unset;
-      word-break: normal;
-    }}
-
-    .tagline {{
-      font-size: 1.02rem;
-      white-space: normal;
-      overflow: visible;
-      text-overflow: unset;
-      line-height: 1.25;
-    }}
-
-    .icon-row {{
-      width: 100%;
-      flex-wrap: wrap;         /* wrap instead of clipping */
-      gap: 8px;
-      justify-content: flex-start;
-      padding-top: 0;
-    }}
-
-    a.icon-btn {{
-      width: 38px;
-      height: 38px;
-    }}
-
-    a.icon-btn i {{
-      font-size: 16px;
-    }}
+    .terminal-title {{ font-size: 1.15rem; line-height: 1.25; }}
+    .tagline {{ font-size: 1.02rem; }}
+    a.icon-btn {{ width: 38px; height: 38px; }}
+    a.icon-btn i {{ font-size: 16px; }}
+    .icon-row {{ gap: 8px; }}
+    .prompt {{ margin-right: 8px; }}
   }}
 
-  /* Touch devices: avoid stuck hover */
+  /* On touch devices: avoid "stuck hover" */
   @media (hover: none) and (pointer: coarse) {{
     a.icon-btn:hover {{
       transform:none;
@@ -301,8 +250,7 @@ topbar_html = f"""
     a.icon-btn:active {{
       background: rgba(57,255,20,0.12);
       border-color: rgba(57,255,20,0.85);
-      box-shadow: 0 0 14px rgba(57,255,20,0.18), 0 12px 22px rgba(0,0,0,0.45);
-      transform: scale(0.98);
+      box-shadow: 0 0 18px rgba(57,255,20,0.18), 0 12px 26px rgba(0,0,0,0.45);
     }}
   }}
 </style>
@@ -310,12 +258,9 @@ topbar_html = f"""
 
 <body>
   <div class="topbar">
-    <div class="left">
-      <div class="terminal-title">
-        <span class="prompt">$</span>
-        <span id="prefix"></span><span id="word"></span><span class="cursor">▌</span>
-      </div>
-      <div class="tagline">{TAGLINE}</div>
+    <div class="terminal-title">
+      <span class="prompt">$</span>
+      <span id="prefix"></span><span id="word"></span><span class="cursor">▌</span>
     </div>
 
     <div class="icon-row">
@@ -332,31 +277,12 @@ topbar_html = f"""
     </div>
   </div>
 
+  <div class="tagline">{TAGLINE}</div>
+
 <script>
 (function () {{
-  // ---------- iframe auto-resize (fixes desktop whitespace + mobile clipping) ----------
-  function resizeFrame() {{
-    try {{
-      const h = Math.max(
-        document.body.scrollHeight,
-        document.documentElement.scrollHeight,
-        document.body.offsetHeight,
-        document.documentElement.offsetHeight
-      );
-      if (window.frameElement) {{
-        window.frameElement.style.height = (h + 2) + "px";
-      }}
-    }} catch (e) {{}}
-  }}
-  window.addEventListener("load", resizeFrame);
-  window.addEventListener("resize", () => setTimeout(resizeFrame, 50));
-
-  // Watch for changes (typing updates the text width/height)
-  const mo = new MutationObserver(() => resizeFrame());
-  mo.observe(document.body, {{ childList: true, subtree: true, characterData: true }});
-
-  // ---------- typing animation ----------
-  const staticPrefix = {STATIC_PREFIX!r};   // already ends with NBSP
+  // IMPORTANT: STATIC_PREFIX already includes the single NBSP at the end
+  const staticPrefix = {STATIC_PREFIX!r};
   const words = {ROTATING!r};
 
   const prefixEl = document.getElementById("prefix");
@@ -374,13 +300,12 @@ topbar_html = f"""
   const holdEmpty = 260;
 
   function step() {{
-    // Unicode-safe slicing so emojis don't show broken chars
+    // Use Unicode-safe slicing so emojis don't show a "broken box" first
     const glyphs = Array.from(words[idx]);
 
     if (!deleting) {{
       char++;
       wordEl.textContent = glyphs.slice(0, char).join("");
-      resizeFrame();
 
       if (char >= glyphs.length) {{
         setTimeout(() => {{
@@ -389,11 +314,11 @@ topbar_html = f"""
         }}, holdFull);
         return;
       }}
+
       setTimeout(step, typeSpeed);
     }} else {{
       char--;
       wordEl.textContent = glyphs.slice(0, Math.max(0, char)).join("");
-      resizeFrame();
 
       if (char <= 0) {{
         deleting = false;
@@ -401,6 +326,7 @@ topbar_html = f"""
         setTimeout(step, holdEmpty);
         return;
       }}
+
       setTimeout(step, deleteSpeed);
     }}
   }}
@@ -416,17 +342,14 @@ topbar_html = f"""
   document.addEventListener("visibilitychange", function() {{
     if (!document.hidden) blurActive();
   }});
-
-  // Final resize after everything settles
-  setTimeout(resizeFrame, 150);
 }})();
 </script>
 </body>
 </html>
 """
 
-# Height is just a starting value now — the iframe will auto-resize itself
-components.html(topbar_html, height=120)
+# Increased height so the top area never clips on mobile (2-line tagline + wrapping)
+components.html(topbar_html, height=190)
 
 st.divider()
 
