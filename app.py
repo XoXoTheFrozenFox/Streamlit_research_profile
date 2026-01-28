@@ -7,37 +7,6 @@ import numpy as np
 import pandas as pd
 import streamlit as st
 import streamlit.components.v1 as components
-from bs4 import BeautifulSoup
-
-def strip_profile_badges(html: str) -> str:
-    """
-    Removes the specific avatar <img> and the specific svg wrapper <div class="_link_gzau3_10">...</div>
-    from the provided HTML string (if present). Returns cleaned HTML.
-    """
-    soup = BeautifulSoup(html, "html.parser")
-
-    # 1) Remove the avatar <img ... data-testid="appCreatorAvatar">
-    for img in soup.find_all("img", attrs={"data-testid": "appCreatorAvatar"}):
-        img.decompose()
-
-    # 2) Remove <div class="_link_gzau3_10"> that contains an <svg> (your badge blob)
-    for div in soup.find_all("div", class_="_link_gzau3_10"):
-        if div.find("svg") is not None:
-            div.decompose()
-
-    return str(soup)
-
-
-# ---- call it ----
-page_html = """<html><body>
-<img src="https://avatars.githubusercontent.com/u/104361159?v=4" alt="App Creator Avatar"
-class="_profileImage_gzau3_78 _darkThemeShadow_gzau3_91" data-testid="appCreatorAvatar">
-<div class="_link_gzau3_10"><svg width="303" height="165" viewBox="0 0 303 165" fill="none"
-xmlns="http://www.w3.org/2000/svg"><path d="..." /></svg></div>
-<div>Keep me</div>
-</body></html>"""
-
-cleaned_html = strip_profile_badges(page_html)
 
 hide_st_style = """
             <style>
@@ -238,7 +207,6 @@ div[data-testid="stTextInput"] input:-webkit-autofill:focus{
 }
 
 div[data-testid="stTextInput"]:has(input:placeholder-shown):not(:focus-within)::after{
-  content: "Field empty!";
   position: absolute;
   right: 14px;
   top: 44px;
