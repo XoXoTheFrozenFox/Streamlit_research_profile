@@ -2083,7 +2083,7 @@ with left:
 - **Detection:** YOLOv8, RT-DETR, Faster R-CNN
 - **Classification:** ViT, Swin, ResNet, EfficientNet, ConvNeXt
 - **Evaluation:** Precision/Recall, Confusion matrices, ROC/PR analysis
-- **UI / Apps:** Streamlit, Tkinter
+- **UI / Apps:** Tkinter
 - **Dev tools:** Visual Studio Code, Jupyter Notebooks, PyCharm
 - **Environments:** Conda, Windows Subsystem for Linux (WSL)
         """.strip()
