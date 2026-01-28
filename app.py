@@ -19,13 +19,21 @@ PORTFOLIO_URL = "https://xoxothefrozenfox.github.io/react-personal-portfolio/"
 LINKEDIN_URL = "https://www.linkedin.com/in/bernard-swanepoel-a2777322b/"
 GITHUB_URL = "https://github.com/XoXoTheFrozenFox"
 EMAIL = "BernardSwanepoel1510@gmail.com"
-UNIVERSITY = "North-West University, Potchefstroom"
 
+# Prefix must end with exactly ONE space (NBSP) and nothing else
 STATIC_PREFIX = "Hi🌞, my name is Bernard Swanepoel.\u00A0"
-ROTATING = [" Masters student✏️", " Researcher🥸", " Computer Scientist💻"," Coffee addict☕"," Space enthusiast💫"]
+
+# IMPORTANT: no leading spaces here (prefix already provides the one space)
+ROTATING = [
+    "Masters student✏️",
+    "Researcher🥸",
+    "Computer Scientist💻",
+    "Coffee addict☕",
+    "Space enthusiast💫",
+]
 
 # -----------------------------
-# Global terminal aesthetic (applies to whole Streamlit page)
+# Global terminal aesthetic (whole Streamlit page)
 # -----------------------------
 st.markdown(
     """
@@ -90,9 +98,7 @@ p, li{
 )
 
 # -----------------------------
-# IMPORTANT: Typing animation must be done inside components.html
-# because Streamlit often strips/doesn't execute <script> in st.markdown.
-# This block renders the whole topbar (typing + icons) as one unit.
+# Topbar (typing must be in components.html so JS runs reliably)
 # -----------------------------
 topbar_html = f"""
 <!doctype html>
@@ -110,8 +116,10 @@ topbar_html = f"""
   body {{
     margin: 0;
     background: transparent;
-    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
     color: var(--green);
+    /* Include emoji-capable fonts to reduce odd fallback behavior */
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono",
+                 "Courier New", "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", monospace;
   }}
 
   .topbar {{
@@ -132,12 +140,16 @@ topbar_html = f"""
     display:flex;
     align-items:center;
     flex-wrap:wrap;
-    gap: 0.15rem;
+    gap: 0; /* IMPORTANT: no extra spacing beyond our NBSP */
     text-shadow: 0 0 18px rgba(57,255,20,0.12);
   }}
 
   .prompt {{
     margin-right: 10px;
+  }}
+
+  #prefix {{
+    margin-right: 0;
   }}
 
   .cursor {{
@@ -155,6 +167,7 @@ topbar_html = f"""
     font-size: 1.25rem;
     font-weight: 650;
     opacity: 0.95;
+    white-space: pre-line;
   }}
 
   .icon-row {{
@@ -162,6 +175,7 @@ topbar_html = f"""
     gap:10px;
     align-items:center;
     flex-wrap:wrap;
+    justify-content:flex-end;
   }}
 
   a.icon-btn {{
@@ -215,6 +229,16 @@ topbar_html = f"""
   a.email-btn:hover .email-open {{ opacity: 1; }}
   a.email-btn:hover .email-closed {{ opacity: 0; }}
 
+  /* Responsive: shrink title + buttons so they don't clip on mobile */
+  @media (max-width: 640px) {{
+    .terminal-title {{ font-size: 1.15rem; line-height: 1.25; }}
+    .tagline {{ font-size: 1.02rem; }}
+    a.icon-btn {{ width: 38px; height: 38px; }}
+    a.icon-btn i {{ font-size: 16px; }}
+    .icon-row {{ gap: 8px; }}
+    .prompt {{ margin-right: 8px; }}
+  }}
+
   /* On touch devices: avoid "stuck hover" */
   @media (hover: none) and (pointer: coarse) {{
     a.icon-btn:hover {{
@@ -236,9 +260,7 @@ topbar_html = f"""
   <div class="topbar">
     <div class="terminal-title">
       <span class="prompt">$</span>
-      <span id="prefix"></span>
-      <span id="word"></span>
-      <span class="cursor">▌</span>
+      <span id="prefix"></span><span id="word"></span><span class="cursor">▌</span>
     </div>
 
     <div class="icon-row">
@@ -255,11 +277,12 @@ topbar_html = f"""
     </div>
   </div>
 
-  <div class="tagline" style="white-space: pre-line;">{TAGLINE}</div>
+  <div class="tagline">{TAGLINE}</div>
 
 <script>
 (function () {{
-  const staticPrefix = {STATIC_PREFIX!r} + " ";
+  // IMPORTANT: STATIC_PREFIX already includes the single NBSP at the end
+  const staticPrefix = {STATIC_PREFIX!r};
   const words = {ROTATING!r};
 
   const prefixEl = document.getElementById("prefix");
@@ -277,13 +300,14 @@ topbar_html = f"""
   const holdEmpty = 260;
 
   function step() {{
-    const current = words[idx];
+    // Use Unicode-safe slicing so emojis don't show a "broken box" first
+    const glyphs = Array.from(words[idx]);
 
     if (!deleting) {{
       char++;
-      wordEl.textContent = current.slice(0, char);
+      wordEl.textContent = glyphs.slice(0, char).join("");
 
-      if (char >= current.length) {{
+      if (char >= glyphs.length) {{
         setTimeout(() => {{
           deleting = true;
           step();
@@ -294,7 +318,7 @@ topbar_html = f"""
       setTimeout(step, typeSpeed);
     }} else {{
       char--;
-      wordEl.textContent = current.slice(0, Math.max(0, char));
+      wordEl.textContent = glyphs.slice(0, Math.max(0, char)).join("");
 
       if (char <= 0) {{
         deleting = false;
@@ -307,7 +331,6 @@ topbar_html = f"""
     }}
   }}
 
-  // Kick off
   wordEl.textContent = "";
   step();
 
@@ -325,8 +348,8 @@ topbar_html = f"""
 </html>
 """
 
-# Height needs to fit title + tagline
-components.html(topbar_html, height=120)
+# Increased height so the top area never clips on mobile (2-line tagline + wrapping)
+components.html(topbar_html, height=190)
 
 st.divider()
 
