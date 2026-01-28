@@ -43,9 +43,6 @@ ROTATING = [
 st.markdown(
     """
 <style>
-#MainMenu {visibility: hidden;}
-footer {visibility: hidden;}
-header {visibility: hidden;}
 
 div[data-testid="stToolbar"]{display:none !important; visibility:hidden !important;}
 div[data-testid="stToolbarActions"]{display:none !important; visibility:hidden !important;}
