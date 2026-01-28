@@ -467,7 +467,7 @@ with left:
     st.markdown("## Background about me")
     st.write(
         "I’m Bernard Swanepoel, a Computer Science master’s student focused on applying deep learning to solar physics—"
-        "specifically automated sunspot detection and McIntosh classification for space-weather risk awareness."
+        "specifically automated sunspot detection and McIntosh classification."
     )
 
     st.markdown("## Research titles")
