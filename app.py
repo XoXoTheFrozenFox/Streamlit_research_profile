@@ -309,7 +309,7 @@ with right:
         st.link_button("💻 GitHub", GITHUB_URL, use_container_width=True)
         st.link_button("✉️ Email me", f"mailto:{EMAIL}", use_container_width=True)
 
-    st.markdown("## Repo / artifacts")
+    st.markdown("## Other porjects")
     st.markdown(
         """
 - Paper / thesis draft: *(add link)*  
