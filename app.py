@@ -8,19 +8,12 @@ import pandas as pd
 import streamlit as st
 import streamlit.components.v1 as components
 
-
-# ============================================================
-# PAGE CONFIG (TAB / URL BAR ICON)
-# ============================================================
 st.set_page_config(
-    page_title="Bernard Swanepoel — Research Profile",
-    page_icon="🧑‍💻",   # tab/icon should be 🧑‍💻
+    page_title="BS — Research profile",
+    page_icon="🧑‍💻",   
     layout="wide",
 )
 
-# ============================================================
-# LINKS / INFO
-# ============================================================
 TAGLINE = ""
 
 PORTFOLIO_URL = "https://xoxothefrozenfox.github.io/react-personal-portfolio/"
@@ -38,12 +31,6 @@ ROTATING = [
     "Space enthusiast💫",
 ]
 
-
-# ============================================================
-# GLOBAL CSS (theme handled by html[data-theme] OR fallback green)
-# - Fix selectbox red border + make it pure black
-# - Border color always follows theme (never red)
-# ============================================================
 st.markdown(
     """
 <style>
@@ -248,9 +235,6 @@ a.send-mailto-btn.is-disabled{
   transform: none !important;
 }
 
-/* ============================================================
-   SELECTBOX (make it true black + theme border, never red)
-   ============================================================ */
 div[data-testid="stSelectbox"]{
   width: 120px !important;
   max-width: 120px !important;
@@ -390,12 +374,6 @@ html[data-theme="pink"] div[data-testid="stSelectbox"] [role="listbox"]{ border:
     unsafe_allow_html=True,
 )
 
-
-# ============================================================
-# TOPBAR (theme stored in localStorage so plots sync reliably)
-# - TAB ICON is ALWAYS 🧑‍💻
-# - "Hi{emoji}" animation remains theme-based
-# ============================================================
 TOPBAR_TEMPLATE = r"""
 <!doctype html>
 <html>
@@ -766,17 +744,9 @@ topbar_html = (
 components.html(topbar_html, height=93)
 st.divider()
 
-
-# ============================================================
-# MAILTO BUILDER
-# ============================================================
 def build_mailto(to_email: str, subject: str, body: str) -> str:
     return f"mailto:{to_email}?subject={quote(subject)}&body={quote(body)}"
 
-
-# ============================================================
-# SPECTRUM HELPERS
-# ============================================================
 @st.cache_data(show_spinner=False)
 def read_spectrum_csv(folder: str) -> pd.DataFrame:
     paths = sorted(glob.glob(os.path.join(folder, "*.csv")))
@@ -839,11 +809,6 @@ def smart_yrange(y: np.ndarray) -> tuple[float, float]:
     pad = 0.08 * span if span > 0 else 0.5
     return float(lo - pad), float(hi + pad)
 
-
-# ============================================================
-# PLOTLY HTML
-# - Slow down a little bit more (per your request)
-# ============================================================
 SPECTRUM_TEMPLATE = r"""
 <div id="__DIV__" style="width:100%;"></div>
 <script src="https://cdn.plot.ly/plotly-2.30.0.min.js"></script>
@@ -969,7 +934,6 @@ SPECTRUM_TEMPLATE = r"""
   async function runSequence(){
     const hasOld = Array.isArray(P.x_old) && P.x_old.length > 0;
 
-    // slowed down slightly
     const WIPE_MS = 1150;
     const REVEAL_MS = 2700;
     const PAUSE_MS = 170;
@@ -1054,10 +1018,247 @@ def spectrum_plot_html(
         .replace("__PAYLOAD__", json.dumps(payload))
     )
 
+CM_TEMPLATE = r"""
+<div class="cm-wrap" id="__WRAP__">
+  <div id="__DIV__" style="width:100%;"></div>
+</div>
 
-# ============================================================
-# MAIN CONTENT
-# ============================================================
+<script src="https://cdn.plot.ly/plotly-2.30.0.min.js"></script>
+<script>
+(function() {
+  const P = __PAYLOAD__;
+  const wrap = document.getElementById(P.wrap_id);
+  const el = document.getElementById(P.div_id);
+
+  const STORAGE_KEY = "bs_theme";
+  const THEMES = ["green","blue","pink","orange"];
+
+  // --------- fade-in on scroll ----------
+  (function setupFade(){
+    if (!wrap) return;
+
+    wrap.style.opacity = "0";
+    wrap.style.transform = "translateY(10px)";
+    wrap.style.transition = "opacity 600ms ease, transform 600ms ease";
+    wrap.style.willChange = "opacity, transform";
+
+    const io = new IntersectionObserver((entries) => {
+      entries.forEach((e) => {
+        if (e.isIntersecting) {
+          wrap.style.opacity = "1";
+          wrap.style.transform = "translateY(0px)";
+          // ensure plot resizes correctly after reveal
+          setTimeout(() => { try { Plotly.Plots.resize(el); } catch(_){} }, 80);
+          io.unobserve(wrap);
+        }
+      });
+    }, { threshold: 0.18 });
+
+    io.observe(wrap);
+  })();
+
+  // --------- theme helpers ----------
+  function themeToRgb(t){
+    switch(t){
+      case "orange": return [255,122,24];
+      case "blue":   return [0,231,255];
+      case "pink":   return [255,43,214];
+      default:       return [57,255,20];
+    }
+  }
+  function rgba(rgb, a){ return `rgba(${rgb[0]}, ${rgb[1]}, ${rgb[2]}, ${a})`; }
+  function rgbStr(rgb){ return `rgb(${rgb[0]}, ${rgb[1]}, ${rgb[2]})`; }
+
+  function getTheme(){
+    try {
+      const t = localStorage.getItem(STORAGE_KEY);
+      if (t && THEMES.includes(t)) return t;
+    } catch(e) {}
+    const t2 = document.documentElement.getAttribute("data-theme");
+    if (t2 && THEMES.includes(t2)) return t2;
+    return "green";
+  }
+
+  function colorsForTheme(theme){
+    const rgb = themeToRgb(theme);
+    return {
+      rgb,
+      font: rgba(rgb, 0.95),
+      axis: rgba(rgb, 0.35),
+      grid: rgba(rgb, 0.12),
+      strong: rgba(rgb, 0.95),
+      soft: rgba(rgb, 0.18),
+      black: "#050505"
+    };
+  }
+
+  function makeColorscale(rgb){
+    // dark -> theme
+    const c0 = "rgb(5,5,5)";
+    const c1 = `rgba(${rgb[0]},${rgb[1]},${rgb[2]},0.30)`;
+    const c2 = `rgba(${rgb[0]},${rgb[1]},${rgb[2]},0.60)`;
+    const c3 = `rgba(${rgb[0]},${rgb[1]},${rgb[2]},0.92)`;
+    return [
+      [0.00, c0],
+      [0.25, c1],
+      [0.60, c2],
+      [1.00, c3],
+    ];
+  }
+
+  function buildAnnotations(z, labels, fontColor){
+    const anns = [];
+    for (let i = 0; i < labels.length; i++){
+      for (let j = 0; j < labels.length; j++){
+        const v = z[i][j];
+        const txt = (typeof v === "number") ? v.toFixed(2) : String(v);
+        // high cells -> dark text for contrast, else theme text
+        const col = (v >= 0.62) ? "#050505" : fontColor;
+        anns.push({
+          x: labels[j],
+          y: labels[i],
+          text: txt,
+          showarrow: false,
+          font: { color: col, size: 16, family: 'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace' }
+        });
+      }
+    }
+    return anns;
+  }
+
+  function makeLayout(C){
+    return {
+      title: { text: P.title, x: 0.02, xanchor: "left" },
+      paper_bgcolor: C.black,
+      plot_bgcolor: C.black,
+      margin: { l: 70, r: 28, t: 64, b: 56 },
+      font: {
+        family: 'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace',
+        color: C.font,
+        size: 13
+      },
+      xaxis: {
+        title: { text: "Predicted label" },
+        type: "category",
+        tickmode: "array",
+        tickvals: P.labels,
+        ticktext: P.labels,
+        ticks: "outside",
+        tickcolor: C.axis,
+        linecolor: C.axis,
+        mirror: true,
+        showgrid: false,
+        zeroline: false
+      },
+      yaxis: {
+        title: { text: "True label" },
+        type: "category",
+        tickmode: "array",
+        tickvals: P.labels,
+        ticktext: P.labels,
+        ticks: "outside",
+        tickcolor: C.axis,
+        linecolor: C.axis,
+        mirror: true,
+        autorange: "reversed",
+        showgrid: false,
+        zeroline: false
+      }
+    };
+  }
+
+  function makeTrace(C){
+    return {
+      type: "heatmap",
+      z: P.z,
+      x: P.labels,
+      y: P.labels,
+      zmin: 0,
+      zmax: 1,
+      colorscale: makeColorscale(C.rgb),
+      hovertemplate:
+        "True=%{y}<br>Pred=%{x}<br>Value=%{z:.2f}<extra></extra>",
+      colorbar: {
+        thickness: 12,
+        len: 0.92,
+        outlinewidth: 0,
+        tickfont: { color: C.font },
+        title: { text: "", font: { color: C.font } }
+      }
+    };
+  }
+
+  function render(){
+    const C = colorsForTheme(getTheme());
+    const layout = makeLayout(C);
+    layout.annotations = buildAnnotations(P.z, P.labels, C.font);
+
+    Plotly.newPlot(
+      el,
+      [makeTrace(C)],
+      layout,
+      { displayModeBar: false, responsive: true }
+    ).then(() => {
+      // tiny "pop" in after plot renders (pairs nicely with scroll fade)
+      try {
+        el.style.opacity = "0";
+        el.style.transform = "scale(0.996)";
+        el.style.transition = "opacity 380ms ease, transform 380ms ease";
+        requestAnimationFrame(() => {
+          el.style.opacity = "1";
+          el.style.transform = "scale(1)";
+        });
+      } catch(_) {}
+    });
+  }
+
+  function restyleToTheme(){
+    const C = colorsForTheme(getTheme());
+    const layout = makeLayout(C);
+    layout.annotations = buildAnnotations(P.z, P.labels, C.font);
+
+    Plotly.restyle(el, {
+      colorscale: [makeColorscale(C.rgb)]
+    }, [0]);
+
+    Plotly.relayout(el, layout);
+  }
+
+  render();
+
+  window.addEventListener("storage", (ev) => {
+    if (ev && ev.key === STORAGE_KEY) restyleToTheme();
+  });
+
+  new MutationObserver(() => restyleToTheme())
+    .observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme"] });
+
+})();
+</script>
+"""
+
+def confusion_matrix_plot_html(
+    z: np.ndarray,
+    labels: list[str],
+    title: str,
+    div_id: str,
+    wrap_id: str,
+) -> str:
+    z_list = [[float(v) for v in row] for row in np.asarray(z, dtype=float)]
+    payload = {
+        "div_id": div_id,
+        "wrap_id": wrap_id,
+        "title": title,
+        "labels": labels,
+        "z": z_list,
+    }
+    return (
+        CM_TEMPLATE
+        .replace("__DIV__", div_id)
+        .replace("__WRAP__", wrap_id)
+        .replace("__PAYLOAD__", json.dumps(payload))
+    )
+
 left, right = st.columns([1.35, 1.0], gap="large")
 
 with left:
@@ -1072,7 +1273,7 @@ with left:
     st.markdown("## Education")
     st.markdown(
         """
-- **MSc Computer Science** — NWU *(2025–2027)*
+- **MSc Computer Science** — NWU *(2025–2026)*
 - **BSc Hons Computer Science and Information Technology** — NWU *(2023–2024)*
 - **BSc Information Technology** — NWU *(2021–2023)*
 - **TEFL (180 hours)** — i-to-i *(2023)*
@@ -1214,9 +1415,54 @@ Spectral data were collected from **SDSS** using a custom Python pipeline built 
     m4.metric("F1-score", "83.28%")
 
     st.markdown("## Hobby project: Confusion matrices")
+    cm_labels = list("OBAFGKM")
+
+    # ---- values taken from your screenshots (normalized) ----
+    cm_1d = np.array([
+        [0.85, 0.12, 0.00, 0.00, 0.00, 0.00, 0.04],
+        [0.02, 0.91, 0.04, 0.00, 0.00, 0.02, 0.02],
+        [0.00, 0.00, 0.99, 0.01, 0.00, 0.00, 0.00],
+        [0.00, 0.01, 0.04, 0.72, 0.18, 0.05, 0.00],
+        [0.01, 0.00, 0.00, 0.08, 0.88, 0.03, 0.00],
+        [0.00, 0.00, 0.00, 0.00, 0.00, 0.97, 0.03],
+        [0.00, 0.01, 0.00, 0.00, 0.01, 0.00, 0.98],
+    ], dtype=float)
+
+    cm_2d = np.array([
+        [0.85, 0.12, 0.00, 0.00, 0.00, 0.00, 0.04],
+        [0.08, 0.91, 0.00, 0.02, 0.00, 0.00, 0.00],
+        [0.00, 0.09, 0.87, 0.04, 0.00, 0.00, 0.00],
+        [0.00, 0.02, 0.07, 0.49, 0.34, 0.07, 0.00],
+        [0.00, 0.02, 0.00, 0.02, 0.94, 0.01, 0.00],
+        [0.00, 0.00, 0.00, 0.01, 0.02, 0.93, 0.04],
+        [0.00, 0.01, 0.00, 0.00, 0.01, 0.03, 0.94],
+    ], dtype=float)
+
     st.markdown("#### 1D-Transformer")
-    
+    components.html(
+        confusion_matrix_plot_html(
+            z=cm_1d,
+            labels=cm_labels,
+            title="Confusion Matrix (Test) — Normalized (1D-Transformer)",
+            div_id="cm_plot_1d",
+            wrap_id="cm_wrap_1d",
+        ),
+        height=560,
+        scrolling=False,
+    )
+
     st.markdown("#### 2D-Transformer")
+    components.html(
+        confusion_matrix_plot_html(
+            z=cm_2d,
+            labels=cm_labels,
+            title="Confusion Matrix (Test) — Normalized (2D-Transformer)",
+            div_id="cm_plot_2d",
+            wrap_id="cm_wrap_2d",
+        ),
+        height=560,
+        scrolling=False,
+    )
 
     st.divider()
 
