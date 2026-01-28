@@ -134,7 +134,7 @@ topbar_html = f"""
 
   /* ✅ Desktop-only padding for TEXT column (title + tagline) */
   .text-col {{
-    padding: 9px 16px 8px 16px;   /* <-- increase/decrease as you like */
+    padding: 12px 16px 8px 16px;   /* <-- increase/decrease as you like */
   }}
 
   .terminal-title {{
