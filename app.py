@@ -1,4 +1,3 @@
-import re
 from urllib.parse import quote
 
 import streamlit as st
@@ -123,25 +122,6 @@ div[data-testid="stTextArea"] textarea:focus{
   background: rgba(255,122,24,0.08) !important;
 }
 
-/* "mailto draft" button (styled like Streamlit buttons) */
-a.mailto-btn{
-  display:inline-flex;
-  align-items:center;
-  justify-content:center;
-  text-decoration:none !important;
-  background: var(--bg) !important;
-  color: var(--orange) !important;
-  border: 1px solid var(--border-orange) !important;
-  border-radius: 14px !important;
-  padding: 0.55rem 0.95rem !important;
-  box-shadow: 0 0 0 1px rgba(255,122,24,0.10) inset !important;
-  transition: background 140ms ease, transform 140ms ease;
-}
-a.mailto-btn:hover{
-  background: rgba(255,122,24,0.08) !important;
-  transform: translateY(-1px);
-}
-
 /* Green theme (set by JS) */
 html[data-theme="green"] body,
 html[data-theme="green"] [data-testid="stAppViewContainer"]{
@@ -168,15 +148,13 @@ html[data-theme="green"] div[data-testid="stTextArea"] textarea::placeholder{
   color: rgba(57,255,20,0.65) !important;
 }
 html[data-theme="green"] .stButton > button,
-html[data-theme="green"] div[data-testid="stFormSubmitButton"] button,
-html[data-theme="green"] a.mailto-btn{
+html[data-theme="green"] div[data-testid="stFormSubmitButton"] button{
   color: var(--green) !important;
   border: 1px solid var(--border-green) !important;
   box-shadow: 0 0 0 1px rgba(57,255,20,0.10) inset !important;
 }
 html[data-theme="green"] .stButton > button:hover,
-html[data-theme="green"] div[data-testid="stFormSubmitButton"] button:hover,
-html[data-theme="green"] a.mailto-btn:hover{
+html[data-theme="green"] div[data-testid="stFormSubmitButton"] button:hover{
   background: rgba(57,255,20,0.08) !important;
 }
 </style>
@@ -533,8 +511,35 @@ st.divider()
 # Mailto draft builder (FREE)
 # -----------------------------
 def build_mailto_link(*, to_email: str, subject: str, body: str) -> str:
-    # Encode safely for mailto URL
     return f"mailto:{to_email}?subject={quote(subject)}&body={quote(body)}"
+
+def trigger_mailto_open(mailto_url: str) -> None:
+    # Attempt to open mail client automatically after clicking "Send message"
+    # (Some browsers may block it; this is still the closest “Send message opens mail client” behavior.)
+    html = f"""
+    <script>
+      (function() {{
+        const url = {mailto_url!r};
+        try {{
+          // Try top navigation first
+          window.top.location.href = url;
+        }} catch (e) {{
+          try {{
+            window.location.href = url;
+          }} catch (e2) {{}}
+        }}
+        // Fallback attempt (may be blocked by popup policy)
+        try {{
+          window.open(url, "_self");
+        }} catch (e3) {{}}
+      }})();
+    </script>
+    """
+    components.html(html, height=0)
+
+# Ensure we only auto-open once per successful submit (avoid re-opening on rerun)
+if "mailto_pending" not in st.session_state:
+    st.session_state["mailto_pending"] = None
 
 # -----------------------------
 # Main content
@@ -602,10 +607,6 @@ with left:
     st.markdown("## Contact")
     st.write("Send me a message directly from this page:")
 
-    # Store link after submission so we can show the "Open email draft" button
-    if "mailto_link" not in st.session_state:
-        st.session_state["mailto_link"] = None
-
     with st.form("contact_form", clear_on_submit=True):
         name = st.text_input("Name", placeholder="Your name")
         subject = st.text_input("Subject", placeholder="What is this about?")
@@ -617,17 +618,17 @@ with left:
         subject_s = (subject or "").strip()
         message_s = (message or "").strip()
 
+        # Require ALL fields
         if not name_s:
             st.error("Please enter your name.")
-            st.session_state["mailto_link"] = None
+            st.session_state["mailto_pending"] = None
         elif not subject_s:
             st.error("Please enter a subject.")
-            st.session_state["mailto_link"] = None
+            st.session_state["mailto_pending"] = None
         elif not message_s:
             st.error("Please enter a message.")
-            st.session_state["mailto_link"] = None
+            st.session_state["mailto_pending"] = None
         else:
-            # Build the email body. We omit visitor email as requested.
             body = (
                 "New website message\n\n"
                 f"Name: {name_s}\n"
@@ -640,19 +641,15 @@ with left:
                 subject=f"[Website] {subject_s}",
                 body=body,
             )
-            st.session_state["mailto_link"] = mailto
-            st.success("Ready ✅ Click the button below to open your email client with the message pre-filled.")
 
-    # Show the "Open email draft" button only when we have a valid draft
-    if st.session_state.get("mailto_link"):
-        st.markdown(
-            f"""
-<a class="mailto-btn" href="{st.session_state['mailto_link']}" target="_blank" rel="noopener">
-  Open email draft
-</a>
-            """.strip(),
-            unsafe_allow_html=True,
-        )
+            # Set pending mailto so we can trigger once after rerun
+            st.session_state["mailto_pending"] = mailto
+            st.success("Opening your email client…")
+
+    # Trigger the mail client open ONCE, then clear
+    if st.session_state.get("mailto_pending"):
+        trigger_mailto_open(st.session_state["mailto_pending"])
+        st.session_state["mailto_pending"] = None
 
 st.divider()
 st.caption("© 2026 Bernard Swanepoel")
