@@ -18,7 +18,7 @@ GITHUB_URL = "https://github.com/XoXoTheFrozenFox"
 EMAIL = "BernardSwanepoel1510@gmail.com"
 UNIVERSITY = "North-West University, Potchefstroom"
 
-STATIC_PREFIX = "Hi🌞, my name is Bernard Swanepoel. + " ""
+STATIC_PREFIX = "Hi🌞, my name is Bernard Swanepoel." + " "
 ROTATING = [" Masters student✏️", " Researcher🥸", " Computer Scientist💻"," Coffee addict☕"," Space enthusiast💫"]
 
 # -----------------------------
