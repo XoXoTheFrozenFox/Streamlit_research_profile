@@ -27,12 +27,14 @@ st.markdown(
 .block-container { padding-top: 2.2rem; padding-bottom: 2rem; }
 h1, h2, h3 { letter-spacing: -0.02em; }
 
+/* Top-left icon row */
 .icon-row{
   display:flex;
   gap:14px;
   align-items:center;
   flex-wrap:wrap;
   margin-top: 0.25rem;
+  margin-bottom: 0.75rem;
 }
 
 .icon-btn{
@@ -67,8 +69,6 @@ h1, h2, h3 { letter-spacing: -0.02em; }
 .icon-btn i{
   font-size: 18px;
 }
-
-div[data-testid="stAlert"]{ padding-top: 0.8rem; padding-bottom: 0.8rem; }
 </style>
 
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
@@ -77,31 +77,42 @@ div[data-testid="stAlert"]{ padding-top: 0.8rem; padding-bottom: 0.8rem; }
 )
 
 # -----------------------------
-# Header
+# Header (top-left buttons only, no extra text)
 # -----------------------------
+st.markdown(
+    f"""
+<div class="icon-row">
+  <a class="icon-btn" href="{PORTFOLIO_URL}" target="_blank" rel="noopener" title="Portfolio">
+    <i class="fa-solid fa-globe"></i>
+  </a>
+  <a class="icon-btn" href="{GITHUB_URL}" target="_blank" rel="noopener" title="GitHub">
+    <i class="fa-brands fa-github"></i>
+  </a>
+  <a class="icon-btn" href="{LINKEDIN_URL}" target="_blank" rel="noopener" title="LinkedIn">
+    <i class="fa-brands fa-linkedin-in"></i>
+  </a>
+  <a class="icon-btn" href="mailto:{EMAIL}" title="Email">
+    <i class="fa-solid fa-envelope"></i>
+  </a>
+  <a class="icon-btn" href="https://www.nwu.ac.za/" target="_blank" rel="noopener" title="North-West University">
+    <i class="fa-solid fa-building-columns"></i>
+  </a>
+</div>
+""",
+    unsafe_allow_html=True,
+)
+
+# Keep your name/title (minimal, not jargon)
 st.title(NAME)
 st.subheader(TAGLINE)
 
-col1, col3 = st.columns([1.4, 1.0], gap="large")
-
-with col1:
-    st.markdown(
-        f"""
-**Focus:** Automated sunspot classification using deep learning  
-**Interests:** Solar physics • Computer vision • Imbalanced learning • Explainability  
-**University:** {UNIVERSITY}  
-""".strip()
-    )
-
-with col3:
-    st.markdown("### Contact")
-    st.markdown(f"**Email:** {EMAIL}")
-    st.markdown(f"**University:** {UNIVERSITY}")
+# Optional minimal line (remove if you want *only* buttons + title)
+st.caption(UNIVERSITY)
 
 st.divider()
 
 # -----------------------------
-# Main content
+# Main content (unchanged)
 # -----------------------------
 left, right = st.columns([1.35, 1.0], gap="large")
 
@@ -123,8 +134,6 @@ with left:
     )
 
     st.markdown("## Highlights")
-    st.info("Replace these placeholders with your real results (macro-F1, dataset size, best model, key findings).")
-
     m1, m2, m3, m4 = st.columns(4)
     m1.metric("Best Macro-F1", "—")
     m2.metric("Classes", "—")
@@ -132,41 +141,7 @@ with left:
     m4.metric("Backbone", "—")
 
 with right:
-    st.markdown("## Links")
-    st.caption("Hover to invert colors ✨")
-
-    st.markdown(
-        f"""
-<div class="icon-row">
-  <a class="icon-btn" href="{PORTFOLIO_URL}" target="_blank" rel="noopener" title="Portfolio">
-    <i class="fa-solid fa-globe"></i>
-  </a>
-  <a class="icon-btn" href="{GITHUB_URL}" target="_blank" rel="noopener" title="GitHub">
-    <i class="fa-brands fa-github"></i>
-  </a>
-  <a class="icon-btn" href="{LINKEDIN_URL}" target="_blank" rel="noopener" title="LinkedIn">
-    <i class="fa-brands fa-linkedin-in"></i>
-  </a>
-  <a class="icon-btn" href="mailto:{EMAIL}" title="Email">
-    <i class="fa-solid fa-envelope"></i>
-  </a>
-  <a class="icon-btn" href="https://www.nwu.ac.za/" target="_blank" rel="noopener" title="North-West University">
-    <i class="fa-solid fa-building-columns"></i>
-  </a>
-</div>
-""",
-        unsafe_allow_html=True,
-    )
-
-    st.markdown("## Live profile")
-    st.write("If an embed gets blocked by headers, these buttons always work:")
-    r1, r2 = st.columns(2)
-    with r1:
-        st.link_button("🌍 Portfolio", PORTFOLIO_URL, use_container_width=True)
-        st.link_button("💼 LinkedIn", LINKEDIN_URL, use_container_width=True)
-    with r2:
-        st.link_button("💻 GitHub", GITHUB_URL, use_container_width=True)
-        st.link_button("✉️ Email me", f"mailto:{EMAIL}", use_container_width=True)
+    st.empty()  # keep right column blank / clean
 
 st.divider()
 st.caption("© 2026 Bernard Swanepoel • Built with Streamlit")
