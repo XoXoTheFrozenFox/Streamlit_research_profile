@@ -1,25 +1,100 @@
 from urllib.parse import quote
-
-import streamlit as st
-import streamlit.components.v1 as components
-
 import os
 import glob
-import time
+import json
 
 import numpy as np
 import pandas as pd
 import plotly.graph_objects as go
 
+import streamlit as st
+import streamlit.components.v1 as components
+
+
+# ============================================================
+# PAGE CONFIG (must be first Streamlit command)
+# Default theme = GREEN => default icon = 👽 (we also set a dynamic favicon via JS)
+# ============================================================
 st.set_page_config(
     page_title="Bernard Swanepoel — Research Profile",
-    page_icon="🌞",
+    page_icon="👽",
     layout="wide",
 )
 
-# -----------------------------
-# Links / info
-# -----------------------------
+
+# ============================================================
+# THEME SYNC (Python <-> topbar)
+# Uses URL query param: ?theme=orange|green|blue|pink
+# Default = green
+# ============================================================
+THEMES = {
+    "orange": {"hex": "#ff7a18", "rgba": "rgba(255,122,24,0.95)", "grid": "rgba(255,122,24,0.14)", "axis": "rgba(255,122,24,0.28)", "border": "rgba(255,122,24,0.45)"},
+    "green":  {"hex": "#39ff14", "rgba": "rgba(57,255,20,0.95)",  "grid": "rgba(57,255,20,0.14)",  "axis": "rgba(57,255,20,0.28)",  "border": "rgba(57,255,20,0.45)"},
+    "blue":   {"hex": "#00e7ff", "rgba": "rgba(0,231,255,0.95)",  "grid": "rgba(0,231,255,0.14)",  "axis": "rgba(0,231,255,0.28)",  "border": "rgba(0,231,255,0.45)"},
+    "pink":   {"hex": "#ff2bd6", "rgba": "rgba(255,43,214,0.95)", "grid": "rgba(255,43,214,0.14)", "axis": "rgba(255,43,214,0.28)", "border": "rgba(255,43,214,0.45)"},
+}
+
+THEME_EMOJI = {
+    "orange": "🌞",
+    "blue": "🌚",
+    "green": "👽",
+    "pink": "🛸",
+}
+
+def get_theme() -> str:
+    try:
+        t = st.query_params.get("theme", "green")
+        if isinstance(t, list):
+            t = t[0] if t else "green"
+        theme = str(t).strip().lower()
+    except Exception:
+        qp = st.experimental_get_query_params()
+        theme = (qp.get("theme", ["green"])[0] or "green").strip().lower()
+    return theme if theme in THEMES else "green"
+
+ACTIVE_THEME = get_theme()
+T = THEMES[ACTIVE_THEME]
+THEME_ICON = THEME_EMOJI.get(ACTIVE_THEME, "👽")
+
+
+# ============================================================
+# DYNAMIC FAVICON (tab icon) via JS (so it changes with theme)
+# ============================================================
+st.markdown(
+    f"""
+<script>
+(function() {{
+  const theme = {json.dumps(ACTIVE_THEME)};
+  const emojiMap = {{ orange:"🌞", blue:"🌚", green:"👽", pink:"🛸" }};
+  const em = emojiMap[theme] || "👽";
+
+  // Emoji favicon via SVG data URL
+  const svg = `
+    <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64">
+      <text y="50" x="6" font-size="52">${{em}}</text>
+    </svg>`;
+  const url = "data:image/svg+xml," + encodeURIComponent(svg);
+
+  let link = document.querySelector("link[rel*='icon']");
+  if (!link) {{
+    link = document.createElement("link");
+    link.rel = "icon";
+    document.head.appendChild(link);
+  }}
+  link.href = url;
+
+  // Also set data-theme on root for CSS
+  document.documentElement.setAttribute("data-theme", theme);
+}})();
+</script>
+""",
+    unsafe_allow_html=True,
+)
+
+
+# ============================================================
+# LINKS / INFO
+# ============================================================
 TAGLINE = ""
 
 PORTFOLIO_URL = "https://xoxothefrozenfox.github.io/react-personal-portfolio/"
@@ -27,7 +102,7 @@ LINKEDIN_URL = "https://www.linkedin.com/in/bernard-swanepoel-a2777322b/"
 GITHUB_URL = "https://github.com/XoXoTheFrozenFox"
 EMAIL = "BernardSwanepoel1510@gmail.com"
 
-STATIC_PREFIX = "Hi🌞, my name is Bernard Swanepoel. "
+STATIC_PREFIX = f"Hi{THEME_ICON}, my name is Bernard Swanepoel. "
 
 ROTATING = [
     "Masters student✏️",
@@ -37,61 +112,10 @@ ROTATING = [
     "Space enthusiast💫",
 ]
 
-# -----------------------------
-# Theme sync (Python <-> topbar)
-# Uses URL query param: ?theme=orange|green|blue|pink
-# -----------------------------
-THEMES = {
-    "orange": {
-        "color": "rgba(255,122,24,0.95)",
-        "grid": "rgba(255,122,24,0.14)",
-        "axis": "rgba(255,122,24,0.28)",
-        "border": "rgba(255,122,24,0.45)",
-    },
-    "green": {
-        "color": "rgba(57,255,20,0.95)",
-        "grid": "rgba(57,255,20,0.14)",
-        "axis": "rgba(57,255,20,0.28)",
-        "border": "rgba(57,255,20,0.45)",
-    },
-    "blue": {
-        "color": "rgba(0,231,255,0.95)",
-        "grid": "rgba(0,231,255,0.14)",
-        "axis": "rgba(0,231,255,0.28)",
-        "border": "rgba(0,231,255,0.45)",
-    },
-    "pink": {
-        "color": "rgba(255,43,214,0.95)",
-        "grid": "rgba(255,43,214,0.14)",
-        "axis": "rgba(255,43,214,0.28)",
-        "border": "rgba(255,43,214,0.45)",
-    },
-}
 
-def get_theme() -> str:
-    # Streamlit versions differ: support both APIs
-    try:
-        t = st.query_params.get("theme", "orange")
-        if isinstance(t, list):
-            t = t[0] if t else "orange"
-        theme = str(t).strip().lower()
-    except Exception:
-        qp = st.experimental_get_query_params()
-        theme = (qp.get("theme", ["orange"])[0] or "orange").strip().lower()
-
-    return theme if theme in THEMES else "orange"
-
-ACTIVE_THEME = get_theme()
-
-# Ensure the root html has the right theme attribute on load
-st.markdown(
-    f"<script>document.documentElement.setAttribute('data-theme', '{ACTIVE_THEME}');</script>",
-    unsafe_allow_html=True,
-)
-
-# -----------------------------
-# Global terminal aesthetic
-# -----------------------------
+# ============================================================
+# GLOBAL TERMINAL AESTHETIC (DEFAULT = GREEN)
+# ============================================================
 st.markdown(
     """
 <style>
@@ -100,7 +124,7 @@ st.markdown(
 footer {visibility: hidden;}
 header {visibility: hidden;}
 
-/* Remove the "chain/link" icon next to headings */
+/* Remove heading link icons */
 a.stMarkdownHeaderLink,
 a[data-testid="stHeaderLink"],
 [data-testid="stHeader"] a,
@@ -128,12 +152,12 @@ h1 a, h2 a, h3 a, h4 a, h5 a, h6 a {
   --panel: rgba(0,0,0,0.35);
 }
 
-/* Default theme = ORANGE */
+/* DEFAULT = GREEN */
 html, body, [data-testid="stAppViewContainer"]{
   background: var(--bg) !important;
-  color: var(--orange) !important;
+  color: var(--green) !important;
 }
-*{ color: var(--orange) !important; }
+*{ color: var(--green) !important; }
 
 .block-container{
   padding-top: 0.55rem !important;
@@ -143,7 +167,7 @@ html, body, [data-testid="stAppViewContainer"]{
 /* Divider */
 hr{
   border: none !important;
-  border-top: 1px solid var(--border-orange) !important;
+  border-top: 1px solid var(--border-green) !important;
   opacity: 1 !important;
   margin: 0.18rem 0 0.55rem 0 !important;
 }
@@ -151,7 +175,7 @@ hr{
 /* Metrics */
 div[data-testid="stMetric"]{
   background: var(--panel) !important;
-  border: 1px solid var(--border-orange) !important;
+  border: 1px solid var(--border-green) !important;
   border-radius: 14px !important;
   padding: 12px 12px !important;
   box-shadow: none !important;
@@ -160,11 +184,11 @@ div[data-testid="stMetric"]{
 /* Alerts */
 div[data-testid="stAlert"]{
   background: var(--panel) !important;
-  border: 1px solid var(--border-orange) !important;
+  border: 1px solid var(--border-green) !important;
   border-radius: 14px !important;
 }
 
-/* st.info bg (if ever used) */
+/* st.info bg */
 div[data-testid="stAlert"][data-baseweb="notification"]{
   background: #050505 !important;
 }
@@ -176,15 +200,12 @@ p, li, label, div{
   font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
 }
 
-/* -----------------------------
-   TRUE BLACK inputs + remove ANY red wrapper ring
------------------------------- */
+/* TRUE BLACK inputs + remove rings */
 div[data-testid="stTextInput"],
 div[data-testid="stTextArea"]{
   position: relative !important;
 }
 
-/* Kill wrapper borders/box-shadows */
 div[data-testid="stTextInput"] > div,
 div[data-testid="stTextArea"] > div,
 div[data-testid="stTextInput"] [data-baseweb],
@@ -212,18 +233,15 @@ div[data-testid="stTextInput"] [data-baseweb="base-input"]{
   outline: none !important;
 }
 
-/* Actual input/textarea = ONLY border you want */
+/* input border = GREEN default */
 div[data-testid="stTextInput"] input,
 div[data-testid="stTextArea"] textarea{
   background: var(--bg) !important;
-  color: var(--orange) !important;
-
-  border: 1px solid var(--border-orange) !important;
+  color: var(--green) !important;
+  border: 1px solid var(--border-green) !important;
   border-radius: 14px !important;
-
   box-shadow: none !important;
   outline: none !important;
-
   background-clip: padding-box !important;
 }
 
@@ -233,14 +251,14 @@ div[data-testid="stTextInput"] input:focus-visible,
 div[data-testid="stTextArea"] textarea:focus-visible,
 div[data-testid="stTextInput"] input[aria-invalid="true"],
 div[data-testid="stTextArea"] textarea[aria-invalid="true"]{
-  border: 1px solid var(--border-orange) !important;
+  border: 1px solid var(--border-green) !important;
   box-shadow: none !important;
   outline: none !important;
 }
 
 div[data-testid="stTextInput"] input::placeholder,
 div[data-testid="stTextArea"] textarea::placeholder{
-  color: rgba(255,122,24,0.65) !important;
+  color: rgba(57,255,20,0.65) !important;
 }
 
 /* Autofill */
@@ -248,12 +266,12 @@ div[data-testid="stTextInput"] input:-webkit-autofill,
 div[data-testid="stTextInput"] input:-webkit-autofill:hover,
 div[data-testid="stTextInput"] input:-webkit-autofill:focus{
   -webkit-box-shadow: 0 0 0 1000px var(--bg) inset !important;
-  -webkit-text-fill-color: var(--orange) !important;
-  caret-color: var(--orange) !important;
-  border: 1px solid var(--border-orange) !important;
+  -webkit-text-fill-color: var(--green) !important;
+  caret-color: var(--green) !important;
+  border: 1px solid var(--border-green) !important;
 }
 
-/* Bottom-right hint */
+/* Bottom-right "Field empty!" */
 div[data-testid="stTextInput"]:has(input:placeholder-shown):not(:focus-within)::after{
   content: "Field empty!";
   position: absolute;
@@ -273,17 +291,17 @@ div[data-testid="stTextArea"]:has(textarea:placeholder-shown):not(:focus-within)
   pointer-events: none;
 }
 
-/* Buttons */
+/* Buttons (default green) */
 .stButton > button, div[data-testid="stFormSubmitButton"] button{
   background: var(--bg) !important;
-  color: var(--orange) !important;
-  border: 1px solid var(--border-orange) !important;
+  color: var(--green) !important;
+  border: 1px solid var(--border-green) !important;
   border-radius: 14px !important;
   padding: 0.55rem 0.95rem !important;
   box-shadow: none !important;
 }
 .stButton > button:hover, div[data-testid="stFormSubmitButton"] button:hover{
-  background: rgba(255,122,24,0.08) !important;
+  background: rgba(57,255,20,0.08) !important;
 }
 
 /* Mailto button */
@@ -293,8 +311,8 @@ a.send-mailto-btn{
   justify-content: center;
   text-decoration: none !important;
   background: var(--bg) !important;
-  color: var(--orange) !important;
-  border: 1px solid var(--border-orange) !important;
+  color: var(--green) !important;
+  border: 1px solid var(--border-green) !important;
   border-radius: 14px !important;
   padding: 0.55rem 0.95rem !important;
   box-shadow: none !important;
@@ -303,7 +321,7 @@ a.send-mailto-btn{
   cursor: pointer;
 }
 a.send-mailto-btn:hover{
-  background: rgba(255,122,24,0.08) !important;
+  background: rgba(57,255,20,0.08) !important;
   transform: translateY(-1px);
 }
 a.send-mailto-btn.is-disabled{
@@ -313,63 +331,41 @@ a.send-mailto-btn.is-disabled{
   transform: none !important;
 }
 
-/* -----------------------------
-   THEME OVERRIDES (Green / Blue / Pink)
------------------------------- */
-
-/* GREEN */
-html[data-theme="green"] body,
-html[data-theme="green"] [data-testid="stAppViewContainer"]{ color: var(--green) !important; }
-html[data-theme="green"] *{ color: var(--green) !important; }
-html[data-theme="green"] hr{ border-top: 1px solid var(--border-green) !important; }
-html[data-theme="green"] div[data-testid="stMetric"],
-html[data-theme="green"] div[data-testid="stAlert"]{ border: 1px solid var(--border-green) !important; }
-
-html[data-theme="green"] div[data-testid="stTextInput"] input,
-html[data-theme="green"] div[data-testid="stTextArea"] textarea{
-  color: var(--green) !important;
-  border: 1px solid var(--border-green) !important;
+/* ORANGE OVERRIDE */
+html[data-theme="orange"] body,
+html[data-theme="orange"] [data-testid="stAppViewContainer"]{ color: var(--orange) !important; }
+html[data-theme="orange"] *{ color: var(--orange) !important; }
+html[data-theme="orange"] hr{ border-top: 1px solid var(--border-orange) !important; }
+html[data-theme="orange"] div[data-testid="stMetric"],
+html[data-theme="orange"] div[data-testid="stAlert"]{ border: 1px solid var(--border-orange) !important; }
+html[data-theme="orange"] div[data-testid="stTextInput"] input,
+html[data-theme="orange"] div[data-testid="stTextArea"] textarea{
+  color: var(--orange) !important;
+  border: 1px solid var(--border-orange) !important;
 }
-html[data-theme="green"] div[data-testid="stTextInput"] input:focus,
-html[data-theme="green"] div[data-testid="stTextArea"] textarea:focus,
-html[data-theme="green"] div[data-testid="stTextInput"] input[aria-invalid="true"],
-html[data-theme="green"] div[data-testid="stTextArea"] textarea[aria-invalid="true"]{
-  border: 1px solid var(--border-green) !important;
-  box-shadow: none !important;
-  outline: none !important;
+html[data-theme="orange"] div[data-testid="stTextInput"] input::placeholder,
+html[data-theme="orange"] div[data-testid="stTextArea"] textarea::placeholder{ color: rgba(255,122,24,0.65) !important; }
+html[data-theme="orange"] .stButton > button,
+html[data-theme="orange"] div[data-testid="stFormSubmitButton"] button,
+html[data-theme="orange"] a.send-mailto-btn{
+  color: var(--orange) !important;
+  border: 1px solid var(--border-orange) !important;
 }
-html[data-theme="green"] div[data-testid="stTextInput"] input::placeholder,
-html[data-theme="green"] div[data-testid="stTextArea"] textarea::placeholder{ color: rgba(57,255,20,0.65) !important; }
-html[data-theme="green"] .stButton > button,
-html[data-theme="green"] div[data-testid="stFormSubmitButton"] button,
-html[data-theme="green"] a.send-mailto-btn{
-  color: var(--green) !important;
-  border: 1px solid var(--border-green) !important;
-}
-html[data-theme="green"] .stButton > button:hover,
-html[data-theme="green"] div[data-testid="stFormSubmitButton"] button:hover,
-html[data-theme="green"] a.send-mailto-btn:hover{ background: rgba(57,255,20,0.08) !important; }
+html[data-theme="orange"] .stButton > button:hover,
+html[data-theme="orange"] div[data-testid="stFormSubmitButton"] button:hover,
+html[data-theme="orange"] a.send-mailto-btn:hover{ background: rgba(255,122,24,0.08) !important; }
 
-/* BLUE */
+/* BLUE OVERRIDE */
 html[data-theme="blue"] body,
 html[data-theme="blue"] [data-testid="stAppViewContainer"]{ color: var(--blue) !important; }
 html[data-theme="blue"] *{ color: var(--blue) !important; }
 html[data-theme="blue"] hr{ border-top: 1px solid var(--border-blue) !important; }
 html[data-theme="blue"] div[data-testid="stMetric"],
 html[data-theme="blue"] div[data-testid="stAlert"]{ border: 1px solid var(--border-blue) !important; }
-
 html[data-theme="blue"] div[data-testid="stTextInput"] input,
 html[data-theme="blue"] div[data-testid="stTextArea"] textarea{
   color: var(--blue) !important;
   border: 1px solid var(--border-blue) !important;
-}
-html[data-theme="blue"] div[data-testid="stTextInput"] input:focus,
-html[data-theme="blue"] div[data-testid="stTextArea"] textarea:focus,
-html[data-theme="blue"] div[data-testid="stTextInput"] input[aria-invalid="true"],
-html[data-theme="blue"] div[data-testid="stTextArea"] textarea[aria-invalid="true"]{
-  border: 1px solid var(--border-blue) !important;
-  box-shadow: none !important;
-  outline: none !important;
 }
 html[data-theme="blue"] div[data-testid="stTextInput"] input::placeholder,
 html[data-theme="blue"] div[data-testid="stTextArea"] textarea::placeholder{ color: rgba(0,231,255,0.65) !important; }
@@ -383,26 +379,17 @@ html[data-theme="blue"] .stButton > button:hover,
 html[data-theme="blue"] div[data-testid="stFormSubmitButton"] button:hover,
 html[data-theme="blue"] a.send-mailto-btn:hover{ background: rgba(0,231,255,0.08) !important; }
 
-/* PINK */
+/* PINK OVERRIDE */
 html[data-theme="pink"] body,
 html[data-theme="pink"] [data-testid="stAppViewContainer"]{ color: var(--pink) !important; }
 html[data-theme="pink"] *{ color: var(--pink) !important; }
 html[data-theme="pink"] hr{ border-top: 1px solid var(--border-pink) !important; }
 html[data-theme="pink"] div[data-testid="stMetric"],
 html[data-theme="pink"] div[data-testid="stAlert"]{ border: 1px solid var(--border-pink) !important; }
-
 html[data-theme="pink"] div[data-testid="stTextInput"] input,
 html[data-theme="pink"] div[data-testid="stTextArea"] textarea{
   color: var(--pink) !important;
   border: 1px solid var(--border-pink) !important;
-}
-html[data-theme="pink"] div[data-testid="stTextInput"] input:focus,
-html[data-theme="pink"] div[data-testid="stTextArea"] textarea:focus,
-html[data-theme="pink"] div[data-testid="stTextInput"] input[aria-invalid="true"],
-html[data-theme="pink"] div[data-testid="stTextArea"] textarea[aria-invalid="true"]{
-  border: 1px solid var(--border-pink) !important;
-  box-shadow: none !important;
-  outline: none !important;
 }
 html[data-theme="pink"] div[data-testid="stTextInput"] input::placeholder,
 html[data-theme="pink"] div[data-testid="stTextArea"] textarea::placeholder{ color: rgba(255,43,214,0.65) !important; }
@@ -420,9 +407,10 @@ html[data-theme="pink"] a.send-mailto-btn:hover{ background: rgba(255,43,214,0.0
     unsafe_allow_html=True,
 )
 
-# -----------------------------
-# Topbar component (cycles theme and writes ?theme=... then reloads)
-# -----------------------------
+
+# ============================================================
+# TOPBAR (theme toggle updates ?theme=... and reloads)
+# ============================================================
 topbar_html = f"""
 <!doctype html>
 <html>
@@ -452,15 +440,16 @@ topbar_html = f"""
     margin: 0;
     padding: 10px 8px 12px 8px;
     background: transparent;
-    color: var(--orange);
+    color: var(--green);
     font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono",
                  "Courier New", "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", monospace;
     box-sizing: border-box;
   }}
 
-  html[data-theme="green"] body {{ color: var(--green); }}
-  html[data-theme="blue"]  body {{ color: var(--blue); }}
-  html[data-theme="pink"]  body {{ color: var(--pink); }}
+  html[data-theme="orange"] body {{ color: var(--orange); }}
+  html[data-theme="green"] body  {{ color: var(--green); }}
+  html[data-theme="blue"]  body  {{ color: var(--blue); }}
+  html[data-theme="pink"]  body  {{ color: var(--pink); }}
 
   #wrap {{
     width: 100%;
@@ -526,9 +515,9 @@ topbar_html = f"""
     color: currentColor;
 
     box-sizing: border-box;
-    border:1px solid var(--border-orange);
+    border:1px solid var(--border-green);
     background: rgba(0,0,0,0.25);
-    box-shadow: 0 0 0 1px rgba(255,122,24,0.12) inset, 0 10px 22px rgba(0,0,0,0.35);
+    box-shadow: 0 0 0 1px rgba(57,255,20,0.12) inset, 0 10px 22px rgba(0,0,0,0.35);
     transition: transform 140ms ease, background 140ms ease, border-color 140ms ease, box-shadow 140ms ease;
     -webkit-tap-highlight-color: transparent;
     user-select:none;
@@ -539,6 +528,10 @@ topbar_html = f"""
     padding: 0;
   }}
 
+  html[data-theme="orange"] a.icon-btn, html[data-theme="orange"] button.icon-btn {{
+    border-color: var(--border-orange);
+    box-shadow: 0 0 0 1px rgba(255,122,24,0.12) inset, 0 10px 22px rgba(0,0,0,0.35);
+  }}
   html[data-theme="green"] a.icon-btn, html[data-theme="green"] button.icon-btn {{
     border-color: var(--border-green);
     box-shadow: 0 0 0 1px rgba(57,255,20,0.12) inset, 0 10px 22px rgba(0,0,0,0.35);
@@ -559,12 +552,12 @@ topbar_html = f"""
 
   a.icon-btn:hover, button.icon-btn:hover {{
     transform: translateY(-1px);
-    background: rgba(255,122,24,0.12);
-    box-shadow: 0 0 12px rgba(255,122,24,0.18), 0 10px 18px rgba(0,0,0,0.45);
-  }}
-  html[data-theme="green"] a.icon-btn:hover, html[data-theme="green"] button.icon-btn:hover {{
     background: rgba(57,255,20,0.12);
     box-shadow: 0 0 12px rgba(57,255,20,0.18), 0 10px 18px rgba(0,0,0,0.45);
+  }}
+  html[data-theme="orange"] a.icon-btn:hover, html[data-theme="orange"] button.icon-btn:hover {{
+    background: rgba(255,122,24,0.12);
+    box-shadow: 0 0 12px rgba(255,122,24,0.18), 0 10px 18px rgba(0,0,0,0.45);
   }}
   html[data-theme="blue"] a.icon-btn:hover, html[data-theme="blue"] button.icon-btn:hover {{
     background: rgba(0,231,255,0.12);
@@ -654,7 +647,7 @@ topbar_html = f"""
       </div>
 
       <div class="icon-row">
-        <button class="icon-btn" id="themeToggle" type="button" title="Toggle theme (Orange/Green/Blue/Pink)">
+        <button class="icon-btn" id="themeToggle" type="button" title="Toggle theme (Green → Blue → Pink → Orange)">
           <i class="fa-solid fa-palette"></i>
         </button>
 
@@ -675,10 +668,12 @@ topbar_html = f"""
 <script>
 (function () {{
   const wrap = document.getElementById("wrap");
-  const themes = ["orange", "green", "blue", "pink"];
+
+  // Default cycle starts at GREEN
+  const themes = ["green", "blue", "pink", "orange"];
 
   function setTheme(theme) {{
-    const t = themes.includes(theme) ? theme : "orange";
+    const t = themes.includes(theme) ? theme : "green";
     document.documentElement.setAttribute("data-theme", t);
     try {{
       if (window.parent && window.parent.document) {{
@@ -687,17 +682,16 @@ topbar_html = f"""
     }} catch (e) {{}}
   }}
 
-  // init from server (python)
   const initialTheme = {ACTIVE_THEME!r};
   setTheme(initialTheme);
 
   const toggleBtn = document.getElementById("themeToggle");
   toggleBtn.addEventListener("click", function () {{
-    const cur = document.documentElement.getAttribute("data-theme") || "orange";
+    const cur = document.documentElement.getAttribute("data-theme") || "green";
     const i = themes.indexOf(cur);
     const next = themes[(i + 1 + themes.length) % themes.length];
 
-    // write ?theme=next then reload (so Python can match plot colors)
+    // write ?theme=next then reload (python picks it up, plot colors match)
     try {{
       const url = new URL(window.parent.location.href);
       url.searchParams.set("theme", next);
@@ -796,22 +790,19 @@ topbar_html = f"""
 components.html(topbar_html, height=93)
 st.divider()
 
-# -----------------------------
-# Mailto builder
-# -----------------------------
+
+# ============================================================
+# MAILTO BUILDER
+# ============================================================
 def build_mailto(to_email: str, subject: str, body: str) -> str:
     return f"mailto:{to_email}?subject={quote(subject)}&body={quote(body)}"
 
-# -----------------------------
-# Spectrum helpers
-# -----------------------------
+
+# ============================================================
+# SPECTRUM HELPERS
+# ============================================================
 @st.cache_data(show_spinner=False)
 def read_spectrum_csv(folder: str) -> pd.DataFrame:
-    """
-    Expects exactly 1 CSV inside data/<CLASS>/.
-    Columns: wavelength_A, flux, ivar
-    Handles comma / tab / whitespace delimited files.
-    """
     paths = sorted(glob.glob(os.path.join(folder, "*.csv")))
     if not paths:
         raise FileNotFoundError(f"No CSV found in: {folder}")
@@ -840,88 +831,160 @@ def read_spectrum_csv(folder: str) -> pd.DataFrame:
         raise ValueError(f"Expected columns wavelength_A/flux/ivar. Got: {list(df.columns)}")
 
     out = df[[col_w, col_f, col_i]].rename(columns={col_w: "wavelength_A", col_f: "flux", col_i: "ivar"}).copy()
-
     out["wavelength_A"] = pd.to_numeric(out["wavelength_A"], errors="coerce")
     out["flux"] = pd.to_numeric(out["flux"], errors="coerce")
-
     out = out.dropna(subset=["wavelength_A", "flux"])
     out = out.sort_values("wavelength_A").reset_index(drop=True)
     return out
 
-def make_fig(df: pd.DataFrame, n_scatter: int, n_line: int, title: str, theme_key: str) -> go.Figure:
-    theme = THEMES.get(theme_key, THEMES["orange"])
-    line_color = theme["color"]
+
+def build_animated_plotly_payload(df: pd.DataFrame, title: str, theme_key: str) -> dict:
+    theme = THEMES.get(theme_key, THEMES["green"])
+    line_color = theme["rgba"]
     grid_color = theme["grid"]
     axis_color = theme["axis"]
 
     x = df["wavelength_A"].to_numpy()
     y = df["flux"].to_numpy()
+    N = len(df)
 
-    n_scatter = int(np.clip(n_scatter, 2, len(df)))
-    n_line = int(np.clip(n_line, 0, len(df)))
+    # Keep animation light (browser-side)
+    n_frames_points = 26
+    n_frames_line = 26
 
-    fig = go.Figure()
+    # Indices for frames
+    pts_idx = np.unique(np.clip(np.round(np.linspace(max(10, int(N * 0.05)), N, n_frames_points)).astype(int), 2, N))
+    ln_idx = np.unique(np.clip(np.round(np.linspace(2, N, n_frames_line)).astype(int), 2, N))
 
-    fig.add_trace(
-        go.Scattergl(
-            x=x[:n_scatter],
-            y=y[:n_scatter],
-            mode="markers",
-            marker=dict(size=4, opacity=0.95, color=line_color),
-            hovertemplate="λ=%{x:.1f} Å<br>flux=%{y:.4f}<extra></extra>",
-        )
-    )
+    # Base traces (start small)
+    base_scatter_n = int(pts_idx[0]) if len(pts_idx) else min(N, 100)
 
-    if n_line > 0:
-        fig.add_trace(
-            go.Scattergl(
-                x=x[:n_line],
-                y=y[:n_line],
-                mode="lines",
-                line=dict(width=2.2, color=line_color),
-                hoverinfo="skip",
-            )
-        )
+    data = [
+        {
+            "type": "scattergl",
+            "mode": "markers",
+            "x": x[:base_scatter_n].tolist(),
+            "y": y[:base_scatter_n].tolist(),
+            "marker": {"size": 4, "opacity": 0.95, "color": line_color},
+            "hovertemplate": "λ=%{x:.1f} Å<br>flux=%{y:.4f}<extra></extra>",
+            "name": "samples",
+        },
+        {
+            "type": "scattergl",
+            "mode": "lines",
+            "x": [], "y": [],
+            "line": {"width": 2.2, "color": line_color},
+            "hoverinfo": "skip",
+            "name": "trace",
+        },
+    ]
 
-    fig.update_layout(
-        title=dict(text=title, x=0.02, xanchor="left"),
-        paper_bgcolor="#050505",
-        plot_bgcolor="#050505",
-        margin=dict(l=22, r=18, t=52, b=40),
-        font=dict(
-            family='ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace',
-            color=line_color,
-            size=13,
-        ),
-        showlegend=False,
-    )
+    layout = {
+        "title": {"text": title, "x": 0.02, "xanchor": "left"},
+        "paper_bgcolor": "#050505",
+        "plot_bgcolor": "#050505",
+        "margin": {"l": 22, "r": 18, "t": 52, "b": 40},
+        "font": {
+            "family": 'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace',
+            "color": line_color,
+            "size": 13,
+        },
+        "showlegend": False,
+        "xaxis": {
+            "title": {"text": "wavelength (Å)"},
+            "showgrid": True,
+            "gridcolor": grid_color,
+            "zeroline": False,
+            "ticks": "outside",
+            "tickcolor": axis_color,
+            "linecolor": axis_color,
+            "mirror": True,
+        },
+        "yaxis": {
+            "title": {"text": "flux"},
+            "showgrid": True,
+            "gridcolor": grid_color,
+            "zeroline": False,
+            "ticks": "outside",
+            "tickcolor": axis_color,
+            "linecolor": axis_color,
+            "mirror": True,
+        },
+    }
 
-    fig.update_xaxes(
-        title_text="wavelength (Å)",
-        showgrid=True,
-        gridcolor=grid_color,
-        zeroline=False,
-        ticks="outside",
-        tickcolor=axis_color,
-        linecolor=axis_color,
-        mirror=True,
-    )
-    fig.update_yaxes(
-        title_text="flux",
-        showgrid=True,
-        gridcolor=grid_color,
-        zeroline=False,
-        ticks="outside",
-        tickcolor=axis_color,
-        linecolor=axis_color,
-        mirror=True,
-    )
+    frames = []
+    frame_id = 0
 
-    return fig
+    # Phase 1: reveal points
+    for n in pts_idx:
+        frames.append({
+            "name": f"f{frame_id}",
+            "data": [
+                {"x": x[:n].tolist(), "y": y[:n].tolist()},
+                {"x": [], "y": []},
+            ]
+        })
+        frame_id += 1
 
-# -----------------------------
-# Main content
-# -----------------------------
+    # Phase 2: reveal line (points already full)
+    for n in ln_idx:
+        frames.append({
+            "name": f"f{frame_id}",
+            "data": [
+                {"x": x[:N].tolist(), "y": y[:N].tolist()},
+                {"x": x[:n].tolist(), "y": y[:n].tolist()},
+            ]
+        })
+        frame_id += 1
+
+    return {"data": data, "layout": layout, "frames": frames}
+
+
+def render_plotly_html(payload: dict, div_id: str, autoplay: bool) -> str:
+    # NOTE: include_plotlyjs=cdn keeps it lightweight for Streamlit Cloud
+    payload_json = json.dumps(payload)
+    autoplay_js = "true" if autoplay else "false"
+
+    return f"""
+<div id="{div_id}" style="width: 100%;"></div>
+<script src="https://cdn.plot.ly/plotly-2.30.0.min.js"></script>
+<script>
+(function() {{
+  const payload = {payload_json};
+  const divId = {json.dumps(div_id)};
+  const autoplay = {autoplay_js};
+
+  const config = {{
+    displayModeBar: false,
+    responsive: true
+  }};
+
+  const el = document.getElementById(divId);
+
+  // Render once
+  Plotly.newPlot(el, payload.data, payload.layout, config).then(() => {{
+    if (payload.frames && payload.frames.length) {{
+      Plotly.addFrames(el, payload.frames).then(() => {{
+        if (autoplay) {{
+          // Smooth, browser-side animation (no Streamlit reruns, no flicker)
+          Plotly.animate(el, null, {{
+            transition: {{ duration: 35, easing: "cubic-in-out" }},
+            frame: {{ duration: 35, redraw: false }},
+            mode: "immediate"
+          }});
+        }}
+      }});
+    }}
+  }});
+
+}})();
+</script>
+"""
+
+
+# ============================================================
+# MAIN CONTENT
+# ============================================================
 left, right = st.columns([1.35, 1.0], gap="large")
 
 with left:
@@ -933,9 +996,6 @@ with left:
         "I sing opera, and I enjoy 3D printing—mostly figures and fun prints."
     )
 
-    # -----------------------------
-    # Education section (ONE-LINE BULLETS)
-    # -----------------------------
     st.markdown("## Education")
     st.markdown(
         """
@@ -943,7 +1003,7 @@ with left:
 - **BSc Hons Computer Science and Information Technology** — NWU *(2023–2024)*  
 - **BSc Information Technology** — NWU *(2021–2023)*  
 - **TEFL (180 hours)** — i-to-i *(2023)*  
-- **Matric certificate** — Wesvalia *(2016–2020)*  
+- **Matric certificate** — Wesvalia *(2016–2020)*
         """.strip()
     )
 
@@ -1008,25 +1068,22 @@ The distribution and characteristics of the seven spectral classes can be visual
         """.strip()
     )
 
-    # -----------------------------
-    # Hobby project: Spectrum explorer (FIXED + theme-colored)
-    # -----------------------------
+    # ------------------------------------------------------------
+    # Spectrum viewer (NO flicker): browser-side Plotly animation
+    # ------------------------------------------------------------
     st.markdown(
         """
 <style>
-/* Make the selectbox compact */
 div[data-testid="stSelectbox"]{
   max-width: 230px !important;
 }
 div[data-testid="stSelectbox"] label{
   display:none !important;
 }
-
-/* Fancy plot wrapper */
 .spectrum-wrap{
   border: 1px solid rgba(255,255,255,0.10);
   border-radius: 16px;
-  padding: 12px 12px 6px 12px;
+  padding: 12px 12px 10px 12px;
   background: rgba(0,0,0,0.28);
   margin-top: 8px;
   margin-bottom: 6px;
@@ -1061,9 +1118,6 @@ div[data-testid="stSelectbox"] label{
             unsafe_allow_html=True,
         )
 
-    plot_slot = st.empty()
-
-    # No animation on first render; animate only when selection changes
     if "prev_spec_class" not in st.session_state:
         st.session_state.prev_spec_class = spec_class
         st.session_state.spec_initialized = False
@@ -1076,45 +1130,34 @@ div[data-testid="stSelectbox"] label{
     try:
         df_spec = read_spectrum_csv(class_dir)
     except Exception as e:
-        plot_slot.error(f"Could not load spectrum for class '{spec_class}' from '{class_dir}': {e}")
+        st.error(f"Could not load spectrum for class '{spec_class}' from '{class_dir}': {e}")
         df_spec = None
 
     if df_spec is not None:
         title = f"$ MK spectral class {spec_class} — spectrum"
-        N = len(df_spec)
 
-        if not st.session_state.spec_initialized:
-            fig = make_fig(df_spec, n_scatter=N, n_line=N, title=title, theme_key=ACTIVE_THEME)
-            plot_slot.plotly_chart(fig, use_container_width=True, config={"displayModeBar": False})
-            st.session_state.spec_initialized = True
+        # No animation first render
+        autoplay = bool(st.session_state.spec_initialized and changed)
 
-        elif changed:
-            frames = 56
-            sleep_s = 0.016
+        payload = build_animated_plotly_payload(df_spec, title=title, theme_key=ACTIVE_THEME)
 
-            # Phase 1: reveal points
-            for k in range(2, frames + 1):
-                n_scatter = int(np.interp(k, [2, frames], [max(16, N * 0.06), N]))
-                fig = make_fig(df_spec, n_scatter=n_scatter, n_line=0, title=title, theme_key=ACTIVE_THEME)
-                plot_slot.plotly_chart(fig, use_container_width=True, config={"displayModeBar": False})
-                time.sleep(sleep_s)
+        # If no autoplay, just show the final state by forcing the last frame as initial
+        if not autoplay and payload["frames"]:
+            # set base data to final frame to render instantly
+            last = payload["frames"][-1]["data"]
+            payload["data"][0]["x"] = last[0]["x"]
+            payload["data"][0]["y"] = last[0]["y"]
+            payload["data"][1]["x"] = last[1]["x"]
+            payload["data"][1]["y"] = last[1]["y"]
 
-            # Phase 2: draw the line through
-            for k in range(2, frames + 1):
-                n_line = int(np.interp(k, [2, frames], [2, N]))
-                fig = make_fig(df_spec, n_scatter=N, n_line=n_line, title=title, theme_key=ACTIVE_THEME)
-                plot_slot.plotly_chart(fig, use_container_width=True, config={"displayModeBar": False})
-                time.sleep(sleep_s)
+        chart_div_id = f"spectrum_plot_{spec_class}_{ACTIVE_THEME}"
+        html = render_plotly_html(payload, div_id=chart_div_id, autoplay=autoplay)
 
-        else:
-            fig = make_fig(df_spec, n_scatter=N, n_line=N, title=title, theme_key=ACTIVE_THEME)
-            plot_slot.plotly_chart(fig, use_container_width=True, config={"displayModeBar": False})
+        components.html(html, height=460, scrolling=False)
 
-    st.session_state.prev_spec_class = spec_class
+        st.session_state.spec_initialized = True
+        st.session_state.prev_spec_class = spec_class
 
-    # -----------------------------
-    # Rest of your content
-    # -----------------------------
     st.markdown("## Hobby project: Metrics and visualisation")
     m1, m2, m3, m4 = st.columns(4)
     m1.metric("Best Macro-F1", "—")
@@ -1134,7 +1177,6 @@ div[data-testid="stSelectbox"] label{
     name_s = (name or "").strip()
     subject_s = (subject or "").strip()
     message_s = (message or "").strip()
-
     ready = bool(name_s and subject_s and message_s)
 
     if ready:
