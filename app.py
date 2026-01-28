@@ -428,7 +428,7 @@ topbar_html = f"""
 """
 
 # Give enough initial height so nothing clips while JS measures
-components.html(topbar_html, height=220)
+components.html(topbar_html, height=90)
 
 st.divider()
 
