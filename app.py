@@ -30,7 +30,8 @@ ROTATING = [
 
 # -----------------------------
 # Global terminal aesthetic (whole Streamlit page)
-# + HIDE Streamlit chrome (menu/footer/header)
+# Default theme = neon ORANGE, toggle => neon GREEN
+# Hide Streamlit chrome
 # -----------------------------
 st.markdown(
     """
@@ -69,6 +70,7 @@ hr{
   margin: 0.18rem 0 0.55rem 0 !important;
 }
 
+/* Terminal-ish cards */
 div[data-testid="stMetric"]{
   background: rgba(0,0,0,0.35) !important;
   border: 1px solid var(--border-orange) !important;
@@ -76,7 +78,6 @@ div[data-testid="stMetric"]{
   padding: 12px 12px !important;
   box-shadow: 0 0 0 1px rgba(255,122,24,0.10) inset;
 }
-
 div[data-testid="stAlert"]{
   background: rgba(0,0,0,0.35) !important;
   border: 1px solid var(--border-orange) !important;
@@ -86,14 +87,16 @@ p, li{
   font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
 }
 
-/* Code blocks look like terminal blocks */
+/* One big terminal block style */
 pre{
   background: rgba(0,0,0,0.35) !important;
   border: 1px solid var(--border-orange) !important;
-  border-radius: 14px !important;
-  padding: 12px 14px !important;
+  border-radius: 16px !important;
+  padding: 14px 16px !important;
   overflow-x: auto !important;
   box-shadow: 0 0 0 1px rgba(255,122,24,0.10) inset;
+  margin-top: 0.4rem !important;
+  margin-bottom: 0.9rem !important;
 }
 code{
   color: inherit !important;
@@ -129,6 +132,9 @@ html[data-theme="green"] pre{
 
 # -----------------------------
 # Topbar component
+# - Theme toggle button left of portfolio button
+# - No infinite scroll in iframe resize
+# - Mobile bottom-edge clipping fixed
 # -----------------------------
 topbar_html = f"""
 <!doctype html>
@@ -227,9 +233,7 @@ topbar_html = f"""
     justify-content:center;
     text-decoration:none;
     color: currentColor;
-
     box-sizing: border-box;
-
     border:1px solid var(--border-orange);
     background: rgba(0,0,0,0.25);
     box-shadow: 0 0 0 1px rgba(255,122,24,0.12) inset, 0 10px 22px rgba(0,0,0,0.35);
@@ -237,7 +241,6 @@ topbar_html = f"""
     -webkit-tap-highlight-color: transparent;
     user-select:none;
     cursor: pointer;
-
     line-height: 1;
     overflow: visible;
     padding: 0;
@@ -326,22 +329,6 @@ topbar_html = f"""
       margin-top: 6px;
     }}
   }}
-
-  @media (hover: none) and (pointer: coarse) {{
-    a.icon-btn:hover, button.icon-btn:hover {{
-      transform:none;
-      background: rgba(0,0,0,0.25);
-      box-shadow: 0 0 0 1px rgba(255,122,24,0.12) inset, 0 10px 22px rgba(0,0,0,0.35);
-    }}
-    html[data-theme="green"] a.icon-btn:hover,
-    html[data-theme="green"] button.icon-btn:hover {{
-      box-shadow: 0 0 0 1px rgba(57,255,20,0.12) inset, 0 10px 22px rgba(0,0,0,0.35);
-    }}
-
-    a.icon-btn:active, button.icon-btn:active {{
-      transform: scale(0.98);
-    }}
-  }}
 </style>
 </head>
 
@@ -382,6 +369,7 @@ topbar_html = f"""
 (function () {{
   const wrap = document.getElementById("wrap");
 
+  // Theme sync (orange default; toggle -> green)
   function setTheme(theme) {{
     const t = (theme === "green") ? "green" : "orange";
     document.documentElement.setAttribute("data-theme", t);
@@ -400,13 +388,12 @@ topbar_html = f"""
 
   const toggleBtn = document.getElementById("themeToggle");
   setTheme(getSavedTheme());
-
   toggleBtn.addEventListener("click", function () {{
     const cur = document.documentElement.getAttribute("data-theme") || "orange";
     setTheme(cur === "green" ? "orange" : "green");
   }});
 
-  // resize without infinite growth
+  // Resize without infinite growth
   function getHeight() {{
     const b = wrap.getBoundingClientRect().height;
     const sh = wrap.scrollHeight;
@@ -435,36 +422,24 @@ topbar_html = f"""
     childList: true, subtree: true, characterData: true
   }});
 
-  // typing
+  // Typing
   const staticPrefix = {STATIC_PREFIX!r};
   const words = {ROTATING!r};
-
   const prefixEl = document.getElementById("prefix");
   const wordEl = document.getElementById("word");
   prefixEl.textContent = staticPrefix;
 
-  let idx = 0;
-  let char = 0;
-  let deleting = false;
-
-  const typeSpeed = 45;
-  const deleteSpeed = 25;
-  const holdFull = 900;
-  const holdEmpty = 260;
+  let idx = 0, char = 0, deleting = false;
+  const typeSpeed = 45, deleteSpeed = 25, holdFull = 900, holdEmpty = 260;
 
   function step() {{
     const glyphs = Array.from(words[idx]);
-
     if (!deleting) {{
       char++;
       wordEl.textContent = glyphs.slice(0, char).join("");
       resizeFrame();
-
       if (char >= glyphs.length) {{
-        setTimeout(() => {{
-          deleting = true;
-          step();
-        }}, holdFull);
+        setTimeout(() => {{ deleting = true; step(); }}, holdFull);
         return;
       }}
       setTimeout(step, typeSpeed);
@@ -472,7 +447,6 @@ topbar_html = f"""
       char--;
       wordEl.textContent = glyphs.slice(0, Math.max(0, char)).join("");
       resizeFrame();
-
       if (char <= 0) {{
         deleting = false;
         idx = (idx + 1) % words.length;
@@ -482,17 +456,8 @@ topbar_html = f"""
       setTimeout(step, deleteSpeed);
     }}
   }}
-
   wordEl.textContent = "";
   step();
-
-  function blurActive() {{
-    try {{ document.activeElement && document.activeElement.blur && document.activeElement.blur(); }} catch(e) {{}}
-  }}
-  window.addEventListener("pageshow", blurActive);
-  document.addEventListener("visibilitychange", function() {{
-    if (!document.hidden) blurActive();
-  }});
 
   setTimeout(resizeFrame, 120);
   setTimeout(resizeFrame, 350);
@@ -507,15 +472,15 @@ components.html(topbar_html, height=93)
 st.divider()
 
 # -----------------------------
-# Fake terminal / linux command blocks before each section
+# One big terminal: cat each "file"
 # -----------------------------
 BASE = "Person@Interest:/Bernard"
 
 UBUNTU_BANNER = [
     "Welcome to Ubuntu 22.04.3 LTS (GNU/Linux 6.5.0-xx-generic x86_64)",
     "",
-    " * Documentation:  help.ubuntu.com",
-    " * Management:     landscape.canonical.com",
+    " * Documentation:  https://help.ubuntu.com",
+    " * Management:     https://landscape.canonical.com",
     "",
 ]
 
@@ -524,38 +489,63 @@ def _safe_path_segment(title: str) -> str:
     seg = re.sub(r"\s+", "_", seg)
     return seg if seg else "Section"
 
-def _nano_block(title: str, show_banner: bool, show_ctrl_c_before: bool):
-    seg = _safe_path_segment(title)
-    filename = f'{title}.txt'
+def _fake_file_contents_for(title: str) -> str:
+    # Put your section "content" here (this is what cat prints)
+    if title == "Research overview":
+        return (
+            "My research explores deep learning methods for classifying sunspot groups from solar imagery,\\n"
+            "with emphasis on robust generalization, handling class imbalance,\\n"
+            "and producing interpretable predictions.\\n"
+        )
+    if title == "What I’m building":
+        return (
+            "- End-to-end classification pipeline (data -> training -> evaluation -> deployment)\\n"
+            "- Model families: CNN/ViT-style backbones for image-based classification\\n"
+            "- Imbalance handling: class weights, focal loss, oversampling, calibrated thresholds\\n"
+            "- Evaluation: macro-F1, per-class metrics, confusion matrices, ROC/PR curves\\n"
+        )
+    if title == "Highlights":
+        return (
+            "TODO: Replace placeholders with real results (macro-F1, dataset size, best model, key findings).\\n"
+            "Best Macro-F1: —\\n"
+            "Classes: —\\n"
+            "Images: —\\n"
+            "Backbone: —\\n"
+        )
+    return "TODO\\n"
 
+def terminal_cat_log(section_titles):
     lines = []
-    if show_banner:
-        lines += UBUNTU_BANNER
+    lines += UBUNTU_BANNER
 
-    if show_ctrl_c_before:
-        lines.append("^C  (CTRL+C to quit)")
-        lines.append("")
+    for i, title in enumerate(section_titles):
+        seg = _safe_path_segment(title)
+        filename = f'{title}.txt'
+        prompt = f"{BASE}/{seg}$"
+        if i > 0:
+            lines.append("^C  (CTRL+C to quit)")
+            lines.append("")
+        lines.append(f'{prompt} cat "{filename}"')
+        lines.append(_fake_file_contents_for(title).rstrip("\n"))
+        lines.append("")  # spacing
 
-    prompt = f"{BASE}/{seg}$"
-    lines.append(f'{prompt} nano "{filename}"')
-    lines.append("GNU nano 6.2")
-    lines.append("^C  (CTRL+C to quit)")
-    st.markdown("```text\n" + "\n".join(lines) + "\n```")
+    return "\n".join(lines).rstrip() + "\n"
+
+SECTIONS = ["Research overview", "What I’m building", "Highlights"]
+st.markdown("```text\n" + terminal_cat_log(SECTIONS) + "```")
 
 # -----------------------------
-# Main content
+# Main content (normal page sections)
 # -----------------------------
 left, right = st.columns([1.35, 1.0], gap="large")
 
 with left:
-    _nano_block("Research overview", show_banner=True, show_ctrl_c_before=False)
     st.markdown("## Research overview")
     st.write(
         "My research explores deep learning methods for classifying sunspot groups from solar imagery, "
         "with emphasis on robust generalization, handling class imbalance, and producing interpretable predictions."
     )
 
-    _nano_block("What I’m building", show_banner=False, show_ctrl_c_before=True)
     st.markdown("## What I’m building")
     st.markdown(
         """
@@ -566,7 +556,6 @@ with left:
         """.strip()
     )
 
-    _nano_block("Highlights", show_banner=False, show_ctrl_c_before=True)
     st.markdown("## Highlights")
     st.info("Replace these placeholders with your real results (macro-F1, dataset size, best model, key findings).")
 
@@ -577,5 +566,4 @@ with left:
     m4.metric("Backbone", "—")
 
 st.divider()
-# (You can also remove this caption if you want a totally clean page)
-st.caption("© 2026 Bernard Swanepoel • Built with Streamlit")
+st.caption("© 2026 Bernard Swanepoel")
