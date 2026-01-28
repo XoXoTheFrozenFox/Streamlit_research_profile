@@ -10,20 +10,16 @@ st.set_page_config(
 # -----------------------------
 # Links / info
 # -----------------------------
-TAGLINE = (
-    "Masters dissertation: Sunspot classification using deep learning techniques\n"
-    "Honours project: Assessing the cybersecurity awareness of staff members in a higher educational institution"
-)
+TAGLINE = "Masters dissertation: Sunspot classification using deep learning techniques"
 
 PORTFOLIO_URL = "https://xoxothefrozenfox.github.io/react-personal-portfolio/"
 LINKEDIN_URL = "https://www.linkedin.com/in/bernard-swanepoel-a2777322b/"
 GITHUB_URL = "https://github.com/XoXoTheFrozenFox"
 EMAIL = "BernardSwanepoel1510@gmail.com"
 
-# Prefix must end with exactly ONE space (NBSP) and nothing else
+# Prefix ends with exactly ONE space (NBSP)
 STATIC_PREFIX = "Hi🌞, my name is Bernard Swanepoel.\u00A0"
 
-# IMPORTANT: no leading spaces here (prefix already provides the one space)
 ROTATING = [
     "Masters student✏️",
     "Researcher🥸",
@@ -51,11 +47,9 @@ html, body, [data-testid="stAppViewContainer"]{
 }
 *{ color: var(--green) !important; }
 
-[data-testid="stSidebar"]{ background:#070707 !important; }
-
 .block-container{
-  padding-top: 1.2rem !important;
-  padding-bottom: 2rem !important;
+  padding-top: 0.6rem !important;
+  padding-bottom: 1.4rem !important;
 }
 
 /* Streamlit overlays that can steal clicks */
@@ -98,7 +92,12 @@ p, li{
 )
 
 # -----------------------------
-# Topbar (typing must be in components.html so JS runs reliably)
+# Topbar component:
+# - Desktop: title + icons on SAME LINE (true alignment)
+# - Tagline below, full width
+# - No giant empty space (safe auto-resize using wrapper height only)
+# - No hover clipping (padding + overflow visible)
+# - "$" never drops on its own line (prompt includes &nbsp;)
 # -----------------------------
 topbar_html = f"""
 <!doctype html>
@@ -113,43 +112,53 @@ topbar_html = f"""
     --border:rgba(57,255,20,0.45);
   }}
 
-  body {{
-    margin: 0;
-    background: transparent;
-    color: var(--green);
-    /* Include emoji-capable fonts to reduce odd fallback behavior */
-    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono",
-                 "Courier New", "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", monospace;
+  html, body {{
+    overflow: visible !important;
   }}
 
-  .topbar {{
-    display:flex;
-    align-items:center;
-    justify-content:space-between;
-    gap: 14px;
-    flex-wrap:wrap;
-    width: 100%;
+  body {{
+    margin: 0;
+    padding: 10px 8px 8px 8px;      /* same padding for text + buttons */
+    background: transparent;
+    color: var(--green);
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono",
+                 "Courier New", "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", monospace;
     box-sizing: border-box;
   }}
 
+  #wrap {{
+    width: 100%;
+    display: inline-block;           /* prevents feedback-loop height growth */
+  }}
+
+  /* Row 1 = title left, icons right */
+  .row1 {{
+    display: flex;
+    align-items: center;             /* ✅ perfect vertical alignment */
+    justify-content: space-between;
+    gap: 12px;
+    width: 100%;
+  }}
+
   .terminal-title {{
-    font-size: 1.65rem;
+    font-size: 1.62rem;
     font-weight: 700;
-    line-height: 1.25;
+    line-height: 1.22;
     margin: 0;
-    display:flex;
-    align-items:center;
-    flex-wrap:wrap;
-    gap: 0; /* IMPORTANT: no extra spacing beyond our NBSP */
+    min-width: 0;
+    white-space: nowrap;             /* desktop stays one line */
+    overflow: hidden;
+    text-overflow: ellipsis;
     text-shadow: 0 0 18px rgba(57,255,20,0.12);
   }}
 
   .prompt {{
-    margin-right: 10px;
+    display: inline;
+    white-space: nowrap;
   }}
 
-  #prefix {{
-    margin-right: 0;
+  #prefix, #word {{
+    white-space: nowrap;
   }}
 
   .cursor {{
@@ -162,20 +171,12 @@ topbar_html = f"""
     50% {{ opacity: 0; }}
   }}
 
-  .tagline {{
-    margin-top: 0.35rem;
-    font-size: 1.25rem;
-    font-weight: 650;
-    opacity: 0.95;
-    white-space: pre-line;
-  }}
-
   .icon-row {{
     display:flex;
     gap:10px;
     align-items:center;
-    flex-wrap:wrap;
     justify-content:flex-end;
+    flex: 0 0 auto;
   }}
 
   a.icon-btn {{
@@ -190,7 +191,7 @@ topbar_html = f"""
     border:1px solid var(--border);
     background: rgba(0,0,0,0.25);
     box-shadow: 0 0 0 1px rgba(57,255,20,0.12) inset, 0 10px 22px rgba(0,0,0,0.35);
-    transition: transform 160ms ease, background 160ms ease, border-color 160ms ease, box-shadow 160ms ease, filter 160ms ease;
+    transition: transform 140ms ease, background 140ms ease, border-color 140ms ease, box-shadow 140ms ease;
     -webkit-tap-highlight-color: transparent;
     user-select:none;
   }}
@@ -200,11 +201,12 @@ topbar_html = f"""
     pointer-events:none;
   }}
 
+  /* ✅ tiny lift + smaller glow so nothing ever gets clipped */
   a.icon-btn:hover {{
-    transform: translateY(-2px);
+    transform: translateY(-1px);
     background: rgba(57,255,20,0.12);
     border-color: rgba(57,255,20,0.85);
-    box-shadow: 0 0 18px rgba(57,255,20,0.18), 0 12px 26px rgba(0,0,0,0.45);
+    box-shadow: 0 0 12px rgba(57,255,20,0.18), 0 10px 18px rgba(0,0,0,0.45);
   }}
 
   a.icon-btn:active {{
@@ -225,21 +227,72 @@ topbar_html = f"""
   }}
   a.email-btn .email-open {{ opacity: 0; }}
   a.email-btn .email-closed {{ opacity: 1; }}
-
   a.email-btn:hover .email-open {{ opacity: 1; }}
   a.email-btn:hover .email-closed {{ opacity: 0; }}
 
-  /* Responsive: shrink title + buttons so they don't clip on mobile */
-  @media (max-width: 640px) {{
-    .terminal-title {{ font-size: 1.15rem; line-height: 1.25; }}
-    .tagline {{ font-size: 1.02rem; }}
-    a.icon-btn {{ width: 38px; height: 38px; }}
-    a.icon-btn i {{ font-size: 16px; }}
-    .icon-row {{ gap: 8px; }}
-    .prompt {{ margin-right: 8px; }}
+  /* Tagline row */
+  .tagline {{
+    margin-top: 8px;
+    font-size: 1.18rem;
+    font-weight: 650;
+    opacity: 0.95;
+    white-space: nowrap;             /* desktop: single line */
+    overflow: hidden;
+    text-overflow: ellipsis;
   }}
 
-  /* On touch devices: avoid "stuck hover" */
+  /* -----------------------
+     Mobile formatting (different)
+     ----------------------- */
+  @media (max-width: 640px) {{
+    body {{
+      padding: 12px 10px 10px 10px;  /* extra safety so hover/glow never clips */
+    }}
+
+    .row1 {{
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 10px;
+    }}
+
+    .terminal-title {{
+      font-size: 1.10rem;
+      white-space: normal;           /* allow wrap */
+      overflow: visible;
+      text-overflow: unset;
+      line-height: 1.25;
+    }}
+
+    /* ✅ Keep $ glued to the following text */
+    .prompt {{
+      display: inline-block;
+    }}
+
+    .icon-row {{
+      width: 100%;
+      flex-wrap: wrap;               /* wrap instead of clipping/cutting off */
+      justify-content: flex-start;
+      gap: 8px;
+    }}
+
+    a.icon-btn {{
+      width: 38px;
+      height: 38px;
+    }}
+    a.icon-btn i {{
+      font-size: 16px;
+    }}
+
+    .tagline {{
+      font-size: 1.02rem;
+      white-space: normal;           /* show full line if it wraps */
+      overflow: visible;
+      text-overflow: unset;
+      line-height: 1.25;
+    }}
+  }}
+
+  /* Touch devices: avoid stuck hover */
   @media (hover: none) and (pointer: coarse) {{
     a.icon-btn:hover {{
       transform:none;
@@ -250,44 +303,61 @@ topbar_html = f"""
     a.icon-btn:active {{
       background: rgba(57,255,20,0.12);
       border-color: rgba(57,255,20,0.85);
-      box-shadow: 0 0 18px rgba(57,255,20,0.18), 0 12px 26px rgba(0,0,0,0.45);
+      box-shadow: 0 0 12px rgba(57,255,20,0.18), 0 10px 18px rgba(0,0,0,0.45);
+      transform: scale(0.98);
     }}
   }}
 </style>
 </head>
 
 <body>
-  <div class="topbar">
-    <div class="terminal-title">
-      <span class="prompt">$</span>
-      <span id="prefix"></span><span id="word"></span><span class="cursor">▌</span>
+  <div id="wrap">
+    <div class="row1">
+      <div class="terminal-title">
+        <span class="prompt">$&nbsp;</span>
+        <span id="prefix"></span><span id="word"></span><span class="cursor">▌</span>
+      </div>
+
+      <div class="icon-row">
+        <a class="icon-btn" href="{PORTFOLIO_URL}" target="_blank" rel="noopener" title="Portfolio"><i class="fa-solid fa-globe"></i></a>
+        <a class="icon-btn" href="{GITHUB_URL}" target="_blank" rel="noopener" title="GitHub"><i class="fa-brands fa-github"></i></a>
+        <a class="icon-btn" href="{LINKEDIN_URL}" target="_blank" rel="noopener" title="LinkedIn"><i class="fa-brands fa-linkedin-in"></i></a>
+
+        <a class="icon-btn email-btn" href="mailto:{EMAIL}" title="Email">
+          <i class="fa-solid fa-envelope email-closed"></i>
+          <i class="fa-solid fa-envelope-open email-open"></i>
+        </a>
+
+        <a class="icon-btn" href="https://www.nwu.ac.za/" target="_blank" rel="noopener" title="North-West University"><i class="fa-solid fa-building-columns"></i></a>
+      </div>
     </div>
 
-    <div class="icon-row">
-      <a class="icon-btn" href="{PORTFOLIO_URL}" target="_blank" rel="noopener" title="Portfolio"><i class="fa-solid fa-globe"></i></a>
-      <a class="icon-btn" href="{GITHUB_URL}" target="_blank" rel="noopener" title="GitHub"><i class="fa-brands fa-github"></i></a>
-      <a class="icon-btn" href="{LINKEDIN_URL}" target="_blank" rel="noopener" title="LinkedIn"><i class="fa-brands fa-linkedin-in"></i></a>
-
-      <a class="icon-btn email-btn" href="mailto:{EMAIL}" title="Email">
-        <i class="fa-solid fa-envelope email-closed"></i>
-        <i class="fa-solid fa-envelope-open email-open"></i>
-      </a>
-
-      <a class="icon-btn" href="https://www.nwu.ac.za/" target="_blank" rel="noopener" title="North-West University"><i class="fa-solid fa-building-columns"></i></a>
-    </div>
+    <div class="tagline">{TAGLINE}</div>
   </div>
-
-  <div class="tagline">{TAGLINE}</div>
 
 <script>
 (function () {{
-  // IMPORTANT: STATIC_PREFIX already includes the single NBSP at the end
-  const staticPrefix = {STATIC_PREFIX!r};
+  const wrap = document.getElementById("wrap");
+
+  // ✅ Safe auto-resize: measure WRAP only (prevents runaway / huge whitespace)
+  function resizeFrame() {{
+    try {{
+      const h = Math.ceil(wrap.getBoundingClientRect().height);
+      if (window.frameElement) {{
+        window.frameElement.style.height = (h + 2) + "px";
+      }}
+    }} catch (e) {{}}
+  }}
+  window.addEventListener("load", () => setTimeout(resizeFrame, 0));
+  window.addEventListener("resize", () => setTimeout(resizeFrame, 50));
+  new MutationObserver(() => resizeFrame()).observe(wrap, {{ childList: true, subtree: true, characterData: true }});
+
+  // Typing animation (Unicode-safe for emojis)
+  const staticPrefix = {STATIC_PREFIX!r};  // already ends with NBSP
   const words = {ROTATING!r};
 
   const prefixEl = document.getElementById("prefix");
   const wordEl = document.getElementById("word");
-
   prefixEl.textContent = staticPrefix;
 
   let idx = 0;
@@ -300,12 +370,12 @@ topbar_html = f"""
   const holdEmpty = 260;
 
   function step() {{
-    // Use Unicode-safe slicing so emojis don't show a "broken box" first
     const glyphs = Array.from(words[idx]);
 
     if (!deleting) {{
       char++;
       wordEl.textContent = glyphs.slice(0, char).join("");
+      resizeFrame();
 
       if (char >= glyphs.length) {{
         setTimeout(() => {{
@@ -314,11 +384,11 @@ topbar_html = f"""
         }}, holdFull);
         return;
       }}
-
       setTimeout(step, typeSpeed);
     }} else {{
       char--;
       wordEl.textContent = glyphs.slice(0, Math.max(0, char)).join("");
+      resizeFrame();
 
       if (char <= 0) {{
         deleting = false;
@@ -326,7 +396,6 @@ topbar_html = f"""
         setTimeout(step, holdEmpty);
         return;
       }}
-
       setTimeout(step, deleteSpeed);
     }}
   }}
@@ -342,14 +411,16 @@ topbar_html = f"""
   document.addEventListener("visibilitychange", function() {{
     if (!document.hidden) blurActive();
   }});
+
+  setTimeout(resizeFrame, 120);
 }})();
 </script>
 </body>
 </html>
 """
 
-# Increased height so the top area never clips on mobile (2-line tagline + wrapping)
-components.html(topbar_html, height=190)
+# Starting height only; component auto-resizes to exact content height
+components.html(topbar_html, height=120)
 
 st.divider()
 
