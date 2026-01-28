@@ -3,6 +3,14 @@ from urllib.parse import quote
 import streamlit as st
 import streamlit.components.v1 as components
 
+import os
+import glob
+import time
+
+import numpy as np
+import pandas as pd
+import plotly.graph_objects as go
+
 st.set_page_config(
     page_title="Bernard Swanepoel — Research Profile",
     page_icon="🌞",
@@ -826,9 +834,234 @@ with left:
 
     Spectral data were collected from **SDSS** using a custom Python pipeline built with **Astropy**, resulting in a dataset of **10,955** stellar spectra. The extracted numerical spectral features were first used as input to a **1D Transformer** model. In a subsequent approach, each spectrum was converted into a **2D spectrogram** representation, which was then used to train a **2D Transformer** model.
 
-    The distribution and characteristics of the seven spectral classes can be visualized below.
+    The distribution and characteristics of the seven spectral classes can be visualized below:
     """
     )
+
+# -----------------------------
+# Hobby project: Star classification (Spectrum explorer)
+# -----------------------------
+st.markdown(
+    """
+<style>
+/* Make the selectbox compact */
+div[data-testid="stSelectbox"]{
+  max-width: 230px !important;
+}
+div[data-testid="stSelectbox"] label{
+  display:none !important;
+}
+
+/* Fancy plot wrapper */
+.spectrum-wrap{
+  border: 1px solid rgba(255,255,255,0.10);
+  border-radius: 16px;
+  padding: 12px 12px 6px 12px;
+  background: rgba(0,0,0,0.28);
+  margin-top: 6px;
+}
+</style>
+""",
+    unsafe_allow_html=True,
+)
+
+def _read_spectrum_csv(folder: str) -> pd.DataFrame:
+    """
+    Expects exactly 1 CSV inside data/<CLASS>/.
+    Columns: wavelength_A, flux, ivar
+    Handles comma / tab / whitespace delimited files.
+    """
+    paths = sorted(glob.glob(os.path.join(folder, "*.csv")))
+    if not paths:
+        raise FileNotFoundError(f"No CSV found in: {folder}")
+    path = paths[0]
+
+    # Try common delimiters robustly
+    for kwargs in (
+        dict(sep=","),
+        dict(sep="\t"),
+        dict(sep=r"\s+"),
+    ):
+        try:
+            df = pd.read_csv(path, engine="python", **kwargs)
+            # If it parsed as a single column, try next delimiter
+            if df.shape[1] >= 3:
+                break
+        except Exception:
+            df = None
+
+    if df is None or df.shape[1] < 3:
+        raise ValueError(f"Could not parse CSV: {path}")
+
+    # Normalize column names
+    df.columns = [c.strip() for c in df.columns]
+
+    # Flexible column matching
+    col_w = next((c for c in df.columns if c.lower().startswith("wavelength")), None)
+    col_f = next((c for c in df.columns if c.lower() == "flux"), None)
+    col_i = next((c for c in df.columns if c.lower() == "ivar"), None)
+
+    if not (col_w and col_f and col_i):
+        raise ValueError(f"Expected columns wavelength_A/flux/ivar. Got: {list(df.columns)}")
+
+    df = df[[col_w, col_f, col_i]].rename(columns={col_w: "wavelength_A", col_f: "flux", col_i: "ivar"})
+    df = df.dropna(subset=["wavelength_A", "flux"]).copy()
+    df["wavelength_A"] = pd.to_numeric(df["wavelength_A"], errors="coerce")
+    df["flux"] = pd.to_numeric(df["flux"], errors="coerce")
+    df = df.dropna(subset=["wavelength_A", "flux"])
+    df = df.sort_values("wavelength_A").reset_index(drop=True)
+    return df
+
+def _make_fig(df: pd.DataFrame, n_scatter: int, n_line: int, title: str) -> go.Figure:
+    x = df["wavelength_A"].to_numpy()
+    y = df["flux"].to_numpy()
+
+    # Clamp counts
+    n_scatter = int(np.clip(n_scatter, 2, len(df)))
+    n_line = int(np.clip(n_line, 0, len(df)))
+
+    fig = go.Figure()
+
+    # Phase 1: points appear (markers)
+    fig.add_trace(
+        go.Scattergl(
+            x=x[:n_scatter],
+            y=y[:n_scatter],
+            mode="markers",
+            marker=dict(size=4, opacity=0.95, color="currentColor"),
+            name="Samples",
+            hovertemplate="λ=%{x:.1f} Å<br>flux=%{y:.4f}<extra></extra>",
+        )
+    )
+
+    # Phase 2: draw a line through (lines)
+    if n_line > 0:
+        fig.add_trace(
+            go.Scattergl(
+                x=x[:n_line],
+                y=y[:n_line],
+                mode="lines",
+                line=dict(width=2.2, color="currentColor"),
+                name="Trace",
+                hoverinfo="skip",
+            )
+        )
+
+    fig.update_layout(
+        title=dict(text=title, x=0.02, xanchor="left"),
+        paper_bgcolor="#050505",
+        plot_bgcolor="#050505",
+        margin=dict(l=22, r=18, t=52, b=40),
+        font=dict(family='ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace',
+                  color="currentColor",
+                  size=13),
+        showlegend=False,
+    )
+
+    fig.update_xaxes(
+        title_text="wavelength (Å)",
+        showgrid=True,
+        gridcolor="rgba(255,255,255,0.08)",
+        zeroline=False,
+        ticks="outside",
+        tickcolor="rgba(255,255,255,0.25)",
+        linecolor="rgba(255,255,255,0.18)",
+        mirror=True,
+    )
+    fig.update_yaxes(
+        title_text="flux",
+        showgrid=True,
+        gridcolor="rgba(255,255,255,0.08)",
+        zeroline=False,
+        ticks="outside",
+        tickcolor="rgba(255,255,255,0.25)",
+        linecolor="rgba(255,255,255,0.18)",
+        mirror=True,
+    )
+
+    return fig
+
+# --- UI row (compact combobox) ---
+classes = list("OBAFGKM")
+default_idx = classes.index("A")
+
+c1, c2 = st.columns([0.32, 0.68], gap="small")
+with c1:
+    spec_class = st.selectbox(
+        "Spectral class",
+        options=classes,
+        index=default_idx,
+        label_visibility="collapsed",
+    )
+with c2:
+    st.markdown(
+        f"""
+<div class="spectrum-wrap">
+  <div style="font-size:12px; opacity:0.85;">
+    $ spectrum viewer — MK class <b>{spec_class}</b>
+  </div>
+</div>
+""",
+        unsafe_allow_html=True,
+    )
+
+plot_slot = st.empty()
+
+# --- State: no animation on first render; animate only on change ---
+if "prev_spec_class" not in st.session_state:
+    st.session_state.prev_spec_class = spec_class
+    st.session_state.spec_initialized = False
+
+changed = (spec_class != st.session_state.prev_spec_class)
+
+# Load data
+data_root = "data"
+class_dir = os.path.join(data_root, spec_class)
+
+try:
+    df_spec = _read_spectrum_csv(class_dir)
+except Exception as e:
+    plot_slot.error(f"Could not load spectrum for class '{spec_class}' from '{class_dir}': {e}")
+    df_spec = None
+
+if df_spec is not None:
+    title = f"$ MK spectral class {spec_class} — spectrum"
+
+    # First ever plot: render instantly (no animation)
+    if not st.session_state.spec_initialized:
+        fig = _make_fig(df_spec, n_scatter=len(df_spec), n_line=len(df_spec), title=title)
+        plot_slot.plotly_chart(fig, use_container_width=True, config={"displayModeBar": False})
+        st.session_state.spec_initialized = True
+
+    # Subsequent changes: animate
+    elif changed:
+        N = len(df_spec)
+
+        # Keep animation smooth + not too slow
+        frames = 64
+        sleep_s = 0.016  # ~60fps-ish (Streamlit will be slower, but smooth enough)
+
+        # Phase 1: reveal points
+        for k in range(2, frames + 1):
+            n_scatter = int(np.interp(k, [2, frames], [max(10, N * 0.05), N]))
+            fig = _make_fig(df_spec, n_scatter=n_scatter, n_line=0, title=title)
+            plot_slot.plotly_chart(fig, use_container_width=True, config={"displayModeBar": False})
+            time.sleep(sleep_s)
+
+        # Phase 2: draw the line through
+        for k in range(2, frames + 1):
+            n_line = int(np.interp(k, [2, frames], [2, N]))
+            fig = _make_fig(df_spec, n_scatter=N, n_line=n_line, title=title)
+            plot_slot.plotly_chart(fig, use_container_width=True, config={"displayModeBar": False})
+            time.sleep(sleep_s)
+
+    # No change: keep static
+    else:
+        fig = _make_fig(df_spec, n_scatter=len(df_spec), n_line=len(df_spec), title=title)
+        plot_slot.plotly_chart(fig, use_container_width=True, config={"displayModeBar": False})
+
+    # Update previous selection
+    st.session_state.prev_spec_class = spec_class
 
     st.markdown("## Hobby project: Metrics and visualisation")
     m1, m2, m3, m4 = st.columns(4)
