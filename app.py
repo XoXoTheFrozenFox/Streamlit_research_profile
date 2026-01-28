@@ -24,12 +24,9 @@ UNIVERSITY = "North-West University, Potchefstroom"
 st.markdown(
     """
 <style>
-/* Make Streamlit a touch cleaner */
 .block-container { padding-top: 2.2rem; padding-bottom: 2rem; }
 h1, h2, h3 { letter-spacing: -0.02em; }
-small, .stCaption { opacity: 0.85; }
 
-/* Icon row */
 .icon-row{
   display:flex;
   gap:14px;
@@ -38,7 +35,6 @@ small, .stCaption { opacity: 0.85; }
   margin-top: 0.25rem;
 }
 
-/* Round icon button with hover invert */
 .icon-btn{
   width:46px;
   height:46px;
@@ -72,38 +68,9 @@ small, .stCaption { opacity: 0.85; }
   font-size: 18px;
 }
 
-/* Label chips (optional) */
-.chip-row{
-  display:flex;
-  gap:10px;
-  flex-wrap:wrap;
-  margin-top: 0.6rem;
-}
-.chip{
-  display:inline-flex;
-  align-items:center;
-  gap:8px;
-  padding: 8px 12px;
-  border-radius: 999px;
-  border: 1px solid rgba(255,255,255,0.18);
-  background: rgba(255,255,255,0.06);
-  color: rgba(255,255,255,0.92);
-  text-decoration:none !important;
-  transition: background 160ms ease, color 160ms ease, transform 160ms ease, border-color 160ms ease;
-}
-.chip:hover{
-  background: rgba(255,255,255,0.92);
-  color: rgba(10,10,10,0.95);
-  border-color: rgba(0,0,0,0.18);
-  transform: translateY(-1px);
-}
-.chip i{ font-size: 14px; }
-
-/* Reduce padding inside info boxes a bit */
 div[data-testid="stAlert"]{ padding-top: 0.8rem; padding-bottom: 0.8rem; }
 </style>
 
-<!-- Font Awesome for icons -->
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 """,
     unsafe_allow_html=True,
@@ -115,7 +82,7 @@ div[data-testid="stAlert"]{ padding-top: 0.8rem; padding-bottom: 0.8rem; }
 st.title(NAME)
 st.subheader(TAGLINE)
 
-col1, col2, col3 = st.columns([1.25, 1.0, 1.0], gap="large")
+col1, col3 = st.columns([1.4, 1.0], gap="large")
 
 with col1:
     st.markdown(
@@ -125,56 +92,6 @@ with col1:
 **University:** {UNIVERSITY}  
 """.strip()
     )
-
-    # Optional "chip" buttons with labels (cleaner than bullet lists)
-    st.markdown(
-        f"""
-<div class="chip-row">
-  <a class="chip" href="{PORTFOLIO_URL}" target="_blank" rel="noopener">
-    <i class="fa-solid fa-globe"></i><span>Portfolio</span>
-  </a>
-  <a class="chip" href="{GITHUB_URL}" target="_blank" rel="noopener">
-    <i class="fa-brands fa-github"></i><span>GitHub</span>
-  </a>
-  <a class="chip" href="{LINKEDIN_URL}" target="_blank" rel="noopener">
-    <i class="fa-brands fa-linkedin-in"></i><span>LinkedIn</span>
-  </a>
-  <a class="chip" href="mailto:{EMAIL}">
-    <i class="fa-solid fa-envelope"></i><span>Email</span>
-  </a>
-</div>
-""",
-        unsafe_allow_html=True,
-    )
-
-with col2:
-    st.markdown("### Quick links")
-
-    # Icon-only buttons (like your screenshot)
-    st.markdown(
-        f"""
-<div class="icon-row">
-  <a class="icon-btn" href="{PORTFOLIO_URL}" target="_blank" rel="noopener" title="Portfolio">
-    <i class="fa-solid fa-globe"></i>
-  </a>
-  <a class="icon-btn" href="{GITHUB_URL}" target="_blank" rel="noopener" title="GitHub">
-    <i class="fa-brands fa-github"></i>
-  </a>
-  <a class="icon-btn" href="{LINKEDIN_URL}" target="_blank" rel="noopener" title="LinkedIn">
-    <i class="fa-brands fa-linkedin-in"></i>
-  </a>
-  <a class="icon-btn" href="mailto:{EMAIL}" title="Email">
-    <i class="fa-solid fa-envelope"></i>
-  </a>
-  <a class="icon-btn" href="https://www.nwu.ac.za/" target="_blank" rel="noopener" title="North-West University">
-    <i class="fa-solid fa-building-columns"></i>
-  </a>
-</div>
-""",
-        unsafe_allow_html=True,
-    )
-
-    st.caption("Hover to invert colors ✨")
 
 with col3:
     st.markdown("### Contact")
@@ -215,9 +132,34 @@ with left:
     m4.metric("Backbone", "—")
 
 with right:
+    st.markdown("## Links")
+    st.caption("Hover to invert colors ✨")
+
+    st.markdown(
+        f"""
+<div class="icon-row">
+  <a class="icon-btn" href="{PORTFOLIO_URL}" target="_blank" rel="noopener" title="Portfolio">
+    <i class="fa-solid fa-globe"></i>
+  </a>
+  <a class="icon-btn" href="{GITHUB_URL}" target="_blank" rel="noopener" title="GitHub">
+    <i class="fa-brands fa-github"></i>
+  </a>
+  <a class="icon-btn" href="{LINKEDIN_URL}" target="_blank" rel="noopener" title="LinkedIn">
+    <i class="fa-brands fa-linkedin-in"></i>
+  </a>
+  <a class="icon-btn" href="mailto:{EMAIL}" title="Email">
+    <i class="fa-solid fa-envelope"></i>
+  </a>
+  <a class="icon-btn" href="https://www.nwu.ac.za/" target="_blank" rel="noopener" title="North-West University">
+    <i class="fa-solid fa-building-columns"></i>
+  </a>
+</div>
+""",
+        unsafe_allow_html=True,
+    )
+
     st.markdown("## Live profile")
     st.write("If an embed gets blocked by headers, these buttons always work:")
-
     r1, r2 = st.columns(2)
     with r1:
         st.link_button("🌍 Portfolio", PORTFOLIO_URL, use_container_width=True)
@@ -225,15 +167,6 @@ with right:
     with r2:
         st.link_button("💻 GitHub", GITHUB_URL, use_container_width=True)
         st.link_button("✉️ Email me", f"mailto:{EMAIL}", use_container_width=True)
-
-    st.markdown("## Repo / artifacts")
-    st.markdown(
-        """
-- Paper / thesis draft: *(add link)*  
-- Dataset: *(add link)*  
-- Demo notebook: *(add link)*  
-        """.strip()
-    )
 
 st.divider()
 st.caption("© 2026 Bernard Swanepoel • Built with Streamlit")
