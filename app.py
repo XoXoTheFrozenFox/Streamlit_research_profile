@@ -6,15 +6,15 @@ st.set_page_config(
     page_icon="🌞",
     layout="wide",
 )
-st.markdown(
-    """
-    <style>
-    #MainMenu {visibility: hidden;}
-    footer {visibility: hidden;}
-    header {visibility: hidden;}
-    </style>
-    """,
-)
+# st.markdown(
+#     """
+#     <style>
+#     #MainMenu {visibility: hidden;}
+#     footer {visibility: hidden;}
+#     header {visibility: hidden;}
+#     </style>
+#     """,
+# )
 # -----------------------------
 # Links / info
 # -----------------------------
