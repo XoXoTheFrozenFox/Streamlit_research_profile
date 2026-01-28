@@ -525,7 +525,7 @@ topbar_html = f"""
 """
 
 # Initial height; JS will clamp and auto-fit without infinite scrolling
-components.html(topbar_html, height=93)
+components.html(topbar_html, height=95)
 
 st.divider()
 
