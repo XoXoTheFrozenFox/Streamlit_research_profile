@@ -820,7 +820,9 @@ with left:
         """.strip()
     )
 
-    st.markdown("## Highlights")
+    st.markdown("## Hobby projects: Star classification")
+
+    st.markdown("## Hobby project: Metrics and visualisation")
     m1, m2, m3, m4 = st.columns(4)
     m1.metric("Best Macro-F1", "—")
     m2.metric("Classes", "—")
