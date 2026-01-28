@@ -763,7 +763,6 @@ with left:
     st.markdown(
         """
     - **MSc Computer Science** — NWU — 2025–2027  
-    - **TEFL (300 hours)** — i-to-i — 2024–2025  
     - **BSc Hons Computer Science and Information Technology** — NWU — 2023–2024  
     - **BSc Information Technology** — NWU — 2021–2023  
     - **TEFL (180 hours)** — i-to-i — 2023  
