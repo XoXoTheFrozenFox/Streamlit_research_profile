@@ -6,15 +6,7 @@ st.set_page_config(
     page_icon="🌞",
     layout="wide",
 )
-# st.markdown(
-#     """
-#     <style>
-#     #MainMenu {visibility: hidden;}
-#     footer {visibility: hidden;}
-#     header {visibility: hidden;}
-#     </style>
-#     """,
-# )
+
 # -----------------------------
 # Links / info
 # -----------------------------
@@ -39,9 +31,7 @@ ROTATING = [
 
 # -----------------------------
 # Global terminal aesthetic (whole Streamlit page)
-# - Default site text = neon ORANGE
-# - Clicking the toggle button switches to neon GREEN (the current color you had)
-# - Buttons follow the current text color automatically
+# Default theme = neon ORANGE, toggle => neon GREEN
 # -----------------------------
 st.markdown(
     """
@@ -73,7 +63,6 @@ div[data-testid="stDecoration"]{
   pointer-events: none !important;
 }
 
-/* Divider tight to content */
 hr{
   border: none !important;
   border-top: 1px solid var(--border-orange) !important;
@@ -98,7 +87,7 @@ p, li{
   font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
 }
 
-/* When green theme is active (set by JS) */
+/* Green theme (set by JS) */
 html[data-theme="green"] body,
 html[data-theme="green"] [data-testid="stAppViewContainer"]{
   color: var(--green) !important;
@@ -125,9 +114,8 @@ html[data-theme="green"] div[data-testid="stAlert"]{
 # Topbar component
 # FIXES:
 # - No infinite scrolling: remove documentElement.scrollHeight feedback loop, clamp heights, update only on change
-# - Add theme toggle button left of portfolio button:
-#   default ORANGE, click => GREEN
-# - Icon button colors follow current theme (orange/green)
+# - Theme toggle button left of portfolio button
+# - Mobile button bottom-edge clipping: use box-sizing:border-box + a touch of bottom padding + overflow visible
 # -----------------------------
 topbar_html = f"""
 <!doctype html>
@@ -152,7 +140,7 @@ topbar_html = f"""
   /* Default theme in iframe = ORANGE */
   body {{
     margin: 0;
-    padding: 10px 8px 6px 8px;
+    padding: 10px 8px 10px 8px; /* slightly more bottom padding */
     background: transparent;
     color: var(--orange);
     font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono",
@@ -160,12 +148,12 @@ topbar_html = f"""
     box-sizing: border-box;
   }}
 
-  /* Theme switch inside iframe (syncs with parent) */
   html[data-theme="green"] body {{ color: var(--green); }}
 
   #wrap {{
     width: 100%;
     display: block;
+    overflow: visible; /* ✅ ensure shadows/borders aren't clipped */
   }}
 
   .row1 {{
@@ -190,7 +178,6 @@ topbar_html = f"""
     overflow: visible;
     overflow-wrap: anywhere;
     word-break: break-word;
-    text-shadow: 0 0 18px rgba(0,0,0,0.0);
     padding-top: 2px;
   }}
 
@@ -223,9 +210,11 @@ topbar_html = f"""
     padding-right: 8px;
     padding-left: 8px;
     padding-top: 10px;
+    padding-bottom: 4px;  /* ✅ helps on mobile/HiDPI borders */
+    overflow: visible;    /* ✅ don't clip button borders/shadows */
   }}
 
-  /* Buttons inherit the CURRENT text color (orange/green) */
+  /* Buttons inherit current text color (orange/green) */
   a.icon-btn, button.icon-btn {{
     width:44px;
     height:44px;
@@ -235,20 +224,22 @@ topbar_html = f"""
     justify-content:center;
     text-decoration:none;
     color: currentColor;
-    border:1px solid rgba(255,255,255,0.0); /* placeholder, overwritten below */
+
+    /* ✅ CRITICAL: keep border INSIDE width/height (fixes bottom clipping) */
+    box-sizing: border-box;
+
+    border:1px solid var(--border-orange);
     background: rgba(0,0,0,0.25);
-    box-shadow: 0 0 0 1px rgba(255,255,255,0.0) inset, 0 10px 22px rgba(0,0,0,0.35);
+    box-shadow: 0 0 0 1px rgba(255,122,24,0.12) inset, 0 10px 22px rgba(0,0,0,0.35);
     transition: transform 140ms ease, background 140ms ease, border-color 140ms ease, box-shadow 140ms ease;
     -webkit-tap-highlight-color: transparent;
     user-select:none;
     cursor: pointer;
+
+    line-height: 1;       /* ✅ avoids font metrics affecting layout */
+    overflow: visible;    /* ✅ ensure inner glyph never clips */
   }}
 
-  /* Border + inset shadow depend on theme */
-  a.icon-btn, button.icon-btn {{
-    border-color: var(--border-orange);
-    box-shadow: 0 0 0 1px rgba(255,122,24,0.12) inset, 0 10px 22px rgba(0,0,0,0.35);
-  }}
   html[data-theme="green"] a.icon-btn,
   html[data-theme="green"] button.icon-btn {{
     border-color: var(--border-green);
@@ -302,7 +293,7 @@ topbar_html = f"""
   }}
 
   @media (max-width: 640px) {{
-    body {{ padding: 12px 10px 8px 10px; }}
+    body {{ padding: 12px 10px 12px 10px; }} /* a touch more bottom padding */
 
     .row1 {{
       grid-template-columns: 1fr;
@@ -320,7 +311,8 @@ topbar_html = f"""
     .icon-row {{
       justify-content: flex-start;
       gap: 8px;
-      padding: 0;
+      padding: 0 0 6px 0; /* ✅ tiny bottom padding to stop any edge cut */
+      overflow: visible;
     }}
 
     a.icon-btn, button.icon-btn {{ width: 38px; height: 38px; }}
@@ -366,7 +358,7 @@ topbar_html = f"""
       </div>
 
       <div class="icon-row">
-        <!-- ✅ Theme toggle button (left of portfolio) -->
+        <!-- Theme toggle button (left of portfolio) -->
         <button class="icon-btn" id="themeToggle" type="button" title="Toggle theme (Orange/Green)">
           <i class="fa-solid fa-palette"></i>
         </button>
@@ -394,23 +386,17 @@ topbar_html = f"""
     const t = (theme === "green") ? "green" : "orange";
     document.documentElement.setAttribute("data-theme", t);
     try {{
-      // set theme on parent document (Streamlit page)
       if (window.parent && window.parent.document) {{
         window.parent.document.documentElement.setAttribute("data-theme", t);
       }}
     }} catch (e) {{}}
 
-    try {{
-      localStorage.setItem("siteTheme", t);
-    }} catch (e) {{}}
+    try {{ localStorage.setItem("siteTheme", t); }} catch (e) {{}}
   }}
 
   function getSavedTheme() {{
-    try {{
-      return localStorage.getItem("siteTheme") || "orange";
-    }} catch (e) {{
-      return "orange";
-    }}
+    try {{ return localStorage.getItem("siteTheme") || "orange"; }}
+    catch (e) {{ return "orange"; }}
   }}
 
   const toggleBtn = document.getElementById("themeToggle");
@@ -423,7 +409,6 @@ topbar_html = f"""
 
   // ---------- RESIZE (FIX: prevent infinite growth) ----------
   function getHeight() {{
-    // ✅ only measure the actual content wrapper (no documentElement/body feedback loop)
     const b = wrap.getBoundingClientRect().height;
     const sh = wrap.scrollHeight;
     return Math.ceil(Math.max(b, sh));
@@ -436,10 +421,7 @@ topbar_html = f"""
     if (raf) cancelAnimationFrame(raf);
     raf = requestAnimationFrame(() => {{
       try {{
-        // ✅ clamp height so it can never explode
-        const h = Math.min(260, Math.max(70, getHeight() + 10));
-
-        // ✅ update only when it changes (prevents jitter loops)
+        const h = Math.min(280, Math.max(70, getHeight() + 12));
         if (Math.abs(h - lastH) > 1 && window.frameElement) {{
           lastH = h;
           window.frameElement.style.height = h + "px";
@@ -506,7 +488,6 @@ topbar_html = f"""
   wordEl.textContent = "";
   step();
 
-  // Prevent stuck focus when coming back (mobile)
   function blurActive() {{
     try {{ document.activeElement && document.activeElement.blur && document.activeElement.blur(); }} catch(e) {{}}
   }}
@@ -524,8 +505,7 @@ topbar_html = f"""
 </html>
 """
 
-# Initial height; JS will clamp and auto-fit without infinite scrolling
-components.html(topbar_html, height=95)
+components.html(topbar_html, height=93)
 
 st.divider()
 
