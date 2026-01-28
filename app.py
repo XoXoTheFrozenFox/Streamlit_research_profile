@@ -3,13 +3,14 @@ import os
 import glob
 import json
 
+import numpy as np
 import pandas as pd
 import streamlit as st
 import streamlit.components.v1 as components
 
 
 # ============================================================
-# PAGE CONFIG (tab icon default; JS will override favicon live)
+# PAGE CONFIG
 # ============================================================
 st.set_page_config(
     page_title="Bernard Swanepoel — Research Profile",
@@ -27,7 +28,6 @@ LINKEDIN_URL = "https://www.linkedin.com/in/bernard-swanepoel-a2777322b/"
 GITHUB_URL = "https://github.com/XoXoTheFrozenFox"
 EMAIL = "BernardSwanepoel1510@gmail.com"
 
-# Base prefix WITHOUT emoji; JS injects the emoji based on theme
 STATIC_PREFIX = "Hi, my name is Bernard Swanepoel. "
 
 ROTATING = [
@@ -40,7 +40,7 @@ ROTATING = [
 
 
 # ============================================================
-# GLOBAL TERMINAL AESTHETIC (DEFAULT = GREEN)
+# GLOBAL CSS (theme handled by html[data-theme] OR fallback green)
 # ============================================================
 st.markdown(
     """
@@ -53,8 +53,8 @@ a.stMarkdownHeaderLink,
 a[data-testid="stHeaderLink"],
 [data-testid="stHeader"] a,
 [data-testid="stHeader"] svg,
-h1 a, h2 a, h3 a, h4 a, h5 a, h6 a { 
-  display: none !important; 
+h1 a, h2 a, h3 a, h4 a, h5 a, h6 a {
+  display: none !important;
   opacity: 0 !important;
   visibility: hidden !important;
 }
@@ -246,6 +246,24 @@ a.send-mailto-btn.is-disabled{
   transform: none !important;
 }
 
+/* SELECTBOX: keep it compact */
+div[data-testid="stSelectbox"]{ width: 120px !important; max-width: 120px !important; }
+div[data-testid="stSelectbox"] label{ display:none !important; }
+
+/* CHECKBOX: force black bg + theme border */
+div[data-testid="stCheckbox"]{
+  padding: 6px 10px !important;
+  border-radius: 14px !important;
+  background: #050505 !important;
+  border: 1px solid var(--border-green) !important;
+}
+div[data-testid="stCheckbox"] *{
+  background: transparent !important;
+}
+div[data-testid="stCheckbox"] input{
+  accent-color: var(--green) !important;
+}
+
 /* ORANGE */
 html[data-theme="orange"] body,
 html[data-theme="orange"] [data-testid="stAppViewContainer"]{ color: var(--orange) !important; }
@@ -269,6 +287,8 @@ html[data-theme="orange"] a.send-mailto-btn{
 html[data-theme="orange"] .stButton > button:hover,
 html[data-theme="orange"] div[data-testid="stFormSubmitButton"] button:hover,
 html[data-theme="orange"] a.send-mailto-btn:hover{ background: rgba(255,122,24,0.08) !important; }
+html[data-theme="orange"] div[data-testid="stCheckbox"]{ border: 1px solid var(--border-orange) !important; }
+html[data-theme="orange"] div[data-testid="stCheckbox"] input{ accent-color: var(--orange) !important; }
 
 /* BLUE */
 html[data-theme="blue"] body,
@@ -293,6 +313,8 @@ html[data-theme="blue"] a.send-mailto-btn{
 html[data-theme="blue"] .stButton > button:hover,
 html[data-theme="blue"] div[data-testid="stFormSubmitButton"] button:hover,
 html[data-theme="blue"] a.send-mailto-btn:hover{ background: rgba(0,231,255,0.08) !important; }
+html[data-theme="blue"] div[data-testid="stCheckbox"]{ border: 1px solid var(--border-blue) !important; }
+html[data-theme="blue"] div[data-testid="stCheckbox"] input{ accent-color: var(--blue) !important; }
 
 /* PINK */
 html[data-theme="pink"] body,
@@ -317,13 +339,15 @@ html[data-theme="pink"] a.send-mailto-btn{
 html[data-theme="pink"] .stButton > button:hover,
 html[data-theme="pink"] div[data-testid="stFormSubmitButton"] button:hover,
 html[data-theme="pink"] a.send-mailto-btn:hover{ background: rgba(255,43,214,0.08) !important; }
+html[data-theme="pink"] div[data-testid="stCheckbox"]{ border: 1px solid var(--border-pink) !important; }
+html[data-theme="pink"] div[data-testid="stCheckbox"] input{ accent-color: var(--pink) !important; }
 </style>
 """,
     unsafe_allow_html=True,
 )
 
 # ============================================================
-# TOPBAR (NO f-string JS braces; safe placeholder injection)
+# TOPBAR (stores theme in localStorage so plots can sync reliably)
 # ============================================================
 TOPBAR_TEMPLATE = r"""
 <!doctype html>
@@ -541,8 +565,8 @@ TOPBAR_TEMPLATE = r"""
 
 <script>
 (function () {
-  const wrap = document.getElementById("wrap");
   const themes = ["green", "blue", "pink", "orange"];
+  const STORAGE_KEY = "bs_theme";
 
   const emojiMap = {
     orange: "🌞",
@@ -553,6 +577,14 @@ TOPBAR_TEMPLATE = r"""
 
   const BASE_PREFIX = __STATIC_PREFIX__;
   const WORDS = __ROTATING__;
+
+  function safeGetSavedTheme() {
+    try {
+      const t = localStorage.getItem(STORAGE_KEY);
+      if (t && themes.includes(t)) return t;
+    } catch(e) {}
+    return "green";
+  }
 
   function setFaviconEmoji(em) {
     const svg =
@@ -579,32 +611,40 @@ TOPBAR_TEMPLATE = r"""
   function setTheme(theme) {
     const t = themes.includes(theme) ? theme : "green";
 
+    // Save theme so other iframes (plots) can sync
+    try { localStorage.setItem(STORAGE_KEY, t); } catch(e) {}
+
+    // Set on this doc
     document.documentElement.setAttribute("data-theme", t);
+
+    // Best effort: set on parent doc for your CSS
     try {
       if (window.parent && window.parent.document) {
         window.parent.document.documentElement.setAttribute("data-theme", t);
       }
     } catch (e) {}
 
+    // Emoji + favicon
     const em = emojiMap[t] || "👽";
     setFaviconEmoji(em);
 
-    // "Hi{emoji}, ..."
+    // Prefix emoji injection: "Hi{emoji}, ..."
     const prefixEl = document.getElementById("prefix");
     const patched = BASE_PREFIX.replace(/^Hi,/, "Hi" + em + ",");
     prefixEl.textContent = patched;
   }
 
-  // default green
-  setTheme("green");
+  // initial
+  setTheme(safeGetSavedTheme());
 
   document.getElementById("themeToggle").addEventListener("click", function () {
-    const cur = (window.parent?.document?.documentElement?.getAttribute("data-theme")) || "green";
+    const cur = safeGetSavedTheme();
     const i = themes.indexOf(cur);
     const next = themes[(i + 1 + themes.length) % themes.length];
     setTheme(next);
   });
 
+  // rotating typing (emoji-safe)
   const wordEl = document.getElementById("word");
   let idx = 0, char = 0, deleting = false;
   const typeSpeed = 45, deleteSpeed = 25, holdFull = 900, holdEmpty = 260;
@@ -634,12 +674,13 @@ TOPBAR_TEMPLATE = r"""
   wordEl.textContent = "";
   step();
 
+  // height fit
+  const wrap = document.getElementById("wrap");
   function getHeight() {
     const b = wrap.getBoundingClientRect().height;
     const sh = wrap.scrollHeight;
     return Math.ceil(Math.max(b, sh));
   }
-
   let raf = null;
   let lastH = 0;
   function resizeFrame() {
@@ -654,7 +695,6 @@ TOPBAR_TEMPLATE = r"""
       } catch (e) {}
     });
   }
-
   window.addEventListener("load", () => resizeFrame());
   window.addEventListener("resize", () => setTimeout(resizeFrame, 60));
   new MutationObserver(() => resizeFrame()).observe(wrap, { childList: true, subtree: true, characterData: true });
@@ -671,8 +711,8 @@ topbar_html = (
     .replace("__GITHUB__", GITHUB_URL)
     .replace("__LINKEDIN__", LINKEDIN_URL)
     .replace("__EMAIL__", EMAIL)
-    .replace("__STATIC_PREFIX__", json.dumps(STATIC_PREFIX))
-    .replace("__ROTATING__", json.dumps(ROTATING))
+    .replace("__STATIC_PREFIX__", json.dumps(STATIC_PREFIX, ensure_ascii=False))
+    .replace("__ROTATING__", json.dumps(ROTATING, ensure_ascii=False))
 )
 
 components.html(topbar_html, height=93)
@@ -726,6 +766,19 @@ def read_spectrum_csv(folder: str) -> pd.DataFrame:
     return out
 
 
+def downsample_xy(x: np.ndarray, y: np.ndarray, max_points: int = 4000):
+    """Stable downsample to prevent Plotly freezes / artifacts."""
+    n = int(len(x))
+    if n <= max_points:
+        return x, y
+    idx = np.linspace(0, n - 1, num=max_points, dtype=int)
+    return x[idx], y[idx]
+
+
+# ============================================================
+# PLOTLY HTML (NO scattergl; no per-point animation; clean crossfade)
+# - Uses localStorage theme set by topbar, so color changes ALWAYS work.
+# ============================================================
 SPECTRUM_TEMPLATE = r"""
 <div id="__DIV__" style="width:100%;"></div>
 <script src="https://cdn.plot.ly/plotly-2.30.0.min.js"></script>
@@ -733,44 +786,59 @@ SPECTRUM_TEMPLATE = r"""
 (function() {
   const P = __PAYLOAD__;
   const el = document.getElementById(P.div_id);
+  const STORAGE_KEY = "bs_theme";
+  const THEMES = ["green","blue","pink","orange"];
 
-  function parseRGB(s) {
-    const m = (s || "").match(/rgba?\((\d+)\s*,\s*(\d+)\s*,\s*(\d+)(?:\s*,\s*([\d\.]+))?\)/i);
-    if (!m) return [57,255,20,1];
-    return [parseInt(m[1]), parseInt(m[2]), parseInt(m[3]), m[4] ? parseFloat(m[4]) : 1];
+  function themeToRgb(t){
+    switch(t){
+      case "orange": return [255,122,24];
+      case "blue":   return [0,231,255];
+      case "pink":   return [255,43,214];
+      default:       return [57,255,20];
+    }
   }
-  function rgba(rgb, alpha) {
-    return `rgba(${rgb[0]}, ${rgb[1]}, ${rgb[2]}, ${alpha})`;
+  function rgba(rgb, a){ return `rgba(${rgb[0]}, ${rgb[1]}, ${rgb[2]}, ${a})`; }
+
+  function getTheme(){
+    // 1) localStorage (authoritative, shared across iframes)
+    try {
+      const t = localStorage.getItem(STORAGE_KEY);
+      if (t && THEMES.includes(t)) return t;
+    } catch(e) {}
+
+    // 2) attribute fallback
+    try {
+      const t2 = document.documentElement.getAttribute("data-theme");
+      if (t2 && THEMES.includes(t2)) return t2;
+    } catch(e) {}
+    return "green";
   }
 
-  function getThemeColors() {
-    let doc = document;
-    try { if (window.parent && window.parent.document) doc = window.parent.document; } catch(e) {}
-    const body = doc.body || doc.documentElement;
-    const c = getComputedStyle(body).color;
-    const rgb = parseRGB(c);
-
+  function colorsForTheme(theme){
+    const rgb = themeToRgb(theme);
     return {
       rgb,
-      line: rgba(rgb, 0.95),
+      lineStrong: rgba(rgb, 0.95),
+      lineSoft: rgba(rgb, 0.10),
       font: rgba(rgb, 0.95),
       grid: rgba(rgb, 0.14),
       axis: rgba(rgb, 0.28)
     };
   }
 
-  function makeLayout(colors) {
+  function makeLayout(colors){
     return {
       title: { text: P.title, x: 0.02, xanchor: "left" },
       paper_bgcolor: "#050505",
       plot_bgcolor: "#050505",
-      margin: { l: 22, r: 18, t: 52, b: 40 },
+      margin: { l: 26, r: 18, t: 56, b: 44 },
       font: {
         family: 'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace',
         color: colors.font,
         size: 13
       },
       showlegend: false,
+      transition: { duration: 420, easing: "cubic-in-out" },
       xaxis: {
         title: { text: "wavelength (Å)" },
         showgrid: true,
@@ -794,91 +862,99 @@ SPECTRUM_TEMPLATE = r"""
     };
   }
 
-  function render(initialFull) {
-    const colors = getThemeColors();
+  // two traces = crossfade (no random dots, no WebGL artifacts)
+  function tracesFor(colors){
+    const hasOld = Array.isArray(P.x_old) && P.x_old.length > 0;
 
-    const traceLine = {
-      type: "scattergl",
+    const tOld = {
+      type: "scatter",
       mode: "lines",
-      x: initialFull ? P.x : [],
-      y: initialFull ? P.y : [],
-      line: { width: 2.4, color: colors.line },
+      x: hasOld ? P.x_old : P.x_new,
+      y: hasOld ? P.y_old : P.y_new,
+      line: { width: 2.4, color: colors.lineStrong },
+      opacity: hasOld ? 1.0 : 0.0,
       hovertemplate: "λ=%{x:.1f} Å<br>flux=%{y:.4f}<extra></extra>"
     };
 
-    return Plotly.newPlot(
+    const tNew = {
+      type: "scatter",
+      mode: "lines",
+      x: P.x_new,
+      y: P.y_new,
+      line: { width: 2.4, color: colors.lineStrong },
+      opacity: hasOld ? 0.0 : 1.0,
+      hovertemplate: "λ=%{x:.1f} Å<br>flux=%{y:.4f}<extra></extra>"
+    };
+
+    return { hasOld, data: [tOld, tNew] };
+  }
+
+  function render(){
+    const theme = getTheme();
+    const colors = colorsForTheme(theme);
+    const { hasOld, data } = tracesFor(colors);
+
+    Plotly.newPlot(
       el,
-      [traceLine],
+      data,
       makeLayout(colors),
       { displayModeBar: false, responsive: true }
     ).then(() => {
-      if (P.autoplay) animateReveal();
+      // Fade-in / crossfade
+      setTimeout(() => {
+        if (hasOld){
+          Plotly.restyle(el, { opacity: 0.0 }, [0]); // old out
+          Plotly.restyle(el, { opacity: 1.0 }, [1]); // new in
+        } else {
+          // start hidden then fade in
+          Plotly.restyle(el, { opacity: 0.0 }, [1]);
+          setTimeout(() => Plotly.restyle(el, { opacity: 1.0 }, [1]), 30);
+        }
+      }, 30);
     });
   }
 
-  function restyleToTheme() {
-    const colors = getThemeColors();
-    Plotly.restyle(el, { "line.color": [colors.line] }, [0]);
+  function restyleToTheme(){
+    const theme = getTheme();
+    const colors = colorsForTheme(theme);
+
+    // update both lines + axes/fonts
+    Plotly.restyle(el, { "line.color": [colors.lineStrong] }, [0]);
+    Plotly.restyle(el, { "line.color": [colors.lineStrong] }, [1]);
     Plotly.relayout(el, makeLayout(colors));
   }
 
-  function animateReveal() {
-    const N = P.x.length;
-    if (N < 3) {
-      Plotly.restyle(el, { x: [P.x], y: [P.y] }, [0]);
-      return;
-    }
+  render();
 
-    const colors = getThemeColors();
-    const start = performance.now();
-    const duration = 1400; // ms (tweak if you want)
-    const minAlpha = 0.08;
+  // sync theme changes:
+  // 1) storage event (topbar writes localStorage)
+  window.addEventListener("storage", (ev) => {
+    if (ev && ev.key === STORAGE_KEY) restyleToTheme();
+  });
 
-    function step(now) {
-      const t = Math.min(1, (now - start) / duration);
-      const k = Math.max(2, Math.floor(2 + t * (N - 2)));
-
-      const alpha = minAlpha + (0.95 - minAlpha) * t;
-      const col = rgba(colors.rgb, alpha);
-
-      Plotly.restyle(el, {
-        x: [P.x.slice(0, k)],
-        y: [P.y.slice(0, k)],
-        "line.color": [col]
-      }, [0]);
-
-      if (t < 1) {
-        requestAnimationFrame(step);
-      } else {
-        const finalColors = getThemeColors();
-        Plotly.restyle(el, { x: [P.x], y: [P.y], "line.color": [finalColors.line] }, [0]);
-      }
-    }
-
-    requestAnimationFrame(step);
-  }
-
-  render(!P.autoplay);
-
-  // update plot colors LIVE when theme changes
-  let root = null;
-  try { root = window.parent.document.documentElement; } catch(e) { root = document.documentElement; }
-
-  new MutationObserver(() => {
-    restyleToTheme();
-  }).observe(root, { attributes: true, attributeFilter: ["data-theme"] });
+  // 2) also react if this iframe's data-theme changes
+  new MutationObserver(() => restyleToTheme())
+    .observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme"] });
 
 })();
 </script>
 """
 
-def spectrum_plot_html(x, y, title: str, autoplay: bool, div_id: str) -> str:
+def spectrum_plot_html(
+    x_new,
+    y_new,
+    title: str,
+    div_id: str,
+    x_old=None,
+    y_old=None,
+) -> str:
     payload = {
-        "x": [float(v) for v in x],
-        "y": [float(v) for v in y],
-        "title": title,
-        "autoplay": bool(autoplay),
         "div_id": div_id,
+        "title": title,
+        "x_new": [float(v) for v in x_new],
+        "y_new": [float(v) for v in y_new],
+        "x_old": [float(v) for v in (x_old if x_old is not None else [])],
+        "y_old": [float(v) for v in (y_old if y_old is not None else [])],
     }
     return (
         SPECTRUM_TEMPLATE
@@ -904,10 +980,10 @@ with left:
     st.markdown("## Education")
     st.markdown(
         """
-- **MSc Computer Science** — NWU *(2025–2027)*  
-- **BSc Hons Computer Science and Information Technology** — NWU *(2023–2024)*  
-- **BSc Information Technology** — NWU *(2021–2023)*  
-- **TEFL (180 hours)** — i-to-i *(2023)*  
+- **MSc Computer Science** — NWU *(2025–2027)*
+- **BSc Hons Computer Science and Information Technology** — NWU *(2023–2024)*
+- **BSc Information Technology** — NWU *(2021–2023)*
+- **TEFL (180 hours)** — i-to-i *(2023)*
 - **Matric certificate** — Wesvalia *(2016–2020)*
         """.strip()
     )
@@ -926,7 +1002,7 @@ with left:
     st.markdown("## Research titles")
     st.markdown(
         """
-- **Master’s dissertation:** Sunspot classification using deep learning techniques  
+- **Master’s dissertation:** Sunspot classification using deep learning techniques
 - **Honours project:** Assessing the cybersecurity awareness of staff members in a higher educational institution
         """.strip()
     )
@@ -949,15 +1025,15 @@ with left:
     st.markdown("## Current research tools and technologies used")
     st.markdown(
         """
-- **Data sources:** SDO, JSOC  
-- **Deep learning:** PyTorch  
-- **Core Python stack:** NumPy, Pandas  
-- **Visualization:** Matplotlib, Seaborn  
-- **Detection:** YOLOv8, RT-DETR, Faster R-CNN  
-- **Classification:** ViT, Swin, ResNet, EfficientNet, ConvNeXt  
-- **Evaluation:** Precision/Recall, Confusion matrices, ROC/PR analysis  
-- **UI / Apps:** Streamlit, Tkinter  
-- **Dev tools:** Visual Studio Code, Jupyter Notebooks, PyCharm  
+- **Data sources:** SDO, JSOC
+- **Deep learning:** PyTorch
+- **Core Python stack:** NumPy, Pandas
+- **Visualization:** Matplotlib, Seaborn
+- **Detection:** YOLOv8, RT-DETR, Faster R-CNN
+- **Classification:** ViT, Swin, ResNet, EfficientNet, ConvNeXt
+- **Evaluation:** Precision/Recall, Confusion matrices, ROC/PR analysis
+- **UI / Apps:** Streamlit, Tkinter
+- **Dev tools:** Visual Studio Code, Jupyter Notebooks, PyCharm
 - **Environments:** Conda, Windows Subsystem for Linux (WSL)
         """.strip()
     )
@@ -968,59 +1044,42 @@ with left:
 The goal of this project was to classify stars from their spectra using the Morgan–Keenan (MK) spectral classification scheme, which defines seven primary spectral classes: **O, B, A, F, G, K, and M** (ordered from **hottest to coolest**).
 
 Spectral data were collected from **SDSS** using a custom Python pipeline built with **Astropy**, resulting in a dataset of **10,955** stellar spectra. The extracted numerical spectral features were first used as input to a **1D Transformer** model. In a subsequent approach, each spectrum was converted into a **2D spectrogram** representation, which was then used to train a **2D Transformer** model.
-
-The distribution and characteristics of the seven spectral classes can be visualized below:
         """.strip()
     )
 
-    # UI styling for select + wrapper
+    # compact selector ONLY (remove duplicate right-side pill)
+    classes = list("OBAFGKM")
+    default_idx = classes.index("A")
+
     st.markdown(
         """
 <style>
-div[data-testid="stSelectbox"]{ max-width: 230px !important; }
-div[data-testid="stSelectbox"] label{ display:none !important; }
-.spectrum-wrap{
-  border: 1px solid rgba(255,255,255,0.10);
-  border-radius: 16px;
-  padding: 12px 12px 10px 12px;
-  background: rgba(0,0,0,0.28);
-  margin-top: 8px;
-  margin-bottom: 6px;
+/* keep this selector tight even inside a wide column */
+div[data-testid="stSelectbox"]{
+  width: 120px !important;
+  max-width: 120px !important;
 }
 </style>
 """,
         unsafe_allow_html=True,
     )
 
-    classes = list("OBAFGKM")
-    default_idx = classes.index("A")
+    spec_class = st.selectbox(
+        "Spectral class",
+        options=classes,
+        index=default_idx,
+        label_visibility="collapsed",
+        key="spec_class_select",
+    )
+    st.caption(f"$ spectrum viewer — MK class **{spec_class}**")
 
-    c1, c2 = st.columns([0.32, 0.68], gap="small")
-    with c1:
-        spec_class = st.selectbox(
-            "Spectral class",
-            options=classes,
-            index=default_idx,
-            label_visibility="collapsed",
-            key="spec_class_select",
-        )
-    with c2:
-        st.markdown(
-            f"""
-<div class="spectrum-wrap">
-  <div style="font-size:12px; opacity:0.85;">
-    $ spectrum viewer — MK class <b>{spec_class}</b>
-  </div>
-</div>
-""",
-            unsafe_allow_html=True,
-        )
-
+    # session tracking for crossfade (old->new)
     if "prev_spec_class" not in st.session_state:
         st.session_state.prev_spec_class = spec_class
-        st.session_state.spec_initialized = False
+        st.session_state.prev_x = None
+        st.session_state.prev_y = None
 
-    changed = (spec_class != st.session_state.prev_spec_class)
+    changed = spec_class != st.session_state.prev_spec_class
 
     data_root = "data"
     class_dir = os.path.join(data_root, spec_class)
@@ -1032,21 +1091,35 @@ div[data-testid="stSelectbox"] label{ display:none !important; }
         df_spec = None
 
     if df_spec is not None:
-        title = f"$ MK spectral class {spec_class} — spectrum"
-        autoplay = bool(st.session_state.spec_initialized and changed)
+        x = df_spec["wavelength_A"].to_numpy(dtype=float)
+        y = df_spec["flux"].to_numpy(dtype=float)
 
-        x = df_spec["wavelength_A"].to_numpy()
-        y = df_spec["flux"].to_numpy()
-        div_id = f"spectrum_plot_{spec_class}"
+        # downsample to keep Plotly rock-solid and prevent freezes/dots
+        x, y = downsample_xy(x, y, max_points=4500)
+
+        x_old = st.session_state.prev_x if changed else None
+        y_old = st.session_state.prev_y if changed else None
+
+        title = f"$ MK spectral class {spec_class} — spectrum"
+        div_id = "spectrum_plot_main"  # constant id for stability
 
         components.html(
-            spectrum_plot_html(x, y, title=title, autoplay=autoplay, div_id=div_id),
+            spectrum_plot_html(
+                x_new=x,
+                y_new=y,
+                x_old=x_old,
+                y_old=y_old,
+                title=title,
+                div_id=div_id,
+            ),
             height=460,
             scrolling=False,
         )
 
-        st.session_state.spec_initialized = True
+        # update stored previous after render
         st.session_state.prev_spec_class = spec_class
+        st.session_state.prev_x = x
+        st.session_state.prev_y = y
 
     st.markdown("## Hobby project: Metrics and visualisation")
     m1, m2, m3, m4 = st.columns(4)
