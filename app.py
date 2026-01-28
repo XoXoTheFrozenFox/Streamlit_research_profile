@@ -10,11 +10,11 @@ import streamlit.components.v1 as components
 
 
 # ============================================================
-# PAGE CONFIG
+# PAGE CONFIG (TAB / URL BAR ICON)
 # ============================================================
 st.set_page_config(
     page_title="Bernard Swanepoel — Research Profile",
-    page_icon="👽",
+    page_icon="🧑‍💻",   # tab/icon should be 🧑‍💻
     layout="wide",
 )
 
@@ -41,6 +41,8 @@ ROTATING = [
 
 # ============================================================
 # GLOBAL CSS (theme handled by html[data-theme] OR fallback green)
+# - Fix selectbox red border + make it pure black
+# - Border color always follows theme (never red)
 # ============================================================
 st.markdown(
     """
@@ -246,11 +248,47 @@ a.send-mailto-btn.is-disabled{
   transform: none !important;
 }
 
-/* SELECTBOX: keep it compact */
-div[data-testid="stSelectbox"]{ width: 120px !important; max-width: 120px !important; }
+/* ============================================================
+   SELECTBOX (make it true black + theme border, never red)
+   ============================================================ */
+div[data-testid="stSelectbox"]{
+  width: 120px !important;
+  max-width: 120px !important;
+}
 div[data-testid="stSelectbox"] label{ display:none !important; }
 
-/* CHECKBOX: force black bg + theme border */
+/* kill BaseWeb "invalid" red ring/border and force our own */
+div[data-testid="stSelectbox"] [data-baseweb],
+div[data-testid="stSelectbox"] [data-baseweb] *{
+  box-shadow: none !important;
+}
+
+/* the outer control */
+div[data-testid="stSelectbox"] [data-baseweb="select"] > div{
+  background: #050505 !important;
+  border: 1px solid var(--border-green) !important;
+  border-radius: 14px !important;
+  box-shadow: none !important;
+  outline: none !important;
+}
+
+/* focus state: still theme border, never red */
+div[data-testid="stSelectbox"] [data-baseweb="select"] > div:focus-within{
+  border: 1px solid var(--border-green) !important;
+  box-shadow: none !important;
+}
+
+/* dropdown menu bg */
+div[data-testid="stSelectbox"] [role="listbox"]{
+  background: #050505 !important;
+  border: 1px solid var(--border-green) !important;
+  border-radius: 14px !important;
+  box-shadow: none !important;
+}
+
+/* ============================================================
+   CHECKBOX: force black bg + theme border
+   ============================================================ */
 div[data-testid="stCheckbox"]{
   padding: 6px 10px !important;
   border-radius: 14px !important;
@@ -289,6 +327,8 @@ html[data-theme="orange"] div[data-testid="stFormSubmitButton"] button:hover,
 html[data-theme="orange"] a.send-mailto-btn:hover{ background: rgba(255,122,24,0.08) !important; }
 html[data-theme="orange"] div[data-testid="stCheckbox"]{ border: 1px solid var(--border-orange) !important; }
 html[data-theme="orange"] div[data-testid="stCheckbox"] input{ accent-color: var(--orange) !important; }
+html[data-theme="orange"] div[data-testid="stSelectbox"] [data-baseweb="select"] > div{ border: 1px solid var(--border-orange) !important; }
+html[data-theme="orange"] div[data-testid="stSelectbox"] [role="listbox"]{ border: 1px solid var(--border-orange) !important; }
 
 /* BLUE */
 html[data-theme="blue"] body,
@@ -315,6 +355,8 @@ html[data-theme="blue"] div[data-testid="stFormSubmitButton"] button:hover,
 html[data-theme="blue"] a.send-mailto-btn:hover{ background: rgba(0,231,255,0.08) !important; }
 html[data-theme="blue"] div[data-testid="stCheckbox"]{ border: 1px solid var(--border-blue) !important; }
 html[data-theme="blue"] div[data-testid="stCheckbox"] input{ accent-color: var(--blue) !important; }
+html[data-theme="blue"] div[data-testid="stSelectbox"] [data-baseweb="select"] > div{ border: 1px solid var(--border-blue) !important; }
+html[data-theme="blue"] div[data-testid="stSelectbox"] [role="listbox"]{ border: 1px solid var(--border-blue) !important; }
 
 /* PINK */
 html[data-theme="pink"] body,
@@ -341,13 +383,18 @@ html[data-theme="pink"] div[data-testid="stFormSubmitButton"] button:hover,
 html[data-theme="pink"] a.send-mailto-btn:hover{ background: rgba(255,43,214,0.08) !important; }
 html[data-theme="pink"] div[data-testid="stCheckbox"]{ border: 1px solid var(--border-pink) !important; }
 html[data-theme="pink"] div[data-testid="stCheckbox"] input{ accent-color: var(--pink) !important; }
+html[data-theme="pink"] div[data-testid="stSelectbox"] [data-baseweb="select"] > div{ border: 1px solid var(--border-pink) !important; }
+html[data-theme="pink"] div[data-testid="stSelectbox"] [role="listbox"]{ border: 1px solid var(--border-pink) !important; }
 </style>
 """,
     unsafe_allow_html=True,
 )
 
+
 # ============================================================
-# TOPBAR (stores theme in localStorage so plots can sync reliably)
+# TOPBAR (theme stored in localStorage so plots sync reliably)
+# - TAB ICON is ALWAYS 🧑‍💻
+# - "Hi{emoji}" animation remains theme-based
 # ============================================================
 TOPBAR_TEMPLATE = r"""
 <!doctype html>
@@ -575,6 +622,7 @@ TOPBAR_TEMPLATE = r"""
     pink: "🛸"
   };
 
+  const FAVICON_EMOJI = "🧑‍💻";
   const BASE_PREFIX = __STATIC_PREFIX__;
   const WORDS = __ROTATING__;
 
@@ -588,9 +636,13 @@ TOPBAR_TEMPLATE = r"""
 
   function setFaviconEmoji(em) {
     const svg =
-      '<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64">' +
-      '<text y="50" x="6" font-size="52">' + em + '</text>' +
-      '</svg>';
+      '<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64">' +
+      '<rect width="64" height="64" fill="transparent"/>' +
+      '<text x="32" y="34" text-anchor="middle" dominant-baseline="middle" ' +
+      'font-size="50" font-family="Apple Color Emoji, Segoe UI Emoji, Noto Color Emoji, sans-serif">' +
+      em +
+      '</text></svg>';
+
     const url = "data:image/svg+xml," + encodeURIComponent(svg);
 
     function apply(doc) {
@@ -611,30 +663,26 @@ TOPBAR_TEMPLATE = r"""
   function setTheme(theme) {
     const t = themes.includes(theme) ? theme : "green";
 
-    // Save theme so other iframes (plots) can sync
     try { localStorage.setItem(STORAGE_KEY, t); } catch(e) {}
 
-    // Set on this doc
     document.documentElement.setAttribute("data-theme", t);
 
-    // Best effort: set on parent doc for your CSS
     try {
       if (window.parent && window.parent.document) {
         window.parent.document.documentElement.setAttribute("data-theme", t);
       }
     } catch (e) {}
 
-    // Emoji + favicon
-    const em = emojiMap[t] || "👽";
-    setFaviconEmoji(em);
+    // Always set tab icon to 🧑‍💻
+    setFaviconEmoji(FAVICON_EMOJI);
 
     // Prefix emoji injection: "Hi{emoji}, ..."
+    const em = emojiMap[t] || "👽";
     const prefixEl = document.getElementById("prefix");
     const patched = BASE_PREFIX.replace(/^Hi,/, "Hi" + em + ",");
     prefixEl.textContent = patched;
   }
 
-  // initial
   setTheme(safeGetSavedTheme());
 
   document.getElementById("themeToggle").addEventListener("click", function () {
@@ -766,8 +814,7 @@ def read_spectrum_csv(folder: str) -> pd.DataFrame:
     return out
 
 
-def downsample_xy(x: np.ndarray, y: np.ndarray, max_points: int = 4000):
-    """Stable downsample to prevent Plotly freezes / artifacts."""
+def downsample_xy(x: np.ndarray, y: np.ndarray, max_points: int = 3500):
     n = int(len(x))
     if n <= max_points:
         return x, y
@@ -775,9 +822,27 @@ def downsample_xy(x: np.ndarray, y: np.ndarray, max_points: int = 4000):
     return x[idx], y[idx]
 
 
+def smart_yrange(y: np.ndarray) -> tuple[float, float]:
+    yy = np.asarray(y, dtype=float)
+    yy = yy[np.isfinite(yy)]
+    if yy.size < 3:
+        return (0.0, 1.0)
+
+    lo, hi = np.percentile(yy, [1.0, 99.0])
+    if not np.isfinite(lo) or not np.isfinite(hi) or lo == hi:
+        lo, hi = float(np.min(yy)), float(np.max(yy))
+        if lo == hi:
+            lo -= 1.0
+            hi += 1.0
+
+    span = hi - lo
+    pad = 0.08 * span if span > 0 else 0.5
+    return float(lo - pad), float(hi + pad)
+
+
 # ============================================================
-# PLOTLY HTML (NO scattergl; no per-point animation; clean crossfade)
-# - Uses localStorage theme set by topbar, so color changes ALWAYS work.
+# PLOTLY HTML
+# - Slow down a little bit more (per your request)
 # ============================================================
 SPECTRUM_TEMPLATE = r"""
 <div id="__DIV__" style="width:100%;"></div>
@@ -800,45 +865,37 @@ SPECTRUM_TEMPLATE = r"""
   function rgba(rgb, a){ return `rgba(${rgb[0]}, ${rgb[1]}, ${rgb[2]}, ${a})`; }
 
   function getTheme(){
-    // 1) localStorage (authoritative, shared across iframes)
     try {
       const t = localStorage.getItem(STORAGE_KEY);
       if (t && THEMES.includes(t)) return t;
     } catch(e) {}
-
-    // 2) attribute fallback
-    try {
-      const t2 = document.documentElement.getAttribute("data-theme");
-      if (t2 && THEMES.includes(t2)) return t2;
-    } catch(e) {}
+    const t2 = document.documentElement.getAttribute("data-theme");
+    if (t2 && THEMES.includes(t2)) return t2;
     return "green";
   }
 
   function colorsForTheme(theme){
     const rgb = themeToRgb(theme);
     return {
-      rgb,
-      lineStrong: rgba(rgb, 0.95),
-      lineSoft: rgba(rgb, 0.10),
+      line: rgba(rgb, 0.95),
       font: rgba(rgb, 0.95),
       grid: rgba(rgb, 0.14),
       axis: rgba(rgb, 0.28)
     };
   }
 
-  function makeLayout(colors){
+  function makeLayout(colors, yRange){
     return {
       title: { text: P.title, x: 0.02, xanchor: "left" },
       paper_bgcolor: "#050505",
       plot_bgcolor: "#050505",
-      margin: { l: 26, r: 18, t: 56, b: 44 },
+      margin: { l: 60, r: 18, t: 56, b: 44 },
       font: {
         family: 'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace',
         color: colors.font,
         size: 13
       },
       showlegend: false,
-      transition: { duration: 420, easing: "cubic-in-out" },
       xaxis: {
         title: { text: "wavelength (Å)" },
         showgrid: true,
@@ -850,7 +907,9 @@ SPECTRUM_TEMPLATE = r"""
         mirror: true
       },
       yaxis: {
-        title: { text: "flux" },
+        title: { text: "flux", standoff: 34 },
+        automargin: true,
+        range: yRange,
         showgrid: true,
         gridcolor: colors.grid,
         zeroline: false,
@@ -862,77 +921,106 @@ SPECTRUM_TEMPLATE = r"""
     };
   }
 
-  // two traces = crossfade (no random dots, no WebGL artifacts)
-  function tracesFor(colors){
-    const hasOld = Array.isArray(P.x_old) && P.x_old.length > 0;
-
-    const tOld = {
-      type: "scatter",
-      mode: "lines",
-      x: hasOld ? P.x_old : P.x_new,
-      y: hasOld ? P.y_old : P.y_new,
-      line: { width: 2.4, color: colors.lineStrong },
-      opacity: hasOld ? 1.0 : 0.0,
-      hovertemplate: "λ=%{x:.1f} Å<br>flux=%{y:.4f}<extra></extra>"
-    };
-
-    const tNew = {
-      type: "scatter",
-      mode: "lines",
-      x: P.x_new,
-      y: P.y_new,
-      line: { width: 2.4, color: colors.lineStrong },
-      opacity: hasOld ? 0.0 : 1.0,
-      hovertemplate: "λ=%{x:.1f} Å<br>flux=%{y:.4f}<extra></extra>"
-    };
-
-    return { hasOld, data: [tOld, tNew] };
-  }
-
-  function render(){
-    const theme = getTheme();
-    const colors = colorsForTheme(theme);
-    const { hasOld, data } = tracesFor(colors);
-
-    Plotly.newPlot(
-      el,
-      data,
-      makeLayout(colors),
-      { displayModeBar: false, responsive: true }
-    ).then(() => {
-      // Fade-in / crossfade
-      setTimeout(() => {
-        if (hasOld){
-          Plotly.restyle(el, { opacity: 0.0 }, [0]); // old out
-          Plotly.restyle(el, { opacity: 1.0 }, [1]); // new in
-        } else {
-          // start hidden then fade in
-          Plotly.restyle(el, { opacity: 0.0 }, [1]);
-          setTimeout(() => Plotly.restyle(el, { opacity: 1.0 }, [1]), 30);
-        }
-      }, 30);
-    });
+  function setXY(xArr, yArr){
+    Plotly.restyle(el, { x: [xArr], y: [yArr] }, [0]);
   }
 
   function restyleToTheme(){
-    const theme = getTheme();
-    const colors = colorsForTheme(theme);
-
-    // update both lines + axes/fonts
-    Plotly.restyle(el, { "line.color": [colors.lineStrong] }, [0]);
-    Plotly.restyle(el, { "line.color": [colors.lineStrong] }, [1]);
-    Plotly.relayout(el, makeLayout(colors));
+    const colors = colorsForTheme(getTheme());
+    Plotly.restyle(el, { "line.color": [colors.line] }, [0]);
+    const cur = (el.layout && el.layout.yaxis && el.layout.yaxis.range) ? el.layout.yaxis.range : P.y_range_new;
+    Plotly.relayout(el, makeLayout(colors, cur));
   }
 
-  render();
+  function wipeLeftToRight(xFull, yFull, durationMs){
+    return new Promise((resolve) => {
+      const N = xFull.length;
+      if (N < 3) { setXY([], []); resolve(); return; }
+      const t0 = performance.now();
 
-  // sync theme changes:
-  // 1) storage event (topbar writes localStorage)
+      function step(now){
+        const t = Math.min(1, (now - t0) / durationMs);
+        const start = Math.floor(t * (N - 1));
+        setXY(xFull.slice(start), yFull.slice(start));
+        if (t < 1) requestAnimationFrame(step);
+        else { setXY([], []); resolve(); }
+      }
+      requestAnimationFrame(step);
+    });
+  }
+
+  function revealLeftToRight(xFull, yFull, durationMs){
+    return new Promise((resolve) => {
+      const N = xFull.length;
+      if (N < 3) { setXY(xFull, yFull); resolve(); return; }
+      const t0 = performance.now();
+
+      function step(now){
+        const t = Math.min(1, (now - t0) / durationMs);
+        const end = Math.max(2, Math.floor(2 + t * (N - 2)));
+        setXY(xFull.slice(0, end), yFull.slice(0, end));
+        if (t < 1) requestAnimationFrame(step);
+        else { setXY(xFull, yFull); resolve(); }
+      }
+      requestAnimationFrame(step);
+    });
+  }
+
+  async function runSequence(){
+    const hasOld = Array.isArray(P.x_old) && P.x_old.length > 0;
+
+    // slowed down slightly
+    const WIPE_MS = 1150;
+    const REVEAL_MS = 2700;
+    const PAUSE_MS = 170;
+
+    if (hasOld){
+      await wipeLeftToRight(P.x_old, P.y_old, WIPE_MS);
+      await new Promise(r => setTimeout(r, PAUSE_MS));
+
+      const colors = colorsForTheme(getTheme());
+      Plotly.relayout(el, makeLayout(colors, P.y_range_new));
+
+      await new Promise(r => setTimeout(r, 70));
+      await revealLeftToRight(P.x_new, P.y_new, REVEAL_MS);
+    } else {
+      const colors = colorsForTheme(getTheme());
+      Plotly.relayout(el, makeLayout(colors, P.y_range_new));
+      setXY([], []);
+      await revealLeftToRight(P.x_new, P.y_new, REVEAL_MS);
+    }
+  }
+
+  (function render(){
+    const colors = colorsForTheme(getTheme());
+    const hasOld = Array.isArray(P.x_old) && P.x_old.length > 0;
+
+    const initX = hasOld ? P.x_old : [];
+    const initY = hasOld ? P.y_old : [];
+
+    const trace = {
+      type: "scatter",
+      mode: "lines",
+      x: initX,
+      y: initY,
+      line: { width: 2.4, color: colors.line },
+      hovertemplate: "λ=%{x:.1f} Å<br>flux=%{y:.4f}<extra></extra>"
+    };
+
+    const yStart = hasOld ? P.y_range_old : P.y_range_new;
+
+    Plotly.newPlot(
+      el,
+      [trace],
+      makeLayout(colors, yStart),
+      { displayModeBar: false, responsive: true }
+    ).then(() => runSequence());
+  })();
+
   window.addEventListener("storage", (ev) => {
     if (ev && ev.key === STORAGE_KEY) restyleToTheme();
   });
 
-  // 2) also react if this iframe's data-theme changes
   new MutationObserver(() => restyleToTheme())
     .observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme"] });
 
@@ -947,6 +1035,8 @@ def spectrum_plot_html(
     div_id: str,
     x_old=None,
     y_old=None,
+    y_range_new=(0.0, 1.0),
+    y_range_old=(0.0, 1.0),
 ) -> str:
     payload = {
         "div_id": div_id,
@@ -955,6 +1045,8 @@ def spectrum_plot_html(
         "y_new": [float(v) for v in y_new],
         "x_old": [float(v) for v in (x_old if x_old is not None else [])],
         "y_old": [float(v) for v in (y_old if y_old is not None else [])],
+        "y_range_new": [float(y_range_new[0]), float(y_range_new[1])],
+        "y_range_old": [float(y_range_old[0]), float(y_range_old[1])],
     }
     return (
         SPECTRUM_TEMPLATE
@@ -1043,41 +1135,24 @@ with left:
         """
 The goal of this project was to classify stars from their spectra using the Morgan–Keenan (MK) spectral classification scheme, which defines seven primary spectral classes: **O, B, A, F, G, K, and M** (ordered from **hottest to coolest**).
 
-Spectral data were collected from **SDSS** using a custom Python pipeline built with **Astropy**, resulting in a dataset of **10,955** stellar spectra. The extracted numerical spectral features were first used as input to a **1D Transformer** model. In a subsequent approach, each spectrum was converted into a **2D spectrogram** representation, which was then used to train a **2D Transformer** model.
+Spectral data were collected from **SDSS** using a custom Python pipeline built with **Astropy**, resulting in a dataset of **10,955** stellar spectra.
         """.strip()
-    )
-
-    # compact selector ONLY (remove duplicate right-side pill)
-    classes = list("OBAFGKM")
-    default_idx = classes.index("A")
-
-    st.markdown(
-        """
-<style>
-/* keep this selector tight even inside a wide column */
-div[data-testid="stSelectbox"]{
-  width: 120px !important;
-  max-width: 120px !important;
-}
-</style>
-""",
-        unsafe_allow_html=True,
     )
 
     spec_class = st.selectbox(
         "Spectral class",
-        options=classes,
-        index=default_idx,
+        options=list("OBAFGKM"),
+        index=list("OBAFGKM").index("A"),
         label_visibility="collapsed",
         key="spec_class_select",
     )
     st.caption(f"$ spectrum viewer — MK class **{spec_class}**")
 
-    # session tracking for crossfade (old->new)
     if "prev_spec_class" not in st.session_state:
         st.session_state.prev_spec_class = spec_class
         st.session_state.prev_x = None
         st.session_state.prev_y = None
+        st.session_state.prev_yrange = (0.0, 1.0)
 
     changed = spec_class != st.session_state.prev_spec_class
 
@@ -1093,15 +1168,16 @@ div[data-testid="stSelectbox"]{
     if df_spec is not None:
         x = df_spec["wavelength_A"].to_numpy(dtype=float)
         y = df_spec["flux"].to_numpy(dtype=float)
+        x, y = downsample_xy(x, y, max_points=3500)
 
-        # downsample to keep Plotly rock-solid and prevent freezes/dots
-        x, y = downsample_xy(x, y, max_points=4500)
+        y_range_new = smart_yrange(y)
 
         x_old = st.session_state.prev_x if changed else None
         y_old = st.session_state.prev_y if changed else None
+        y_range_old = st.session_state.prev_yrange if changed else y_range_new
 
         title = f"$ MK spectral class {spec_class} — spectrum"
-        div_id = "spectrum_plot_main"  # constant id for stability
+        div_id = "spectrum_plot_main"
 
         components.html(
             spectrum_plot_html(
@@ -1111,22 +1187,36 @@ div[data-testid="stSelectbox"]{
                 y_old=y_old,
                 title=title,
                 div_id=div_id,
+                y_range_new=y_range_new,
+                y_range_old=y_range_old,
             ),
             height=460,
             scrolling=False,
         )
 
-        # update stored previous after render
         st.session_state.prev_spec_class = spec_class
         st.session_state.prev_x = x
         st.session_state.prev_y = y
+        st.session_state.prev_yrange = y_range_new
 
-    st.markdown("## Hobby project: Metrics and visualisation")
+    st.markdown("## Hobby project: Metrics")
+    st.markdown("#### 1D-Transformer")
     m1, m2, m3, m4 = st.columns(4)
-    m1.metric("Best Macro-F1", "—")
-    m2.metric("Classes", "—")
-    m3.metric("Images", "—")
-    m4.metric("Backbone", "—")
+    m1.metric("Accuracy", "90.33%")
+    m2.metric("Precision", "90.36%")
+    m3.metric("Recall", "90.33%")
+    m4.metric("F1-score", "90.12%")
+    st.markdown("#### 2D-Transformer")
+    m1, m2, m3, m4 = st.columns(4)
+    m1.metric("Accuracy", "83.94%")
+    m2.metric("Precision", "85.13%")
+    m3.metric("Recall", "83.94%")
+    m4.metric("F1-score", "83.28%")
+
+    st.markdown("## Hobby project: Confusion matrices")
+    st.markdown("#### 1D-Transformer")
+    
+    st.markdown("#### 2D-Transformer")
 
     st.divider()
 
