@@ -11,8 +11,8 @@ st.set_page_config(
 # Links / info
 # -----------------------------
 TAGLINE = (
-    "Masters research project title: Sunspot classification using deep learning techniques\n"
-    "Honours research project title: Assessing the cybersecurity awareness of staff members in a higher educational institution\n"
+    "Masters dissertation: Sunspot classification using deep learning techniques\n"
+    "Honours project: Assessing the cybersecurity awareness of staff members in a higher educational institution\n"
     "Line 3 here"
 )
 
