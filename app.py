@@ -820,7 +820,7 @@ with left:
         """.strip()
     )
 
-    st.markdown("## Hobby projects: Star classification")
+    st.markdown("## Hobby project: Star classification")
 
     st.markdown("## Hobby project: Metrics and visualisation")
     m1, m2, m3, m4 = st.columns(4)
