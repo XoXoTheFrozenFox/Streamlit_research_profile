@@ -1,6 +1,5 @@
 import re
-import smtplib
-from email.message import EmailMessage
+from urllib.parse import quote
 
 import streamlit as st
 import streamlit.components.v1 as components
@@ -124,6 +123,25 @@ div[data-testid="stTextArea"] textarea:focus{
   background: rgba(255,122,24,0.08) !important;
 }
 
+/* "mailto draft" button (styled like Streamlit buttons) */
+a.mailto-btn{
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  text-decoration:none !important;
+  background: var(--bg) !important;
+  color: var(--orange) !important;
+  border: 1px solid var(--border-orange) !important;
+  border-radius: 14px !important;
+  padding: 0.55rem 0.95rem !important;
+  box-shadow: 0 0 0 1px rgba(255,122,24,0.10) inset !important;
+  transition: background 140ms ease, transform 140ms ease;
+}
+a.mailto-btn:hover{
+  background: rgba(255,122,24,0.08) !important;
+  transform: translateY(-1px);
+}
+
 /* Green theme (set by JS) */
 html[data-theme="green"] body,
 html[data-theme="green"] [data-testid="stAppViewContainer"]{
@@ -150,13 +168,15 @@ html[data-theme="green"] div[data-testid="stTextArea"] textarea::placeholder{
   color: rgba(57,255,20,0.65) !important;
 }
 html[data-theme="green"] .stButton > button,
-html[data-theme="green"] div[data-testid="stFormSubmitButton"] button{
+html[data-theme="green"] div[data-testid="stFormSubmitButton"] button,
+html[data-theme="green"] a.mailto-btn{
   color: var(--green) !important;
   border: 1px solid var(--border-green) !important;
   box-shadow: 0 0 0 1px rgba(57,255,20,0.10) inset !important;
 }
 html[data-theme="green"] .stButton > button:hover,
-html[data-theme="green"] div[data-testid="stFormSubmitButton"] button:hover{
+html[data-theme="green"] div[data-testid="stFormSubmitButton"] button:hover,
+html[data-theme="green"] a.mailto-btn:hover{
   background: rgba(57,255,20,0.08) !important;
 }
 </style>
@@ -510,68 +530,11 @@ components.html(topbar_html, height=93)
 st.divider()
 
 # -----------------------------
-# Email sending via Brevo SMTP (587 STARTTLS)
+# Mailto draft builder (FREE)
 # -----------------------------
-EMAIL_RE = re.compile(r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
-
-def _is_valid_email(addr: str) -> bool:
-    return bool(addr and EMAIL_RE.match(addr.strip()))
-
-def send_contact_email_smtp(
-    *,
-    visitor_name: str,
-    visitor_email: str,
-    subject: str,
-    message: str,
-) -> tuple[bool, str]:
-    host = st.secrets.get("BREVO_SMTP_HOST", "smtp-relay.brevo.com")
-    port = int(st.secrets.get("BREVO_SMTP_PORT", 587))
-    login = st.secrets.get("BREVO_SMTP_LOGIN", "")
-    password = st.secrets.get("BREVO_SMTP_PASSWORD", "")
-
-    sender_email = st.secrets.get("BREVO_SENDER_EMAIL", "")
-    sender_name = st.secrets.get("BREVO_SENDER_NAME", "Research page Bernard")
-
-    if not login or not password:
-        return False, "Missing BREVO_SMTP_LOGIN / BREVO_SMTP_PASSWORD in Streamlit secrets."
-    if not sender_email or not _is_valid_email(sender_email):
-        return False, "BREVO_SENDER_EMAIL missing or invalid in Streamlit secrets."
-
-    visitor_name = (visitor_name or "").strip()
-    visitor_email = (visitor_email or "").strip()
-    subject = (subject or "").strip()
-    message = (message or "").strip()
-
-    if not message:
-        return False, "Message cannot be empty."
-
-    msg = EmailMessage()
-    msg["From"] = f"{sender_name} <{sender_email}>"
-    msg["To"] = EMAIL
-    msg["Subject"] = f"[Website] {subject}" if subject else "[Website] New message"
-    msg["Reply-To"] = f"{visitor_name} <{visitor_email}>" if _is_valid_email(visitor_email) else sender_email
-
-    body = (
-        "New website message\n\n"
-        f"Name: {visitor_name}\n"
-        f"Email: {visitor_email}\n"
-        f"Subject: {subject}\n"
-        "\n"
-        "Message:\n"
-        f"{message}\n"
-    )
-    msg.set_content(body)
-
-    try:
-        with smtplib.SMTP(host, port, timeout=20) as server:
-            server.ehlo()
-            server.starttls()
-            server.ehlo()
-            server.login(login, password)
-            server.send_message(msg)
-        return True, "Sent ✅"
-    except Exception as e:
-        return False, f"SMTP send failed: {e}"
+def build_mailto_link(*, to_email: str, subject: str, body: str) -> str:
+    # Encode safely for mailto URL
+    return f"mailto:{to_email}?subject={quote(subject)}&body={quote(body)}"
 
 # -----------------------------
 # Main content
@@ -639,31 +602,57 @@ with left:
     st.markdown("## Contact")
     st.write("Send me a message directly from this page:")
 
+    # Store link after submission so we can show the "Open email draft" button
+    if "mailto_link" not in st.session_state:
+        st.session_state["mailto_link"] = None
+
     with st.form("contact_form", clear_on_submit=True):
         name = st.text_input("Name", placeholder="Your name")
-        email = st.text_input("Email", placeholder="you@example.com")
         subject = st.text_input("Subject", placeholder="What is this about?")
         message = st.text_area("Message", placeholder="Type your message here...", height=160)
         submitted = st.form_submit_button("Send message")
 
     if submitted:
-        if not name.strip():
+        name_s = (name or "").strip()
+        subject_s = (subject or "").strip()
+        message_s = (message or "").strip()
+
+        if not name_s:
             st.error("Please enter your name.")
-        elif not _is_valid_email(email):
-            st.error("Please enter a valid email address.")
-        elif not message.strip():
+            st.session_state["mailto_link"] = None
+        elif not subject_s:
+            st.error("Please enter a subject.")
+            st.session_state["mailto_link"] = None
+        elif not message_s:
             st.error("Please enter a message.")
+            st.session_state["mailto_link"] = None
         else:
-            ok, info = send_contact_email_smtp(
-                visitor_name=name,
-                visitor_email=email,
-                subject=subject,
-                message=message,
+            # Build the email body. We omit visitor email as requested.
+            body = (
+                "New website message\n\n"
+                f"Name: {name_s}\n"
+                f"Subject: {subject_s}\n\n"
+                "Message:\n"
+                f"{message_s}\n"
             )
-            if ok:
-                st.success("Message sent successfully ✅")
-            else:
-                st.error(info)
+            mailto = build_mailto_link(
+                to_email=EMAIL,
+                subject=f"[Website] {subject_s}",
+                body=body,
+            )
+            st.session_state["mailto_link"] = mailto
+            st.success("Ready ✅ Click the button below to open your email client with the message pre-filled.")
+
+    # Show the "Open email draft" button only when we have a valid draft
+    if st.session_state.get("mailto_link"):
+        st.markdown(
+            f"""
+<a class="mailto-btn" href="{st.session_state['mailto_link']}" target="_blank" rel="noopener">
+  Open email draft
+</a>
+            """.strip(),
+            unsafe_allow_html=True,
+        )
 
 st.divider()
 st.caption("© 2026 Bernard Swanepoel")
