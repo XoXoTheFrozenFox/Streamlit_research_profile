@@ -17,8 +17,9 @@ LINKEDIN_URL = "https://www.linkedin.com/in/bernard-swanepoel-a2777322b/"
 GITHUB_URL = "https://github.com/XoXoTheFrozenFox"
 EMAIL = "BernardSwanepoel1510@gmail.com"
 
-# Prefix ends with exactly ONE space (NBSP)
-STATIC_PREFIX = "Hi🌞, my name is Bernard Swanepoel.\u00A0"
+# ✅ IMPORTANT: use a NORMAL space at the end so wrapping can happen naturally on mobile
+# (still exactly one space after the dot)
+STATIC_PREFIX = "Hi🌞, my name is Bernard Swanepoel. "
 
 ROTATING = [
     "Masters student✏️",
@@ -40,7 +41,6 @@ st.markdown(
   --border:rgba(57,255,20,0.45);
 }
 
-/* Global: neon green everywhere */
 html, body, [data-testid="stAppViewContainer"]{
   background: var(--bg) !important;
   color: var(--green) !important;
@@ -48,11 +48,10 @@ html, body, [data-testid="stAppViewContainer"]{
 *{ color: var(--green) !important; }
 
 .block-container{
-  padding-top: 0.6rem !important;
-  padding-bottom: 1.4rem !important;
+  padding-top: 0.55rem !important;
+  padding-bottom: 1.25rem !important;
 }
 
-/* Streamlit overlays that can steal clicks */
 header[data-testid="stHeader"],
 div[data-testid="stToolbar"],
 div[data-testid="stDecoration"]{
@@ -60,14 +59,14 @@ div[data-testid="stDecoration"]{
   pointer-events: none !important;
 }
 
-/* Neon divider */
+/* Divider tight to content */
 hr{
   border: none !important;
   border-top: 1px solid var(--border) !important;
   opacity: 1 !important;
+  margin: 0.18rem 0 0.55rem 0 !important;
 }
 
-/* Metric cards */
 div[data-testid="stMetric"]{
   background: rgba(0,0,0,0.35) !important;
   border: 1px solid var(--border) !important;
@@ -76,13 +75,11 @@ div[data-testid="stMetric"]{
   box-shadow: 0 0 0 1px rgba(57,255,20,0.10) inset;
 }
 
-/* Info box */
 div[data-testid="stAlert"]{
   background: rgba(0,0,0,0.35) !important;
   border: 1px solid var(--border) !important;
 }
 
-/* Terminal text feel */
 p, li{
   font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
 }
@@ -92,12 +89,12 @@ p, li{
 )
 
 # -----------------------------
-# Topbar component:
-# - Desktop: title + icons on SAME LINE (true alignment)
-# - Tagline below, full width
-# - No giant empty space (safe auto-resize using wrapper height only)
-# - No hover clipping (padding + overflow visible)
-# - "$" never drops on its own line (prompt includes &nbsp;)
+# Topbar component
+# FIXES:
+# ✅ Desktop text never cuts off: title WRAPS, icons can wrap to next line if needed.
+# ✅ Mobile: typed word starts right after prefix (same line), wraps naturally when needed.
+# ✅ "$" never sits alone (uses $&nbsp;).
+# ✅ Height auto-resizes to exact content (no giant whitespace).
 # -----------------------------
 topbar_html = f"""
 <!doctype html>
@@ -112,13 +109,11 @@ topbar_html = f"""
     --border:rgba(57,255,20,0.45);
   }}
 
-  html, body {{
-    overflow: visible !important;
-  }}
+  html, body {{ overflow: visible !important; }}
 
   body {{
     margin: 0;
-    padding: 10px 8px 8px 8px;      /* same padding for text + buttons */
+    padding: 10px 8px 2px 8px;      /* minimal bottom padding => divider sits close */
     background: transparent;
     color: var(--green);
     font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono",
@@ -128,37 +123,45 @@ topbar_html = f"""
 
   #wrap {{
     width: 100%;
-    display: inline-block;           /* prevents feedback-loop height growth */
+    display: inline-block;          /* stable measurements for iframe autosize */
   }}
 
-  /* Row 1 = title left, icons right */
+  /* Row1: title + icons on same row when possible; wraps cleanly when not */
   .row1 {{
     display: flex;
-    align-items: center;             /* ✅ perfect vertical alignment */
+    align-items: flex-start;
     justify-content: space-between;
     gap: 12px;
     width: 100%;
+    flex-wrap: wrap;                /* ✅ allows title/icons to wrap instead of cutting off */
   }}
 
   .terminal-title {{
-    font-size: 1.62rem;
+    font-size: clamp(1.08rem, 2.05vw, 1.62rem);
     font-weight: 700;
     line-height: 1.22;
     margin: 0;
-    min-width: 0;
-    white-space: nowrap;             /* desktop stays one line */
-    overflow: hidden;
-    text-overflow: ellipsis;
+    min-width: 260px;
+    flex: 1 1 520px;                /* ✅ title gets space, but can wrap */
+    white-space: normal;            /* ✅ wrap instead of clipping */
+    overflow: visible;              /* ✅ no cut off */
+    overflow-wrap: anywhere;        /* ✅ last-resort wrapping */
+    word-break: break-word;
     text-shadow: 0 0 18px rgba(57,255,20,0.12);
+  }}
+
+  /* The typing line is pure inline text, so wrapping is "intelligent" */
+  .typing-line {{
+    display: inline;
   }}
 
   .prompt {{
     display: inline;
-    white-space: nowrap;
+    white-space: nowrap;            /* keep "$ " together */
   }}
 
   #prefix, #word {{
-    white-space: nowrap;
+    display: inline;
   }}
 
   .cursor {{
@@ -167,6 +170,7 @@ topbar_html = f"""
     margin-left: 2px;
     animation: blink 1s steps(1) infinite;
   }}
+
   @keyframes blink {{
     50% {{ opacity: 0; }}
   }}
@@ -176,7 +180,9 @@ topbar_html = f"""
     gap:10px;
     align-items:center;
     justify-content:flex-end;
-    flex: 0 0 auto;
+    flex: 0 1 auto;
+    padding-top: 2px;
+    flex-wrap: wrap;                /* ✅ if icons overflow, wrap (no cut off) */
   }}
 
   a.icon-btn {{
@@ -201,7 +207,6 @@ topbar_html = f"""
     pointer-events:none;
   }}
 
-  /* ✅ tiny lift + smaller glow so nothing ever gets clipped */
   a.icon-btn:hover {{
     transform: translateY(-1px);
     background: rgba(57,255,20,0.12);
@@ -214,9 +219,7 @@ topbar_html = f"""
   }}
 
   /* Email icon swap */
-  a.email-btn {{
-    position: relative;
-  }}
+  a.email-btn {{ position: relative; }}
   a.email-btn i {{
     position: absolute;
     inset: 0;
@@ -230,64 +233,41 @@ topbar_html = f"""
   a.email-btn:hover .email-open {{ opacity: 1; }}
   a.email-btn:hover .email-closed {{ opacity: 0; }}
 
-  /* Tagline row */
   .tagline {{
-    margin-top: 8px;
-    font-size: 1.18rem;
+    margin-top: 6px;
+    margin-bottom: 0;
+    font-size: clamp(1.00rem, 1.45vw, 1.18rem);
     font-weight: 650;
     opacity: 0.95;
-    white-space: nowrap;             /* desktop: single line */
-    overflow: hidden;
-    text-overflow: ellipsis;
+    white-space: normal;
+    overflow: visible;
+    overflow-wrap: anywhere;
+    text-shadow: 0 0 14px rgba(57,255,20,0.10);
   }}
 
-  /* -----------------------
-     Mobile formatting (different)
-     ----------------------- */
+  /* Mobile layout */
   @media (max-width: 640px) {{
-    body {{
-      padding: 12px 10px 10px 10px;  /* extra safety so hover/glow never clips */
-    }}
-
-    .row1 {{
-      flex-direction: column;
-      align-items: flex-start;
-      gap: 10px;
-    }}
+    body {{ padding: 12px 10px 4px 10px; }}
 
     .terminal-title {{
+      min-width: 0;
+      flex: 1 1 auto;
       font-size: 1.10rem;
-      white-space: normal;           /* allow wrap */
-      overflow: visible;
-      text-overflow: unset;
       line-height: 1.25;
-    }}
-
-    /* ✅ Keep $ glued to the following text */
-    .prompt {{
-      display: inline-block;
     }}
 
     .icon-row {{
       width: 100%;
-      flex-wrap: wrap;               /* wrap instead of clipping/cutting off */
       justify-content: flex-start;
       gap: 8px;
+      padding-top: 0;
     }}
 
-    a.icon-btn {{
-      width: 38px;
-      height: 38px;
-    }}
-    a.icon-btn i {{
-      font-size: 16px;
-    }}
+    a.icon-btn {{ width: 38px; height: 38px; }}
+    a.icon-btn i {{ font-size: 16px; }}
 
     .tagline {{
       font-size: 1.02rem;
-      white-space: normal;           /* show full line if it wraps */
-      overflow: visible;
-      text-overflow: unset;
       line-height: 1.25;
     }}
   }}
@@ -314,8 +294,10 @@ topbar_html = f"""
   <div id="wrap">
     <div class="row1">
       <div class="terminal-title">
-        <span class="prompt">$&nbsp;</span>
-        <span id="prefix"></span><span id="word"></span><span class="cursor">▌</span>
+        <span class="typing-line">
+          <span class="prompt">$&nbsp;</span>
+          <span id="prefix"></span><span id="word"></span><span class="cursor">▌</span>
+        </span>
       </div>
 
       <div class="icon-row">
@@ -339,7 +321,7 @@ topbar_html = f"""
 (function () {{
   const wrap = document.getElementById("wrap");
 
-  // ✅ Safe auto-resize: measure WRAP only (prevents runaway / huge whitespace)
+  // Auto-resize iframe to wrap height only (prevents extra space and prevents clipping)
   function resizeFrame() {{
     try {{
       const h = Math.ceil(wrap.getBoundingClientRect().height);
@@ -353,7 +335,7 @@ topbar_html = f"""
   new MutationObserver(() => resizeFrame()).observe(wrap, {{ childList: true, subtree: true, characterData: true }});
 
   // Typing animation (Unicode-safe for emojis)
-  const staticPrefix = {STATIC_PREFIX!r};  // already ends with NBSP
+  const staticPrefix = {STATIC_PREFIX!r};   // ends with ONE normal space
   const words = {ROTATING!r};
 
   const prefixEl = document.getElementById("prefix");
@@ -419,7 +401,6 @@ topbar_html = f"""
 </html>
 """
 
-# Starting height only; component auto-resizes to exact content height
 components.html(topbar_html, height=120)
 
 st.divider()
