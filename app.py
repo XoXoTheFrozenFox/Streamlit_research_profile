@@ -5,92 +5,20 @@ import json
 
 import numpy as np
 import pandas as pd
-import plotly.graph_objects as go
 
 import streamlit as st
 import streamlit.components.v1 as components
 
 
 # ============================================================
-# PAGE CONFIG (must be first Streamlit command)
-# Default theme = GREEN => default icon = 👽 (we also set a dynamic favicon via JS)
+# PAGE CONFIG (static; dynamic favicon is handled via JS)
+# Default theme = GREEN
 # ============================================================
 st.set_page_config(
     page_title="Bernard Swanepoel — Research Profile",
-    page_icon="👽",
+    page_icon="👽",   # default tab icon; JS will override favicon dynamically
     layout="wide",
 )
-
-
-# ============================================================
-# THEME SYNC (Python <-> topbar)
-# Uses URL query param: ?theme=orange|green|blue|pink
-# Default = green
-# ============================================================
-THEMES = {
-    "orange": {"hex": "#ff7a18", "rgba": "rgba(255,122,24,0.95)", "grid": "rgba(255,122,24,0.14)", "axis": "rgba(255,122,24,0.28)", "border": "rgba(255,122,24,0.45)"},
-    "green":  {"hex": "#39ff14", "rgba": "rgba(57,255,20,0.95)",  "grid": "rgba(57,255,20,0.14)",  "axis": "rgba(57,255,20,0.28)",  "border": "rgba(57,255,20,0.45)"},
-    "blue":   {"hex": "#00e7ff", "rgba": "rgba(0,231,255,0.95)",  "grid": "rgba(0,231,255,0.14)",  "axis": "rgba(0,231,255,0.28)",  "border": "rgba(0,231,255,0.45)"},
-    "pink":   {"hex": "#ff2bd6", "rgba": "rgba(255,43,214,0.95)", "grid": "rgba(255,43,214,0.14)", "axis": "rgba(255,43,214,0.28)", "border": "rgba(255,43,214,0.45)"},
-}
-
-THEME_EMOJI = {
-    "orange": "🌞",
-    "blue": "🌚",
-    "green": "👽",
-    "pink": "🛸",
-}
-
-def get_theme() -> str:
-    try:
-        t = st.query_params.get("theme", "green")
-        if isinstance(t, list):
-            t = t[0] if t else "green"
-        theme = str(t).strip().lower()
-    except Exception:
-        qp = st.experimental_get_query_params()
-        theme = (qp.get("theme", ["green"])[0] or "green").strip().lower()
-    return theme if theme in THEMES else "green"
-
-ACTIVE_THEME = get_theme()
-T = THEMES[ACTIVE_THEME]
-THEME_ICON = THEME_EMOJI.get(ACTIVE_THEME, "👽")
-
-
-# ============================================================
-# DYNAMIC FAVICON (tab icon) via JS (so it changes with theme)
-# ============================================================
-st.markdown(
-    f"""
-<script>
-(function() {{
-  const theme = {json.dumps(ACTIVE_THEME)};
-  const emojiMap = {{ orange:"🌞", blue:"🌚", green:"👽", pink:"🛸" }};
-  const em = emojiMap[theme] || "👽";
-
-  // Emoji favicon via SVG data URL
-  const svg = `
-    <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64">
-      <text y="50" x="6" font-size="52">${{em}}</text>
-    </svg>`;
-  const url = "data:image/svg+xml," + encodeURIComponent(svg);
-
-  let link = document.querySelector("link[rel*='icon']");
-  if (!link) {{
-    link = document.createElement("link");
-    link.rel = "icon";
-    document.head.appendChild(link);
-  }}
-  link.href = url;
-
-  // Also set data-theme on root for CSS
-  document.documentElement.setAttribute("data-theme", theme);
-}})();
-</script>
-""",
-    unsafe_allow_html=True,
-)
-
 
 # ============================================================
 # LINKS / INFO
@@ -102,7 +30,8 @@ LINKEDIN_URL = "https://www.linkedin.com/in/bernard-swanepoel-a2777322b/"
 GITHUB_URL = "https://github.com/XoXoTheFrozenFox"
 EMAIL = "BernardSwanepoel1510@gmail.com"
 
-STATIC_PREFIX = f"Hi{THEME_ICON}, my name is Bernard Swanepoel. "
+# NOTE: no emoji here — emoji is injected dynamically in the topbar JS based on theme
+STATIC_PREFIX = "Hi, my name is Bernard Swanepoel. "
 
 ROTATING = [
     "Masters student✏️",
@@ -409,7 +338,7 @@ html[data-theme="pink"] a.send-mailto-btn:hover{ background: rgba(255,43,214,0.0
 
 
 # ============================================================
-# TOPBAR (theme toggle updates ?theme=... and reloads)
+# TOPBAR (theme toggle is JS-only; also updates favicon + "Hi{emoji}")
 # ============================================================
 topbar_html = f"""
 <!doctype html>
@@ -447,9 +376,9 @@ topbar_html = f"""
   }}
 
   html[data-theme="orange"] body {{ color: var(--orange); }}
-  html[data-theme="green"] body  {{ color: var(--green); }}
-  html[data-theme="blue"]  body  {{ color: var(--blue); }}
-  html[data-theme="pink"]  body  {{ color: var(--pink); }}
+  html[data-theme="green"]  body {{ color: var(--green); }}
+  html[data-theme="blue"]   body {{ color: var(--blue); }}
+  html[data-theme="pink"]   body {{ color: var(--pink); }}
 
   #wrap {{
     width: 100%;
@@ -642,7 +571,6 @@ topbar_html = f"""
             <span id="prefix"></span><span id="word"></span><span class="cursor">▌</span>
           </span>
         </div>
-
         <div class="tagline">{TAGLINE}</div>
       </div>
 
@@ -668,39 +596,120 @@ topbar_html = f"""
 <script>
 (function () {{
   const wrap = document.getElementById("wrap");
-
-  // Default cycle starts at GREEN
   const themes = ["green", "blue", "pink", "orange"];
+
+  const emojiMap = {{
+    orange: "🌞",
+    blue: "🌚",
+    green: "👽",
+    pink: "🛸"
+  }};
+
+  function setFaviconEmoji(em) {{
+    const svg = `
+      <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64">
+        <text y="50" x="6" font-size="52">${{em}}</text>
+      </svg>`;
+    const url = "data:image/svg+xml," + encodeURIComponent(svg);
+
+    function apply(doc) {{
+      if (!doc) return;
+      let link = doc.querySelector("link[rel*='icon']");
+      if (!link) {{
+        link = doc.createElement("link");
+        link.rel = "icon";
+        doc.head.appendChild(link);
+      }}
+      link.href = url;
+    }}
+
+    apply(document);
+    try {{
+      apply(window.parent.document);
+    }} catch(e) {{}}
+  }}
 
   function setTheme(theme) {{
     const t = themes.includes(theme) ? theme : "green";
+
+    // set on this component doc
     document.documentElement.setAttribute("data-theme", t);
+
+    // set on parent streamlit doc
     try {{
       if (window.parent && window.parent.document) {{
         window.parent.document.documentElement.setAttribute("data-theme", t);
       }}
     }} catch (e) {{}}
+
+    // update favicon
+    const em = emojiMap[t] || "👽";
+    setFaviconEmoji(em);
+
+    // update "Hi{emoji}" prefix in typing header
+    const prefixEl = document.getElementById("prefix");
+    const base = {STATIC_PREFIX!r}; // "Hi, my name is ..."
+    // Replace starting "Hi," with "Hi{emoji},"
+    const patched = base.replace(/^Hi,/, "Hi" + em + ",");
+    prefixEl.textContent = patched;
   }}
 
-  const initialTheme = {ACTIVE_THEME!r};
-  setTheme(initialTheme);
+  // default theme green
+  setTheme("green");
 
+  // toggle
   const toggleBtn = document.getElementById("themeToggle");
   toggleBtn.addEventListener("click", function () {{
-    const cur = document.documentElement.getAttribute("data-theme") || "green";
+    const cur = (window.parent?.document?.documentElement?.getAttribute("data-theme")) || "green";
     const i = themes.indexOf(cur);
     const next = themes[(i + 1 + themes.length) % themes.length];
-
-    // write ?theme=next then reload (python picks it up, plot colors match)
-    try {{
-      const url = new URL(window.parent.location.href);
-      url.searchParams.set("theme", next);
-      window.parent.location.href = url.toString();
-    }} catch (e) {{
-      setTheme(next);
-    }}
+    setTheme(next);
   }});
 
+  // typing animation
+  const words = {ROTATING!r};
+  const wordEl = document.getElementById("word");
+
+  let idx = 0;
+  let char = 0;
+  let deleting = false;
+
+  const typeSpeed = 45;
+  const deleteSpeed = 25;
+  const holdFull = 900;
+  const holdEmpty = 260;
+
+  function step() {{
+    const glyphs = Array.from(words[idx]);
+
+    if (!deleting) {{
+      char++;
+      wordEl.textContent = glyphs.slice(0, char).join("");
+      if (char >= glyphs.length) {{
+        setTimeout(() => {{
+          deleting = true;
+          step();
+        }}, holdFull);
+        return;
+      }}
+      setTimeout(step, typeSpeed);
+    }} else {{
+      char--;
+      wordEl.textContent = glyphs.slice(0, Math.max(0, char)).join("");
+      if (char <= 0) {{
+        deleting = false;
+        idx = (idx + 1) % words.length;
+        setTimeout(step, holdEmpty);
+        return;
+      }}
+      setTimeout(step, deleteSpeed);
+    }}
+  }}
+
+  wordEl.textContent = "";
+  step();
+
+  // auto-resize iframe
   function getHeight() {{
     const b = wrap.getBoundingClientRect().height;
     const sh = wrap.scrollHeight;
@@ -728,60 +737,6 @@ topbar_html = f"""
   new MutationObserver(() => resizeFrame()).observe(wrap, {{
     childList: true, subtree: true, characterData: true
   }});
-
-  const staticPrefix = {STATIC_PREFIX!r};
-  const words = {ROTATING!r};
-
-  const prefixEl = document.getElementById("prefix");
-  const wordEl = document.getElementById("word");
-  prefixEl.textContent = staticPrefix;
-
-  let idx = 0;
-  let char = 0;
-  let deleting = false;
-
-  const typeSpeed = 45;
-  const deleteSpeed = 25;
-  const holdFull = 900;
-  const holdEmpty = 260;
-
-  function step() {{
-    const glyphs = Array.from(words[idx]);
-
-    if (!deleting) {{
-      char++;
-      wordEl.textContent = glyphs.slice(0, char).join("");
-      resizeFrame();
-
-      if (char >= glyphs.length) {{
-        setTimeout(() => {{
-          deleting = true;
-          step();
-        }}, holdFull);
-        return;
-      }}
-      setTimeout(step, typeSpeed);
-    }} else {{
-      char--;
-      wordEl.textContent = glyphs.slice(0, Math.max(0, char)).join("");
-      resizeFrame();
-
-      if (char <= 0) {{
-        deleting = false;
-        idx = (idx + 1) % words.length;
-        setTimeout(step, holdEmpty);
-        return;
-      }}
-      setTimeout(step, deleteSpeed);
-    }}
-  }}
-
-  wordEl.textContent = "";
-  step();
-
-  setTimeout(resizeFrame, 120);
-  setTimeout(resizeFrame, 350);
-  setTimeout(resizeFrame, 700);
 }})();
 </script>
 </body>
@@ -838,144 +793,174 @@ def read_spectrum_csv(folder: str) -> pd.DataFrame:
     return out
 
 
-def build_animated_plotly_payload(df: pd.DataFrame, title: str, theme_key: str) -> dict:
-    theme = THEMES.get(theme_key, THEMES["green"])
-    line_color = theme["rgba"]
-    grid_color = theme["grid"]
-    axis_color = theme["axis"]
-
-    x = df["wavelength_A"].to_numpy()
-    y = df["flux"].to_numpy()
-    N = len(df)
-
-    # Keep animation light (browser-side)
-    n_frames_points = 26
-    n_frames_line = 26
-
-    # Indices for frames
-    pts_idx = np.unique(np.clip(np.round(np.linspace(max(10, int(N * 0.05)), N, n_frames_points)).astype(int), 2, N))
-    ln_idx = np.unique(np.clip(np.round(np.linspace(2, N, n_frames_line)).astype(int), 2, N))
-
-    # Base traces (start small)
-    base_scatter_n = int(pts_idx[0]) if len(pts_idx) else min(N, 100)
-
-    data = [
-        {
-            "type": "scattergl",
-            "mode": "markers",
-            "x": x[:base_scatter_n].tolist(),
-            "y": y[:base_scatter_n].tolist(),
-            "marker": {"size": 4, "opacity": 0.95, "color": line_color},
-            "hovertemplate": "λ=%{x:.1f} Å<br>flux=%{y:.4f}<extra></extra>",
-            "name": "samples",
-        },
-        {
-            "type": "scattergl",
-            "mode": "lines",
-            "x": [], "y": [],
-            "line": {"width": 2.2, "color": line_color},
-            "hoverinfo": "skip",
-            "name": "trace",
-        },
-    ]
-
-    layout = {
-        "title": {"text": title, "x": 0.02, "xanchor": "left"},
-        "paper_bgcolor": "#050505",
-        "plot_bgcolor": "#050505",
-        "margin": {"l": 22, "r": 18, "t": 52, "b": 40},
-        "font": {
-            "family": 'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace',
-            "color": line_color,
-            "size": 13,
-        },
-        "showlegend": False,
-        "xaxis": {
-            "title": {"text": "wavelength (Å)"},
-            "showgrid": True,
-            "gridcolor": grid_color,
-            "zeroline": False,
-            "ticks": "outside",
-            "tickcolor": axis_color,
-            "linecolor": axis_color,
-            "mirror": True,
-        },
-        "yaxis": {
-            "title": {"text": "flux"},
-            "showgrid": True,
-            "gridcolor": grid_color,
-            "zeroline": False,
-            "ticks": "outside",
-            "tickcolor": axis_color,
-            "linecolor": axis_color,
-            "mirror": True,
-        },
+def spectrum_plot_html(x, y, title: str, autoplay: bool, div_id: str) -> str:
+    payload = {
+        "x": list(map(float, x)),
+        "y": list(map(float, y)),
+        "title": title,
+        "autoplay": bool(autoplay),
+        "div_id": div_id,
     }
 
-    frames = []
-    frame_id = 0
-
-    # Phase 1: reveal points
-    for n in pts_idx:
-        frames.append({
-            "name": f"f{frame_id}",
-            "data": [
-                {"x": x[:n].tolist(), "y": y[:n].tolist()},
-                {"x": [], "y": []},
-            ]
-        })
-        frame_id += 1
-
-    # Phase 2: reveal line (points already full)
-    for n in ln_idx:
-        frames.append({
-            "name": f"f{frame_id}",
-            "data": [
-                {"x": x[:N].tolist(), "y": y[:N].tolist()},
-                {"x": x[:n].tolist(), "y": y[:n].tolist()},
-            ]
-        })
-        frame_id += 1
-
-    return {"data": data, "layout": layout, "frames": frames}
-
-
-def render_plotly_html(payload: dict, div_id: str, autoplay: bool) -> str:
-    # NOTE: include_plotlyjs=cdn keeps it lightweight for Streamlit Cloud
-    payload_json = json.dumps(payload)
-    autoplay_js = "true" if autoplay else "false"
-
     return f"""
-<div id="{div_id}" style="width: 100%;"></div>
+<div id="{div_id}" style="width:100%;"></div>
 <script src="https://cdn.plot.ly/plotly-2.30.0.min.js"></script>
 <script>
 (function() {{
-  const payload = {payload_json};
-  const divId = {json.dumps(div_id)};
-  const autoplay = {autoplay_js};
+  const P = {json.dumps(payload)};
+  const el = document.getElementById(P.div_id);
 
-  const config = {{
-    displayModeBar: false,
-    responsive: true
-  }};
+  function parseRGB(s) {{
+    // "rgb(r, g, b)" or "rgba(r,g,b,a)"
+    const m = (s || "").match(/rgba?\\((\\d+)\\s*,\\s*(\\d+)\\s*,\\s*(\\d+)(?:\\s*,\\s*([\\d\\.]+))?\\)/i);
+    if (!m) return [57,255,20,1];
+    return [parseInt(m[1]), parseInt(m[2]), parseInt(m[3]), m[4] ? parseFloat(m[4]) : 1];
+  }}
+  function rgba(rgb, a) {{
+    return `rgba(${rgb[0]}, ${rgb[1]}, ${rgb[2]}, ${a})`;
+  }}
 
-  const el = document.getElementById(divId);
+  function getThemeColors() {{
+    let doc = document;
+    try {{ if (window.parent && window.parent.document) doc = window.parent.document; }} catch(e) {{}}
+    const root = doc.documentElement;
+    const body = doc.body || root;
 
-  // Render once
-  Plotly.newPlot(el, payload.data, payload.layout, config).then(() => {{
-    if (payload.frames && payload.frames.length) {{
-      Plotly.addFrames(el, payload.frames).then(() => {{
-        if (autoplay) {{
-          // Smooth, browser-side animation (no Streamlit reruns, no flicker)
-          Plotly.animate(el, null, {{
-            transition: {{ duration: 35, easing: "cubic-in-out" }},
-            frame: {{ duration: 35, redraw: false }},
-            mode: "immediate"
-          }});
-        }}
-      }});
+    const c = getComputedStyle(body).color; // theme text color
+    const rgb = parseRGB(c);
+
+    // tuned for a dark terminal plot
+    const line = rgba(rgb, 0.95);
+    const font = rgba(rgb, 0.95);
+    const grid = rgba(rgb, 0.14);
+    const axis = rgba(rgb, 0.28);
+    return {{ rgb, line, font, grid, axis }};
+  }}
+
+  function makeLayout(colors) {{
+    return {{
+      title: {{ text: P.title, x: 0.02, xanchor: "left" }},
+      paper_bgcolor: "#050505",
+      plot_bgcolor: "#050505",
+      margin: {{ l: 22, r: 18, t: 52, b: 40 }},
+      font: {{
+        family: 'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace',
+        color: colors.font,
+        size: 13
+      }},
+      showlegend: false,
+      xaxis: {{
+        title: {{ text: "wavelength (Å)" }},
+        showgrid: true,
+        gridcolor: colors.grid,
+        zeroline: false,
+        ticks: "outside",
+        tickcolor: colors.axis,
+        linecolor: colors.axis,
+        mirror: true
+      }},
+      yaxis: {{
+        title: {{ text: "flux" }},
+        showgrid: true,
+        gridcolor: colors.grid,
+        zeroline: false,
+        ticks: "outside",
+        tickcolor: colors.axis,
+        linecolor: colors.axis,
+        mirror: true
+      }}
+    }};
+  }}
+
+  function render(initialFull) {{
+    const colors = getThemeColors();
+
+    const traceLine = {{
+      type: "scattergl",
+      mode: "lines",
+      x: initialFull ? P.x : [],
+      y: initialFull ? P.y : [],
+      line: {{ width: 2.4, color: colors.line }},
+      hovertemplate: "λ=%{{x:.1f}} Å<br>flux=%{{y:.4f}}<extra></extra>"
+    }};
+
+    const fig = {{
+      data: [traceLine],
+      layout: makeLayout(colors),
+      config: {{ displayModeBar: false, responsive: true }}
+    }};
+
+    return Plotly.newPlot(el, fig.data, fig.layout, fig.config).then(() => {{
+      if (P.autoplay) animateReveal();
+    }});
+  }}
+
+  function restyleToTheme() {{
+    const colors = getThemeColors();
+    Plotly.restyle(el, {{
+      "line.color": [colors.line]
+    }}, [0]);
+
+    Plotly.relayout(el, makeLayout(colors));
+  }}
+
+  function animateReveal() {{
+    // "fade in from left to right" => reveal line x[:k] while also ramping opacity
+    const N = P.x.length;
+    if (N < 3) {{
+      Plotly.restyle(el, {{ x: [P.x], y: [P.y] }}, [0]);
+      return;
     }}
-  }});
+
+    const colors = getThemeColors();
+    const start = performance.now();
+    const duration = 1300; // ms
+    const minAlpha = 0.08;
+
+    function step(now) {{
+      const t = Math.min(1, (now - start) / duration);
+      const k = Math.max(2, Math.floor(2 + t * (N - 2)));
+
+      const alpha = minAlpha + (0.95 - minAlpha) * t;
+      const col = rgba(colors.rgb, alpha);
+
+      Plotly.restyle(el, {{
+        x: [P.x.slice(0, k)],
+        y: [P.y.slice(0, k)],
+        "line.color": [col]
+      }}, [0]);
+
+      if (t < 1) {{
+        requestAnimationFrame(step);
+      }} else {{
+        // lock final state at full opacity + full line
+        const finalColors = getThemeColors();
+        Plotly.restyle(el, {{
+          x: [P.x],
+          y: [P.y],
+          "line.color": [finalColors.line]
+        }}, [0]);
+      }}
+    }}
+
+    requestAnimationFrame(step);
+  }}
+
+  // 1) first render: if autoplay -> start empty, else show full line
+  render(!P.autoplay);
+
+  // 2) if theme changes while page is open, update plot colors live
+  let parentRoot = null;
+  try {{
+    parentRoot = window.parent.document.documentElement;
+  }} catch(e) {{
+    parentRoot = document.documentElement;
+  }}
+
+  new MutationObserver(() => {{
+    // reapply theme styling immediately
+    restyleToTheme();
+  }}).observe(parentRoot, {{ attributes: true, attributeFilter: ["data-theme"] }});
 
 }})();
 </script>
@@ -1069,7 +1054,8 @@ The distribution and characteristics of the seven spectral classes can be visual
     )
 
     # ------------------------------------------------------------
-    # Spectrum viewer (NO flicker): browser-side Plotly animation
+    # Spectrum viewer (new animation: line reveals left→right with fade)
+    # Plot colors update LIVE when theme changes (no Python rerun needed)
     # ------------------------------------------------------------
     st.markdown(
         """
@@ -1136,24 +1122,18 @@ div[data-testid="stSelectbox"] label{
     if df_spec is not None:
         title = f"$ MK spectral class {spec_class} — spectrum"
 
-        # No animation first render
+        # no animation on first ever render
         autoplay = bool(st.session_state.spec_initialized and changed)
 
-        payload = build_animated_plotly_payload(df_spec, title=title, theme_key=ACTIVE_THEME)
+        x = df_spec["wavelength_A"].to_numpy()
+        y = df_spec["flux"].to_numpy()
 
-        # If no autoplay, just show the final state by forcing the last frame as initial
-        if not autoplay and payload["frames"]:
-            # set base data to final frame to render instantly
-            last = payload["frames"][-1]["data"]
-            payload["data"][0]["x"] = last[0]["x"]
-            payload["data"][0]["y"] = last[0]["y"]
-            payload["data"][1]["x"] = last[1]["x"]
-            payload["data"][1]["y"] = last[1]["y"]
-
-        chart_div_id = f"spectrum_plot_{spec_class}_{ACTIVE_THEME}"
-        html = render_plotly_html(payload, div_id=chart_div_id, autoplay=autoplay)
-
-        components.html(html, height=460, scrolling=False)
+        div_id = f"spectrum_plot_{spec_class}"
+        components.html(
+            spectrum_plot_html(x, y, title=title, autoplay=autoplay, div_id=div_id),
+            height=460,
+            scrolling=False,
+        )
 
         st.session_state.spec_initialized = True
         st.session_state.prev_spec_class = spec_class
