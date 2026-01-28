@@ -1,3 +1,7 @@
+import smtplib
+import ssl
+from email.message import EmailMessage
+
 import streamlit as st
 import streamlit.components.v1 as components
 
@@ -85,6 +89,19 @@ p, li{
   font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
 }
 
+/* Make inputs feel more "terminal" */
+div[data-testid="stTextInput"] input,
+div[data-testid="stTextArea"] textarea{
+  background: rgba(0,0,0,0.35) !important;
+  border: 1px solid var(--border-orange) !important;
+  border-radius: 14px !important;
+  box-shadow: 0 0 0 1px rgba(255,122,24,0.10) inset !important;
+}
+div[data-testid="stTextInput"] input:focus,
+div[data-testid="stTextArea"] textarea:focus{
+  outline: none !important;
+}
+
 /* Green theme (set by JS) */
 html[data-theme="green"] body,
 html[data-theme="green"] [data-testid="stAppViewContainer"]{
@@ -102,6 +119,11 @@ html[data-theme="green"] div[data-testid="stMetric"]{
 }
 html[data-theme="green"] div[data-testid="stAlert"]{
   border: 1px solid var(--border-green) !important;
+}
+html[data-theme="green"] div[data-testid="stTextInput"] input,
+html[data-theme="green"] div[data-testid="stTextArea"] textarea{
+  border: 1px solid var(--border-green) !important;
+  box-shadow: 0 0 0 1px rgba(57,255,20,0.10) inset !important;
 }
 </style>
 """,
@@ -357,7 +379,7 @@ topbar_html = f"""
     }} catch (e) {{}}
   }}
 
-  // ✅ ALWAYS start ORANGE (no localStorage restore)
+  // ALWAYS start ORANGE (no localStorage restore)
   setTheme("orange");
 
   const toggleBtn = document.getElementById("themeToggle");
@@ -459,6 +481,44 @@ components.html(topbar_html, height=93)
 st.divider()
 
 # -----------------------------
+# Email helper (uses st.secrets if available)
+# -----------------------------
+def _smtp_config_ok() -> bool:
+    return all(
+        k in st.secrets
+        for k in ("SMTP_HOST", "SMTP_PORT", "SMTP_USER", "SMTP_PASS", "SMTP_TO")
+    )
+
+def _send_email_via_smtp(sender_name: str, sender_email: str, subject: str, message: str) -> None:
+    msg = EmailMessage()
+    msg["Subject"] = f"[Website Contact] {subject}".strip()
+    msg["From"] = st.secrets["SMTP_USER"]
+    msg["To"] = st.secrets["SMTP_TO"]
+    msg["Reply-To"] = sender_email
+
+    body = (
+        f"New contact form submission\n\n"
+        f"Name: {sender_name}\n"
+        f"Email: {sender_email}\n"
+        f"Subject: {subject}\n\n"
+        f"Message:\n{message}\n"
+    )
+    msg.set_content(body)
+
+    host = str(st.secrets["SMTP_HOST"])
+    port = int(st.secrets["SMTP_PORT"])
+    user = str(st.secrets["SMTP_USER"])
+    pw = str(st.secrets["SMTP_PASS"])
+
+    context = ssl.create_default_context()
+    with smtplib.SMTP(host, port, timeout=20) as server:
+        server.ehlo()
+        server.starttls(context=context)
+        server.ehlo()
+        server.login(user, pw)
+        server.send_message(msg)
+
+# -----------------------------
 # Main content
 # -----------------------------
 left, right = st.columns([1.35, 1.0], gap="large")
@@ -466,8 +526,8 @@ left, right = st.columns([1.35, 1.0], gap="large")
 with left:
     st.markdown("## Background about me")
     st.write(
-    "I’m Bernard Swanepoel, a Computer Science master’s student focused on applying deep learning to solar physics—especially automated sunspot detection and McIntosh classification. "
-    "Outside of research, I’m into gaming (Destiny, League of Legends, and pretty much anything Nintendo), I sing opera, and I enjoy 3D printing—mostly figures and fun prints."
+        "I’m Bernard Swanepoel, a Computer Science master’s student focused on applying deep learning to solar physics—especially automated sunspot detection and McIntosh classification. "
+        "Outside of research, I’m into gaming (Destiny, League of Legends, and pretty much anything Nintendo), I sing opera, and I enjoy 3D printing—mostly figures and fun prints."
     )
 
     st.markdown("## Research titles")
@@ -512,6 +572,65 @@ with left:
     m2.metric("Classes", "—")
     m3.metric("Images", "—")
     m4.metric("Backbone", "—")
+
+    st.divider()
+
+    # -----------------------------
+    # Contact page (section)
+    # -----------------------------
+    st.markdown("## Contact")
+
+    with st.form("contact_form", clear_on_submit=False):
+        name = st.text_input("Your name", placeholder="e.g., Jane Doe")
+        from_email = st.text_input("Your email", placeholder="e.g., jane@example.com")
+        subject = st.text_input("Subject", placeholder="e.g., Research collaboration")
+        message = st.text_area("Message", placeholder="Write your message here...", height=160)
+
+        # Simple anti-bot honeypot (should stay empty)
+        hp = st.text_input("Leave this empty", value="", label_visibility="collapsed")
+
+        submitted = st.form_submit_button("Send message")
+
+    if submitted:
+        # Basic validation
+        if hp.strip():
+            st.warning("Message blocked.")
+        elif not name.strip() or not from_email.strip() or not subject.strip() or not message.strip():
+            st.warning("Please complete all fields.")
+        elif "@" not in from_email or "." not in from_email:
+            st.warning("Please enter a valid email address.")
+        else:
+            if _smtp_config_ok():
+                try:
+                    _send_email_via_smtp(
+                        sender_name=name.strip(),
+                        sender_email=from_email.strip(),
+                        subject=subject.strip(),
+                        message=message.strip(),
+                    )
+                    st.success("Sent ✅")
+                except Exception:
+                    st.error(
+                        "Could not send via server email (SMTP). "
+                        "You can still contact me directly using the Email button at the top."
+                    )
+            else:
+                # Fallback: show a mailto link + message to copy (works without secrets)
+                mailto_subject = subject.strip().replace("\n", " ").replace("\r", " ")
+                st.info(
+                    "Email sending is not configured on this deployment yet. "
+                    "Use the button below to open your email client with the message pre-filled."
+                )
+                mailto_body = (
+                    f"Name: {name.strip()}\n"
+                    f"Email: {from_email.strip()}\n\n"
+                    f"{message.strip()}"
+                )
+                # Keep it simple: show mailto link + copyable text
+                st.markdown(
+                    f"[Open email draft](mailto:{EMAIL}?subject={mailto_subject}&body={mailto_body})"
+                )
+                st.code(mailto_body, language="text")
 
 st.divider()
 st.caption("© 2026 Bernard Swanepoel")
