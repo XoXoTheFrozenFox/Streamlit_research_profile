@@ -10,7 +10,7 @@ st.set_page_config(
 # -----------------------------
 # Links / info
 # -----------------------------
-TAGLINE = "MSc Computer Science — Sunspot Classification with Deep Learning"
+TAGLINE = "Research project title: Sunspot classification using deep learning techniques"
 
 PORTFOLIO_URL = "https://xoxothefrozenfox.github.io/react-personal-portfolio/"
 LINKEDIN_URL = "https://www.linkedin.com/in/bernard-swanepoel-a2777322b/"
@@ -19,7 +19,7 @@ EMAIL = "BernardSwanepoel1510@gmail.com"
 UNIVERSITY = "North-West University, Potchefstroom"
 
 STATIC_PREFIX = "Hi🌞, my name is Bernard Swanepoel."
-ROTATING = ["{MSc. student}", "{Reasearcher}", "{Computer Scientist}"]
+ROTATING = ["MSc. student", "Researcher", "Computer Scientist"]
 
 # -----------------------------
 # Global terminal aesthetic (applies to whole Streamlit page)
