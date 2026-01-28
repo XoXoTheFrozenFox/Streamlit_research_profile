@@ -32,8 +32,8 @@ ROTATING = [
 # -----------------------------
 # Global terminal aesthetic + hide Streamlit chrome
 # + add 2 more color profiles (neon blue, neon pink)
-# + make st.info block pure black like background
-# + hide header link icon on hover
+# + remove header link icons next to titles
+# + make the INFO block with placeholder text exactly #050505
 # -----------------------------
 st.markdown(
     """
@@ -43,11 +43,16 @@ st.markdown(
 footer {visibility: hidden;}
 header {visibility: hidden;}
 
-/* Hide Streamlit "link" icon next to headings on hover */
+/* Remove the "chain/link" icon next to headings */
 a.stMarkdownHeaderLink,
 a[data-testid="stHeaderLink"],
 [data-testid="stHeader"] a,
-[data-testid="stHeader"] svg { display:none !important; opacity:0 !important; }
+[data-testid="stHeader"] svg,
+h1 a, h2 a, h3 a, h4 a, h5 a, h6 a { 
+  display: none !important; 
+  opacity: 0 !important;
+  visibility: hidden !important;
+}
 
 /* Theme vars */
 :root{
@@ -95,19 +100,17 @@ div[data-testid="stMetric"]{
   box-shadow: 0 0 0 1px rgba(255,122,24,0.10) inset;
 }
 
-/* Alerts default (we'll override st.info specifically below) */
+/* Alerts default */
 div[data-testid="stAlert"]{
   background: var(--panel) !important;
   border: 1px solid var(--border-orange) !important;
   border-radius: 14px !important;
 }
 
-/* Make INFO block (your placeholder message) pure black like background */
+/* The st.info block background (your placeholder message) -> EXACTLY #050505 */
 div[data-testid="stAlert"][data-baseweb="notification"]{
-  background: var(--bg) !important;
+  background: #050505 !important;
 }
-
-/* Extra-safe: make the inner content also match */
 div[data-testid="stAlert"][data-baseweb="notification"] *{
   background: transparent !important;
 }
@@ -116,9 +119,7 @@ p, li, label, div{
   font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
 }
 
-/* -----------------------------
-   PURE BLACK form widgets (match background exactly)
------------------------------- */
+/* PURE BLACK form widgets */
 div[data-testid="stTextInput"] input,
 div[data-testid="stTextArea"] textarea{
   background: var(--bg) !important;
@@ -209,16 +210,14 @@ html[data-theme="green"] .stButton > button:hover,
 html[data-theme="green"] div[data-testid="stFormSubmitButton"] button:hover,
 html[data-theme="green"] a.send-mailto-btn:hover{ background: rgba(57,255,20,0.08) !important; }
 
-/* BLUE (neon) */
+/* BLUE */
 html[data-theme="blue"] body,
 html[data-theme="blue"] [data-testid="stAppViewContainer"]{ color: var(--blue) !important; }
 html[data-theme="blue"] *{ color: var(--blue) !important; }
 html[data-theme="blue"] hr{ border-top: 1px solid var(--border-blue) !important; }
 html[data-theme="blue"] div[data-testid="stMetric"],
 html[data-theme="blue"] div[data-testid="stAlert"]{ border: 1px solid var(--border-blue) !important; }
-html[data-theme="blue"] div[data-testid="stMetric"]{
-  box-shadow: 0 0 0 1px rgba(0,231,255,0.10) inset;
-}
+html[data-theme="blue"] div[data-testid="stMetric"]{ box-shadow: 0 0 0 1px rgba(0,231,255,0.10) inset; }
 html[data-theme="blue"] div[data-testid="stTextInput"] input,
 html[data-theme="blue"] div[data-testid="stTextArea"] textarea{
   color: var(--blue) !important;
@@ -238,16 +237,14 @@ html[data-theme="blue"] .stButton > button:hover,
 html[data-theme="blue"] div[data-testid="stFormSubmitButton"] button:hover,
 html[data-theme="blue"] a.send-mailto-btn:hover{ background: rgba(0,231,255,0.08) !important; }
 
-/* PINK (neon) */
+/* PINK */
 html[data-theme="pink"] body,
 html[data-theme="pink"] [data-testid="stAppViewContainer"]{ color: var(--pink) !important; }
 html[data-theme="pink"] *{ color: var(--pink) !important; }
 html[data-theme="pink"] hr{ border-top: 1px solid var(--border-pink) !important; }
 html[data-theme="pink"] div[data-testid="stMetric"],
 html[data-theme="pink"] div[data-testid="stAlert"]{ border: 1px solid var(--border-pink) !important; }
-html[data-theme="pink"] div[data-testid="stMetric"]{
-  box-shadow: 0 0 0 1px rgba(255,43,214,0.10) inset;
-}
+html[data-theme="pink"] div[data-testid="stMetric"]{ box-shadow: 0 0 0 1px rgba(255,43,214,0.10) inset; }
 html[data-theme="pink"] div[data-testid="stTextInput"] input,
 html[data-theme="pink"] div[data-testid="stTextArea"] textarea{
   color: var(--pink) !important;
@@ -272,7 +269,7 @@ html[data-theme="pink"] a.send-mailto-btn:hover{ background: rgba(255,43,214,0.0
 )
 
 # -----------------------------
-# Topbar component (now cycles: orange -> green -> blue -> pink)
+# Topbar component (cycles: orange -> green -> blue -> pink)
 # -----------------------------
 topbar_html = f"""
 <!doctype html>
@@ -701,7 +698,7 @@ with left:
     )
 
     st.markdown("## Highlights")
-    st.info("Replace these placeholders with your real results (macro-F1, dataset size, best model, key findings).")
+    # Removed the placeholder info block entirely (as requested)
     m1, m2, m3, m4 = st.columns(4)
     m1.metric("Best Macro-F1", "—")
     m2.metric("Classes", "—")
@@ -742,13 +739,11 @@ with left:
             unsafe_allow_html=True,
         )
     else:
-        # Disabled-look button (same UI, but not clickable)
         st.markdown(
             '<a class="send-mailto-btn is-disabled" href="#">Send message</a>',
             unsafe_allow_html=True,
         )
 
-        # Only show errors when user typed something (avoid noisy red on empty initial)
         if name or subject or message:
             if not name_s:
                 st.error("Please enter your name.")
