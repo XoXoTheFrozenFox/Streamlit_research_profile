@@ -10,7 +10,7 @@ import streamlit.components.v1 as components
 
 st.set_page_config(
     page_title="BS — Research profile",
-    page_icon="🧑‍💻",   
+    page_icon="🧑‍💻",
     layout="wide",
 )
 
@@ -38,6 +38,20 @@ st.markdown(
 footer {visibility: hidden;}
 header {visibility: hidden;}
 
+div[data-testid="stToolbar"]{display:none !important; visibility:hidden !important;}
+div[data-testid="stToolbarActions"]{display:none !important; visibility:hidden !important;}
+div[data-testid="stStatusWidget"]{display:none !important; visibility:hidden !important;}
+div[data-testid="stDeployButton"]{display:none !important; visibility:hidden !important;}
+div[data-testid="stDecoration"]{display:none !important; visibility:hidden !important;}
+div[data-testid="stActionButtonIcon"]{display:none !important; visibility:hidden !important;}
+div[data-testid="stAppToolbar"]{display:none !important; visibility:hidden !important;}
+button[title="View app settings"]{display:none !important;}
+button[title="Settings"]{display:none !important;}
+button[aria-label="View app settings"]{display:none !important;}
+button[aria-label="Settings"]{display:none !important;}
+div[class*="st-emotion-cache"][class*="toolbar"]{display:none !important;}
+div[class*="st-emotion-cache"][style*="position: fixed"][style*="bottom"]{display:none !important;}
+
 a.stMarkdownHeaderLink,
 a[data-testid="stHeaderLink"],
 [data-testid="stHeader"] a,
@@ -64,7 +78,6 @@ h1 a, h2 a, h3 a, h4 a, h5 a, h6 a {
   --panel: rgba(0,0,0,0.35);
 }
 
-/* DEFAULT = GREEN */
 html, body, [data-testid="stAppViewContainer"]{
   background: var(--bg) !important;
   color: var(--green) !important;
@@ -108,7 +121,6 @@ p, li, label, div{
   font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
 }
 
-/* inputs */
 div[data-testid="stTextInput"],
 div[data-testid="stTextArea"]{
   position: relative !important;
@@ -196,7 +208,6 @@ div[data-testid="stTextArea"]:has(textarea:placeholder-shown):not(:focus-within)
   pointer-events: none;
 }
 
-/* buttons */
 .stButton > button, div[data-testid="stFormSubmitButton"] button{
   background: var(--bg) !important;
   color: var(--green) !important;
@@ -241,13 +252,11 @@ div[data-testid="stSelectbox"]{
 }
 div[data-testid="stSelectbox"] label{ display:none !important; }
 
-/* kill BaseWeb "invalid" red ring/border and force our own */
 div[data-testid="stSelectbox"] [data-baseweb],
 div[data-testid="stSelectbox"] [data-baseweb] *{
   box-shadow: none !important;
 }
 
-/* the outer control */
 div[data-testid="stSelectbox"] [data-baseweb="select"] > div{
   background: #050505 !important;
   border: 1px solid var(--border-green) !important;
@@ -256,13 +265,11 @@ div[data-testid="stSelectbox"] [data-baseweb="select"] > div{
   outline: none !important;
 }
 
-/* focus state: still theme border, never red */
 div[data-testid="stSelectbox"] [data-baseweb="select"] > div:focus-within{
   border: 1px solid var(--border-green) !important;
   box-shadow: none !important;
 }
 
-/* dropdown menu bg */
 div[data-testid="stSelectbox"] [role="listbox"]{
   background: #050505 !important;
   border: 1px solid var(--border-green) !important;
@@ -270,9 +277,6 @@ div[data-testid="stSelectbox"] [role="listbox"]{
   box-shadow: none !important;
 }
 
-/* ============================================================
-   CHECKBOX: force black bg + theme border
-   ============================================================ */
 div[data-testid="stCheckbox"]{
   padding: 6px 10px !important;
   border-radius: 14px !important;
@@ -286,7 +290,6 @@ div[data-testid="stCheckbox"] input{
   accent-color: var(--green) !important;
 }
 
-/* ORANGE */
 html[data-theme="orange"] body,
 html[data-theme="orange"] [data-testid="stAppViewContainer"]{ color: var(--orange) !important; }
 html[data-theme="orange"] *{ color: var(--orange) !important; }
@@ -314,7 +317,6 @@ html[data-theme="orange"] div[data-testid="stCheckbox"] input{ accent-color: var
 html[data-theme="orange"] div[data-testid="stSelectbox"] [data-baseweb="select"] > div{ border: 1px solid var(--border-orange) !important; }
 html[data-theme="orange"] div[data-testid="stSelectbox"] [role="listbox"]{ border: 1px solid var(--border-orange) !important; }
 
-/* BLUE */
 html[data-theme="blue"] body,
 html[data-theme="blue"] [data-testid="stAppViewContainer"]{ color: var(--blue) !important; }
 html[data-theme="blue"] *{ color: var(--blue) !important; }
@@ -342,7 +344,6 @@ html[data-theme="blue"] div[data-testid="stCheckbox"] input{ accent-color: var(-
 html[data-theme="blue"] div[data-testid="stSelectbox"] [data-baseweb="select"] > div{ border: 1px solid var(--border-blue) !important; }
 html[data-theme="blue"] div[data-testid="stSelectbox"] [role="listbox"]{ border: 1px solid var(--border-blue) !important; }
 
-/* PINK */
 html[data-theme="pink"] body,
 html[data-theme="pink"] [data-testid="stAppViewContainer"]{ color: var(--pink) !important; }
 html[data-theme="pink"] *{ color: var(--pink) !important; }
@@ -651,10 +652,8 @@ TOPBAR_TEMPLATE = r"""
       }
     } catch (e) {}
 
-    // Always set tab icon to 🧑‍💻
     setFaviconEmoji(FAVICON_EMOJI);
 
-    // Prefix emoji injection: "Hi{emoji}, ..."
     const em = emojiMap[t] || "👽";
     const prefixEl = document.getElementById("prefix");
     const patched = BASE_PREFIX.replace(/^Hi,/, "Hi" + em + ",");
@@ -670,7 +669,6 @@ TOPBAR_TEMPLATE = r"""
     setTheme(next);
   });
 
-  // rotating typing (emoji-safe)
   const wordEl = document.getElementById("word");
   let idx = 0, char = 0, deleting = false;
   const typeSpeed = 45, deleteSpeed = 25, holdFull = 900, holdEmpty = 260;
@@ -700,7 +698,6 @@ TOPBAR_TEMPLATE = r"""
   wordEl.textContent = "";
   step();
 
-  // height fit
   const wrap = document.getElementById("wrap");
   function getHeight() {
     const b = wrap.getBoundingClientRect().height;
@@ -783,14 +780,12 @@ def read_spectrum_csv(folder: str) -> pd.DataFrame:
     out = out.sort_values("wavelength_A").reset_index(drop=True)
     return out
 
-
 def downsample_xy(x: np.ndarray, y: np.ndarray, max_points: int = 3500):
     n = int(len(x))
     if n <= max_points:
         return x, y
     idx = np.linspace(0, n - 1, num=max_points, dtype=int)
     return x[idx], y[idx]
-
 
 def smart_yrange(y: np.ndarray) -> tuple[float, float]:
     yy = np.asarray(y, dtype=float)
@@ -854,7 +849,7 @@ SPECTRUM_TEMPLATE = r"""
       title: { text: P.title, x: 0.02, xanchor: "left" },
       paper_bgcolor: "#050505",
       plot_bgcolor: "#050505",
-      margin: { l: 60, r: 18, t: 56, b: 44 },
+      margin: { l: 54, r: 18, t: 56, b: 44 },
       font: {
         family: 'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace',
         color: colors.font,
@@ -872,7 +867,7 @@ SPECTRUM_TEMPLATE = r"""
         mirror: true
       },
       yaxis: {
-        title: { text: "flux", standoff: 34 },
+        title: { text: "flux", standoff: 12 },
         automargin: true,
         range: yRange,
         showgrid: true,
@@ -1033,7 +1028,6 @@ CM_TEMPLATE = r"""
   const STORAGE_KEY = "bs_theme";
   const THEMES = ["green","blue","pink","orange"];
 
-  // --------- fade-in on scroll ----------
   (function setupFade(){
     if (!wrap) return;
 
@@ -1047,7 +1041,6 @@ CM_TEMPLATE = r"""
         if (e.isIntersecting) {
           wrap.style.opacity = "1";
           wrap.style.transform = "translateY(0px)";
-          // ensure plot resizes correctly after reveal
           setTimeout(() => { try { Plotly.Plots.resize(el); } catch(_){} }, 80);
           io.unobserve(wrap);
         }
@@ -1057,7 +1050,6 @@ CM_TEMPLATE = r"""
     io.observe(wrap);
   })();
 
-  // --------- theme helpers ----------
   function themeToRgb(t){
     switch(t){
       case "orange": return [255,122,24];
@@ -1067,7 +1059,6 @@ CM_TEMPLATE = r"""
     }
   }
   function rgba(rgb, a){ return `rgba(${rgb[0]}, ${rgb[1]}, ${rgb[2]}, ${a})`; }
-  function rgbStr(rgb){ return `rgb(${rgb[0]}, ${rgb[1]}, ${rgb[2]})`; }
 
   function getTheme(){
     try {
@@ -1085,15 +1076,11 @@ CM_TEMPLATE = r"""
       rgb,
       font: rgba(rgb, 0.95),
       axis: rgba(rgb, 0.35),
-      grid: rgba(rgb, 0.12),
-      strong: rgba(rgb, 0.95),
-      soft: rgba(rgb, 0.18),
       black: "#050505"
     };
   }
 
   function makeColorscale(rgb){
-    // dark -> theme
     const c0 = "rgb(5,5,5)";
     const c1 = `rgba(${rgb[0]},${rgb[1]},${rgb[2]},0.30)`;
     const c2 = `rgba(${rgb[0]},${rgb[1]},${rgb[2]},0.60)`;
@@ -1112,7 +1099,6 @@ CM_TEMPLATE = r"""
       for (let j = 0; j < labels.length; j++){
         const v = z[i][j];
         const txt = (typeof v === "number") ? v.toFixed(2) : String(v);
-        // high cells -> dark text for contrast, else theme text
         const col = (v >= 0.62) ? "#050505" : fontColor;
         anns.push({
           x: labels[j],
@@ -1176,8 +1162,7 @@ CM_TEMPLATE = r"""
       zmin: 0,
       zmax: 1,
       colorscale: makeColorscale(C.rgb),
-      hovertemplate:
-        "True=%{y}<br>Pred=%{x}<br>Value=%{z:.2f}<extra></extra>",
+      hovertemplate: "True=%{y}<br>Pred=%{x}<br>Value=%{z:.2f}<extra></extra>",
       colorbar: {
         thickness: 12,
         len: 0.92,
@@ -1199,7 +1184,6 @@ CM_TEMPLATE = r"""
       layout,
       { displayModeBar: false, responsive: true }
     ).then(() => {
-      // tiny "pop" in after plot renders (pairs nicely with scroll fade)
       try {
         el.style.opacity = "0";
         el.style.transform = "scale(0.996)";
@@ -1217,10 +1201,7 @@ CM_TEMPLATE = r"""
     const layout = makeLayout(C);
     layout.annotations = buildAnnotations(P.z, P.labels, C.font);
 
-    Plotly.restyle(el, {
-      colorscale: [makeColorscale(C.rgb)]
-    }, [0]);
-
+    Plotly.restyle(el, { colorscale: [makeColorscale(C.rgb)] }, [0]);
     Plotly.relayout(el, layout);
   }
 
@@ -1417,7 +1398,6 @@ Spectral data were collected from **SDSS** using a custom Python pipeline built 
     st.markdown("## Hobby project: Confusion matrices")
     cm_labels = list("OBAFGKM")
 
-    # ---- values taken from your screenshots (normalized) ----
     cm_1d = np.array([
         [0.85, 0.12, 0.00, 0.00, 0.00, 0.00, 0.04],
         [0.02, 0.91, 0.04, 0.00, 0.00, 0.02, 0.02],
