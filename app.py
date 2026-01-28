@@ -82,6 +82,7 @@ div[data-testid="stMetric"]{
 div[data-testid="stAlert"]{
   background: var(--panel) !important;
   border: 1px solid var(--border-orange) !important;
+  border-radius: 14px !important;
 }
 
 p, li, label, div{
@@ -122,6 +123,35 @@ div[data-testid="stTextArea"] textarea:focus{
   background: rgba(255,122,24,0.08) !important;
 }
 
+/* Mailto "Send message" link styled EXACTLY like button */
+a.send-mailto-btn{
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  text-decoration: none !important;
+  background: var(--bg) !important;
+  color: var(--orange) !important;
+  border: 1px solid var(--border-orange) !important;
+  border-radius: 14px !important;
+  padding: 0.55rem 0.95rem !important;
+  box-shadow: 0 0 0 1px rgba(255,122,24,0.10) inset !important;
+  transition: transform 140ms ease, background 140ms ease;
+  user-select: none;
+  cursor: pointer;
+}
+a.send-mailto-btn:hover{
+  background: rgba(255,122,24,0.08) !important;
+  transform: translateY(-1px);
+}
+
+/* Disabled-look */
+a.send-mailto-btn.is-disabled{
+  opacity: 0.55;
+  cursor: not-allowed;
+  pointer-events: none;
+  transform: none !important;
+}
+
 /* Green theme (set by JS) */
 html[data-theme="green"] body,
 html[data-theme="green"] [data-testid="stAppViewContainer"]{
@@ -148,13 +178,15 @@ html[data-theme="green"] div[data-testid="stTextArea"] textarea::placeholder{
   color: rgba(57,255,20,0.65) !important;
 }
 html[data-theme="green"] .stButton > button,
-html[data-theme="green"] div[data-testid="stFormSubmitButton"] button{
+html[data-theme="green"] div[data-testid="stFormSubmitButton"] button,
+html[data-theme="green"] a.send-mailto-btn{
   color: var(--green) !important;
   border: 1px solid var(--border-green) !important;
   box-shadow: 0 0 0 1px rgba(57,255,20,0.10) inset !important;
 }
 html[data-theme="green"] .stButton > button:hover,
-html[data-theme="green"] div[data-testid="stFormSubmitButton"] button:hover{
+html[data-theme="green"] div[data-testid="stFormSubmitButton"] button:hover,
+html[data-theme="green"] a.send-mailto-btn:hover{
   background: rgba(57,255,20,0.08) !important;
 }
 </style>
@@ -508,38 +540,10 @@ components.html(topbar_html, height=93)
 st.divider()
 
 # -----------------------------
-# Mailto draft builder (FREE)
+# Mailto builder (FREE)
 # -----------------------------
-def build_mailto_link(*, to_email: str, subject: str, body: str) -> str:
+def build_mailto(to_email: str, subject: str, body: str) -> str:
     return f"mailto:{to_email}?subject={quote(subject)}&body={quote(body)}"
-
-def trigger_mailto_open(mailto_url: str) -> None:
-    # Attempt to open mail client automatically after clicking "Send message"
-    # (Some browsers may block it; this is still the closest “Send message opens mail client” behavior.)
-    html = f"""
-    <script>
-      (function() {{
-        const url = {mailto_url!r};
-        try {{
-          // Try top navigation first
-          window.top.location.href = url;
-        }} catch (e) {{
-          try {{
-            window.location.href = url;
-          }} catch (e2) {{}}
-        }}
-        // Fallback attempt (may be blocked by popup policy)
-        try {{
-          window.open(url, "_self");
-        }} catch (e3) {{}}
-      }})();
-    </script>
-    """
-    components.html(html, height=0)
-
-# Ensure we only auto-open once per successful submit (avoid re-opening on rerun)
-if "mailto_pending" not in st.session_state:
-    st.session_state["mailto_pending"] = None
 
 # -----------------------------
 # Main content
@@ -607,49 +611,49 @@ with left:
     st.markdown("## Contact")
     st.write("Send me a message directly from this page:")
 
-    with st.form("contact_form", clear_on_submit=True):
-        name = st.text_input("Name", placeholder="Your name")
-        subject = st.text_input("Subject", placeholder="What is this about?")
-        message = st.text_area("Message", placeholder="Type your message here...", height=160)
-        submitted = st.form_submit_button("Send message")
+    # Inputs (no email field, as requested)
+    name = st.text_input("Name", placeholder="Your name")
+    subject = st.text_input("Subject", placeholder="What is this about?")
+    message = st.text_area("Message", placeholder="Type your message here...", height=160)
 
-    if submitted:
-        name_s = (name or "").strip()
-        subject_s = (subject or "").strip()
-        message_s = (message or "").strip()
+    name_s = (name or "").strip()
+    subject_s = (subject or "").strip()
+    message_s = (message or "").strip()
 
-        # Require ALL fields
-        if not name_s:
-            st.error("Please enter your name.")
-            st.session_state["mailto_pending"] = None
-        elif not subject_s:
-            st.error("Please enter a subject.")
-            st.session_state["mailto_pending"] = None
-        elif not message_s:
-            st.error("Please enter a message.")
-            st.session_state["mailto_pending"] = None
-        else:
-            body = (
-                "New website message\n\n"
-                f"Name: {name_s}\n"
-                f"Subject: {subject_s}\n\n"
-                "Message:\n"
-                f"{message_s}\n"
-            )
-            mailto = build_mailto_link(
-                to_email=EMAIL,
-                subject=f"[Website] {subject_s}",
-                body=body,
-            )
+    ready = bool(name_s and subject_s and message_s)
 
-            # Set pending mailto so we can trigger once after rerun
-            st.session_state["mailto_pending"] = mailto
-            st.success("Opening your email client…")
+    if ready:
+        body = (
+            "New website message\n\n"
+            f"Name: {name_s}\n"
+            f"Subject: {subject_s}\n\n"
+            "Message:\n"
+            f"{message_s}\n"
+        )
+        mailto = build_mailto(
+            to_email=EMAIL,
+            subject=f"[Website] {subject_s}",
+            body=body,
+        )
+        st.markdown(
+            f'<a class="send-mailto-btn" href="{mailto}">Send message</a>',
+            unsafe_allow_html=True,
+        )
+    else:
+        # Disabled-look button (same UI, but not clickable)
+        st.markdown(
+            '<a class="send-mailto-btn is-disabled" href="#">Send message</a>',
+            unsafe_allow_html=True,
+        )
 
-    # Trigger the mail client open ONCE, then clear
-    if st.session_state.get("mailto_pending"):
-        trigger_mailto_open(st.session_state["mailto_pending"])
-        st.session_state["mailto_pending"] = None
+        # Only show errors when user typed something (avoid noisy red on empty initial)
+        if name or subject or message:
+            if not name_s:
+                st.error("Please enter your name.")
+            elif not subject_s:
+                st.error("Please enter a subject.")
+            elif not message_s:
+                st.error("Please enter a message.")
 
 st.divider()
 st.caption("© 2026 Bernard Swanepoel")
