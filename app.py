@@ -297,26 +297,5 @@ with left:
     m3.metric("Images", "—")
     m4.metric("Backbone", "—")
 
-with right:
-    st.markdown("## Live profile")
-    st.write("If an embed gets blocked by headers, these buttons always work:")
-
-    r1, r2 = st.columns(2)
-    with r1:
-        st.link_button("🌍 Portfolio", PORTFOLIO_URL, use_container_width=True)
-        st.link_button("💼 LinkedIn", LINKEDIN_URL, use_container_width=True)
-    with r2:
-        st.link_button("💻 GitHub", GITHUB_URL, use_container_width=True)
-        st.link_button("✉️ Email me", f"mailto:{EMAIL}", use_container_width=True)
-
-    st.markdown("## Other porjects")
-    st.markdown(
-        """
-- Paper / thesis draft: *(add link)*  
-- Dataset: *(add link)*  
-- Demo notebook: *(add link)*  
-        """.strip()
-    )
-
 st.divider()
 st.caption("© 2026 Bernard Swanepoel • Built with Streamlit")
