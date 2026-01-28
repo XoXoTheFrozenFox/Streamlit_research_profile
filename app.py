@@ -30,7 +30,7 @@ ROTATING = [
 # -----------------------------
 # Global terminal aesthetic (whole Streamlit page)
 # + HIDE Streamlit chrome (menu/footer/header)
-# Default theme = ORANGE; toggle => GREEN (driven by HTML component)
+# Default theme = ORANGE; toggle => GREEN
 # -----------------------------
 st.markdown(
     """
@@ -61,7 +61,6 @@ html, body, [data-testid="stAppViewContainer"]{
   padding-bottom: 1.25rem !important;
 }
 
-/* Divider tight to content */
 hr{
   border: none !important;
   border-top: 1px solid var(--border-orange) !important;
@@ -111,6 +110,7 @@ html[data-theme="green"] div[data-testid="stAlert"]{
 
 # -----------------------------
 # Topbar component
+# - DEFAULT ALWAYS ORANGE (no saved theme on load)
 # - Theme toggle button left of portfolio button
 # - No infinite scroll from iframe resize
 # - Mobile bottom-edge clipping fixed (box-sizing + padding)
@@ -137,7 +137,7 @@ topbar_html = f"""
 
   body {{
     margin: 0;
-    padding: 10px 8px 12px 8px; /* extra bottom padding helps mobile */
+    padding: 10px 8px 12px 8px;
     background: transparent;
     color: var(--orange);
     font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono",
@@ -196,7 +196,7 @@ topbar_html = f"""
     align-items:center;
     justify-content:flex-end;
     flex-wrap: wrap;
-    padding: 10px 8px 8px 8px; /* bottom padding prevents any edge cut */
+    padding: 10px 8px 8px 8px;
     overflow: visible;
   }}
 
@@ -294,7 +294,7 @@ topbar_html = f"""
     .icon-row {{
       justify-content: flex-start;
       gap: 8px;
-      padding: 0 0 10px 0; /* more bottom padding to guarantee no clipping */
+      padding: 0 0 10px 0;
       overflow: visible;
     }}
 
@@ -355,17 +355,12 @@ topbar_html = f"""
         window.parent.document.documentElement.setAttribute("data-theme", t);
       }}
     }} catch (e) {{}}
-    try {{ localStorage.setItem("siteTheme", t); }} catch (e) {{}}
   }}
 
-  function getSavedTheme() {{
-    try {{ return localStorage.getItem("siteTheme") || "orange"; }}
-    catch (e) {{ return "orange"; }}
-  }}
+  // ✅ ALWAYS start ORANGE (no localStorage restore)
+  setTheme("orange");
 
   const toggleBtn = document.getElementById("themeToggle");
-  setTheme(getSavedTheme());
-
   toggleBtn.addEventListener("click", function () {{
     const cur = document.documentElement.getAttribute("data-theme") || "orange";
     setTheme(cur === "green" ? "orange" : "green");
