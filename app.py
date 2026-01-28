@@ -40,6 +40,10 @@ ROTATING = [
     "Space enthusiast💫",
 ]
 
+EMAILJS_PUBLIC_KEY = st.secrets.get("EMAILJS_PUBLIC_KEY", "")
+EMAILJS_SERVICE_ID = st.secrets.get("EMAILJS_SERVICE_ID", "")
+EMAILJS_TEMPLATE_ID = st.secrets.get("EMAILJS_TEMPLATE_ID", "")
+
 st.markdown(
     """
 <style>
@@ -93,6 +97,13 @@ html, body, [data-testid="stAppViewContainer"]{
 .block-container{
   padding-top: 0.55rem !important;
   padding-bottom: 1.25rem !important;
+}
+
+@media (max-width: 640px){
+  .block-container{
+    padding-left: 0.85rem !important;
+    padding-right: 0.85rem !important;
+  }
 }
 
 hr{
@@ -850,30 +861,58 @@ SPECTRUM_TEMPLATE = r"""
     };
   }
 
-  function makeLayout(colors, yRange){
+  function isMobile(w){ return w <= 640; }
+
+  function getContainerWidth(){
+    try {
+      const r = el.getBoundingClientRect();
+      const w = Math.max(0, r.width || 0);
+      if (w > 0) return w;
+    } catch(e) {}
+    return Math.max(320, Math.min(980, window.innerWidth || 420));
+  }
+
+  function computeHeight(w){
+    const m = isMobile(w);
+    const h = m ? Math.round(Math.max(320, Math.min(520, w * 0.82 + 90))) : 440;
+    return h;
+  }
+
+  function makeLayout(colors, yRange, w){
+    const m = isMobile(w);
+    const h = computeHeight(w);
+
     return {
-      title: { text: P.title, x: 0.02, xanchor: "left" },
+      title: {
+        text: P.title,
+        x: 0.02,
+        xanchor: "left",
+        font: { size: m ? 13 : 16 }
+      },
       paper_bgcolor: "#050505",
       plot_bgcolor: "#050505",
-      margin: { l: 54, r: 18, t: 56, b: 44 },
+      height: h,
+      margin: m ? { l: 50, r: 14, t: 56, b: 48 } : { l: 60, r: 18, t: 58, b: 46 },
       font: {
         family: 'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace',
         color: colors.font,
-        size: 13
+        size: m ? 11 : 13
       },
       showlegend: false,
       xaxis: {
-        title: { text: "wavelength (Å)" },
+        title: { text: "wavelength (Å)", font: { size: m ? 11 : 13 } },
         showgrid: true,
         gridcolor: colors.grid,
         zeroline: false,
         ticks: "outside",
         tickcolor: colors.axis,
         linecolor: colors.axis,
-        mirror: true
+        mirror: true,
+        tickfont: { size: m ? 10 : 12 },
+        automargin: true
       },
       yaxis: {
-        title: { text: "flux", standoff: 12 },
+        title: { text: "flux", standoff: m ? 6 : 12, font: { size: m ? 11 : 13 } },
         automargin: true,
         range: yRange,
         showgrid: true,
@@ -882,7 +921,8 @@ SPECTRUM_TEMPLATE = r"""
         ticks: "outside",
         tickcolor: colors.axis,
         linecolor: colors.axis,
-        mirror: true
+        mirror: true,
+        tickfont: { size: m ? 10 : 12 }
       }
     };
   }
@@ -891,11 +931,22 @@ SPECTRUM_TEMPLATE = r"""
     Plotly.restyle(el, { x: [xArr], y: [yArr] }, [0]);
   }
 
+  function updateFrameHeight(){
+    try {
+      const w = getContainerWidth();
+      const h = computeHeight(w) + 18;
+      if (window.frameElement) window.frameElement.style.height = h + "px";
+    } catch(e) {}
+  }
+
   function restyleToTheme(){
+    const w = getContainerWidth();
     const colors = colorsForTheme(getTheme());
     Plotly.restyle(el, { "line.color": [colors.line] }, [0]);
     const cur = (el.layout && el.layout.yaxis && el.layout.yaxis.range) ? el.layout.yaxis.range : P.y_range_new;
-    Plotly.relayout(el, makeLayout(colors, cur));
+    Plotly.relayout(el, makeLayout(colors, cur, w));
+    try { Plotly.Plots.resize(el); } catch(e) {}
+    updateFrameHeight();
   }
 
   function wipeLeftToRight(xFull, yFull, durationMs){
@@ -943,20 +994,27 @@ SPECTRUM_TEMPLATE = r"""
       await wipeLeftToRight(P.x_old, P.y_old, WIPE_MS);
       await new Promise(r => setTimeout(r, PAUSE_MS));
 
+      const w = getContainerWidth();
       const colors = colorsForTheme(getTheme());
-      Plotly.relayout(el, makeLayout(colors, P.y_range_new));
+      Plotly.relayout(el, makeLayout(colors, P.y_range_new, w));
+      updateFrameHeight();
 
       await new Promise(r => setTimeout(r, 70));
       await revealLeftToRight(P.x_new, P.y_new, REVEAL_MS);
+      updateFrameHeight();
     } else {
+      const w = getContainerWidth();
       const colors = colorsForTheme(getTheme());
-      Plotly.relayout(el, makeLayout(colors, P.y_range_new));
+      Plotly.relayout(el, makeLayout(colors, P.y_range_new, w));
       setXY([], []);
+      updateFrameHeight();
       await revealLeftToRight(P.x_new, P.y_new, REVEAL_MS);
+      updateFrameHeight();
     }
   }
 
   (function render(){
+    const w = getContainerWidth();
     const colors = colorsForTheme(getTheme());
     const hasOld = Array.isArray(P.x_old) && P.x_old.length > 0;
 
@@ -968,7 +1026,7 @@ SPECTRUM_TEMPLATE = r"""
       mode: "lines",
       x: initX,
       y: initY,
-      line: { width: 2.4, color: colors.line },
+      line: { width: isMobile(w) ? 2.0 : 2.4, color: colors.line },
       hovertemplate: "λ=%{x:.1f} Å<br>flux=%{y:.4f}<extra></extra>"
     };
 
@@ -977,9 +1035,12 @@ SPECTRUM_TEMPLATE = r"""
     Plotly.newPlot(
       el,
       [trace],
-      makeLayout(colors, yStart),
+      makeLayout(colors, yStart, w),
       { displayModeBar: false, responsive: true }
-    ).then(() => runSequence());
+    ).then(() => {
+      updateFrameHeight();
+      runSequence().then(() => updateFrameHeight());
+    });
   })();
 
   window.addEventListener("storage", (ev) => {
@@ -988,6 +1049,10 @@ SPECTRUM_TEMPLATE = r"""
 
   new MutationObserver(() => restyleToTheme())
     .observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme"] });
+
+  const ro = new ResizeObserver(() => restyleToTheme());
+  try { ro.observe(el); } catch(e) {}
+  window.addEventListener("resize", () => setTimeout(restyleToTheme, 50));
 
 })();
 </script>
@@ -1099,8 +1164,27 @@ CM_TEMPLATE = r"""
     ];
   }
 
-  function buildAnnotations(z, labels, fontColor){
+  function getWidth(){
+    try {
+      const r = el.getBoundingClientRect();
+      const w = Math.max(0, r.width || 0);
+      if (w > 0) return w;
+    } catch(e) {}
+    return Math.max(320, Math.min(980, window.innerWidth || 420));
+  }
+
+  function isMobile(w){ return w <= 640; }
+
+  function computeHeight(w){
+    const m = isMobile(w);
+    const h = m ? Math.round(Math.max(380, Math.min(760, w * 0.98 + 120))) : 560;
+    return h;
+  }
+
+  function buildAnnotations(z, labels, fontColor, w){
+    const m = isMobile(w);
     const anns = [];
+    const fs = m ? 11 : 16;
     for (let i = 0; i < labels.length; i++){
       for (let j = 0; j < labels.length; j++){
         const v = z[i][j];
@@ -1111,26 +1195,34 @@ CM_TEMPLATE = r"""
           y: labels[i],
           text: txt,
           showarrow: false,
-          font: { color: col, size: 16, family: 'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace' }
+          font: { color: col, size: fs, family: 'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace' }
         });
       }
     }
     return anns;
   }
 
-  function makeLayout(C){
+  function makeLayout(C, w){
+    const m = isMobile(w);
+    const h = computeHeight(w);
     return {
-      title: { text: P.title, x: 0.02, xanchor: "left" },
+      title: {
+        text: P.title,
+        x: 0.02,
+        xanchor: "left",
+        font: { size: m ? 13 : 16 }
+      },
       paper_bgcolor: C.black,
       plot_bgcolor: C.black,
-      margin: { l: 70, r: 28, t: 64, b: 56 },
+      height: h,
+      margin: m ? { l: 58, r: 12, t: 64, b: 74 } : { l: 70, r: 28, t: 64, b: 56 },
       font: {
         family: 'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace',
         color: C.font,
-        size: 13
+        size: m ? 11 : 13
       },
       xaxis: {
-        title: { text: "Predicted label" },
+        title: { text: "Predicted label", font: { size: m ? 11 : 13 } },
         type: "category",
         tickmode: "array",
         tickvals: P.labels,
@@ -1140,10 +1232,13 @@ CM_TEMPLATE = r"""
         linecolor: C.axis,
         mirror: true,
         showgrid: false,
-        zeroline: false
+        zeroline: false,
+        tickfont: { size: m ? 10 : 12 },
+        tickangle: m ? -45 : 0,
+        automargin: true
       },
       yaxis: {
-        title: { text: "True label" },
+        title: { text: "True label", font: { size: m ? 11 : 13 } },
         type: "category",
         tickmode: "array",
         tickvals: P.labels,
@@ -1154,12 +1249,15 @@ CM_TEMPLATE = r"""
         mirror: true,
         autorange: "reversed",
         showgrid: false,
-        zeroline: false
+        zeroline: false,
+        tickfont: { size: m ? 10 : 12 },
+        automargin: true
       }
     };
   }
 
-  function makeTrace(C){
+  function makeTrace(C, w){
+    const m = isMobile(w);
     return {
       type: "heatmap",
       z: P.z,
@@ -1170,23 +1268,32 @@ CM_TEMPLATE = r"""
       colorscale: makeColorscale(C.rgb),
       hovertemplate: "True=%{y}<br>Pred=%{x}<br>Value=%{z:.2f}<extra></extra>",
       colorbar: {
-        thickness: 12,
-        len: 0.92,
+        thickness: m ? 10 : 12,
+        len: m ? 0.86 : 0.92,
         outlinewidth: 0,
-        tickfont: { color: C.font },
+        tickfont: { color: C.font, size: m ? 10 : 12 },
         title: { text: "", font: { color: C.font } }
       }
     };
   }
 
+  function updateFrameHeight(){
+    try {
+      const w = getWidth();
+      const h = computeHeight(w) + 18;
+      if (window.frameElement) window.frameElement.style.height = h + "px";
+    } catch(e) {}
+  }
+
   function render(){
+    const w = getWidth();
     const C = colorsForTheme(getTheme());
-    const layout = makeLayout(C);
-    layout.annotations = buildAnnotations(P.z, P.labels, C.font);
+    const layout = makeLayout(C, w);
+    layout.annotations = buildAnnotations(P.z, P.labels, C.font, w);
 
     Plotly.newPlot(
       el,
-      [makeTrace(C)],
+      [makeTrace(C, w)],
       layout,
       { displayModeBar: false, responsive: true }
     ).then(() => {
@@ -1199,16 +1306,22 @@ CM_TEMPLATE = r"""
           el.style.transform = "scale(1)";
         });
       } catch(_) {}
+      updateFrameHeight();
+      try { Plotly.Plots.resize(el); } catch(_) {}
+      updateFrameHeight();
     });
   }
 
   function restyleToTheme(){
+    const w = getWidth();
     const C = colorsForTheme(getTheme());
-    const layout = makeLayout(C);
-    layout.annotations = buildAnnotations(P.z, P.labels, C.font);
+    const layout = makeLayout(C, w);
+    layout.annotations = buildAnnotations(P.z, P.labels, C.font, w);
 
     Plotly.restyle(el, { colorscale: [makeColorscale(C.rgb)] }, [0]);
     Plotly.relayout(el, layout);
+    try { Plotly.Plots.resize(el); } catch(_) {}
+    updateFrameHeight();
   }
 
   render();
@@ -1219,6 +1332,10 @@ CM_TEMPLATE = r"""
 
   new MutationObserver(() => restyleToTheme())
     .observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme"] });
+
+  const ro = new ResizeObserver(() => restyleToTheme());
+  try { ro.observe(el); } catch(e) {}
+  window.addEventListener("resize", () => setTimeout(restyleToTheme, 50));
 
 })();
 </script>
@@ -1244,6 +1361,341 @@ def confusion_matrix_plot_html(
         .replace("__DIV__", div_id)
         .replace("__WRAP__", wrap_id)
         .replace("__PAYLOAD__", json.dumps(payload))
+    )
+
+EMAILJS_CONTACT_TEMPLATE = r"""
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
+<style>
+  :root{
+    --bg:#050505;
+
+    --orange:#ff7a18;
+    --green:#39ff14;
+    --blue:#00e7ff;
+    --pink:#ff2bd6;
+
+    --border-orange:rgba(255,122,24,0.45);
+    --border-green:rgba(57,255,20,0.45);
+    --border-blue:rgba(0,231,255,0.45);
+    --border-pink:rgba(255,43,214,0.45);
+  }
+
+  html, body{
+    margin:0;
+    padding:0;
+    background: transparent;
+    color: var(--green);
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+  }
+
+  .wrap{
+    width:100%;
+    box-sizing:border-box;
+    padding: 6px 0 2px 0;
+  }
+
+  .grid{
+    display:grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+  }
+
+  .field{
+    position:relative;
+    width:100%;
+  }
+
+  .full{ grid-column: 1 / -1; }
+
+  input, textarea{
+    width:100%;
+    box-sizing:border-box;
+    background: var(--bg);
+    color: currentColor;
+    border: 1px solid var(--border-green);
+    border-radius: 14px;
+    padding: 12px 14px;
+    outline: none;
+    box-shadow: none;
+    font-size: 14px;
+    line-height: 1.25;
+  }
+
+  textarea{
+    min-height: 160px;
+    resize: vertical;
+  }
+
+  input::placeholder, textarea::placeholder{
+    color: rgba(57,255,20,0.65);
+  }
+
+  .field:has(input:placeholder-shown):not(:focus-within)::after,
+  .field:has(textarea:placeholder-shown):not(:focus-within)::after{
+    content: "Field empty!";
+    position:absolute;
+    right: 14px;
+    top: 44px;
+    font-size: 12px;
+    opacity: 0.75;
+    pointer-events:none;
+    color: currentColor;
+  }
+
+  .btn-row{
+    display:flex;
+    gap: 10px;
+    align-items:center;
+    justify-content:flex-start;
+    margin-top: 12px;
+  }
+
+  button{
+    appearance:none;
+    border: 1px solid var(--border-green);
+    background: var(--bg);
+    color: currentColor;
+    border-radius: 14px;
+    padding: 0.55rem 0.95rem;
+    cursor:pointer;
+    box-shadow:none;
+    outline:none;
+    font-size: 14px;
+  }
+
+  button:hover{
+    background: rgba(57,255,20,0.08);
+  }
+
+  button[disabled]{
+    opacity: 0.55;
+    cursor: not-allowed;
+  }
+
+  .status{
+    margin-top: 10px;
+    font-size: 13px;
+    opacity: 0.92;
+    min-height: 18px;
+  }
+
+  .status.ok{ opacity: 0.95; }
+  .status.err{ opacity: 0.95; }
+
+  @media (max-width: 640px){
+    .grid{ grid-template-columns: 1fr; gap: 10px; }
+    input, textarea{ font-size: 14px; }
+  }
+</style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="grid">
+      <div class="field">
+        <input id="from_name" type="text" placeholder="Your name" autocomplete="name" />
+      </div>
+      <div class="field">
+        <input id="reply_to" type="email" placeholder="Your email" autocomplete="email" />
+      </div>
+      <div class="field full">
+        <input id="subject" type="text" placeholder="What is this about?" />
+      </div>
+      <div class="field full">
+        <textarea id="message" placeholder="Type your message here..."></textarea>
+      </div>
+    </div>
+
+    <div class="btn-row">
+      <button id="sendBtn" type="button">Send message</button>
+      <div class="status" id="status"></div>
+    </div>
+  </div>
+
+<script>
+(function(){
+  const PUBLIC_KEY = __PUBLIC_KEY__;
+  const SERVICE_ID = __SERVICE_ID__;
+  const TEMPLATE_ID = __TEMPLATE_ID__;
+  const TO_EMAIL = __TO_EMAIL__;
+
+  const STORAGE_KEY = "bs_theme";
+  const THEMES = ["green","blue","pink","orange"];
+
+  function themeToVars(t){
+    switch(t){
+      case "orange":
+        return { color: "var(--orange)", border: "var(--border-orange)", ph: "rgba(255,122,24,0.65)", hover: "rgba(255,122,24,0.08)" };
+      case "blue":
+        return { color: "var(--blue)", border: "var(--border-blue)", ph: "rgba(0,231,255,0.65)", hover: "rgba(0,231,255,0.08)" };
+      case "pink":
+        return { color: "var(--pink)", border: "var(--border-pink)", ph: "rgba(255,43,214,0.65)", hover: "rgba(255,43,214,0.08)" };
+      default:
+        return { color: "var(--green)", border: "var(--border-green)", ph: "rgba(57,255,20,0.65)", hover: "rgba(57,255,20,0.08)" };
+    }
+  }
+
+  function getTheme(){
+    try {
+      const t = localStorage.getItem(STORAGE_KEY);
+      if (t && THEMES.includes(t)) return t;
+    } catch(e) {}
+    const t2 = document.documentElement.getAttribute("data-theme");
+    if (t2 && THEMES.includes(t2)) return t2;
+    return "green";
+  }
+
+  function applyTheme(){
+    const t = getTheme();
+    document.documentElement.setAttribute("data-theme", t);
+    const V = themeToVars(t);
+
+    document.body.style.color = V.color;
+
+    const borderColor = getComputedStyle(document.documentElement).getPropertyValue(V.border.replace("var(", "").replace(")", "")).trim();
+    const placeholderColor = V.ph;
+
+    const css = document.createElement("style");
+    css.id = "dynTheme";
+    css.textContent = `
+      input, textarea, button { border-color: ${borderColor} !important; }
+      input::placeholder, textarea::placeholder { color: ${placeholderColor} !important; }
+      button:hover { background: ${V.hover} !important; }
+    `;
+    const old = document.getElementById("dynTheme");
+    if (old) old.remove();
+    document.head.appendChild(css);
+  }
+
+  function updateFrameHeight(){
+    try{
+      const h = Math.ceil(document.body.scrollHeight + 10);
+      if (window.frameElement) window.frameElement.style.height = h + "px";
+    }catch(e){}
+  }
+
+  applyTheme();
+  updateFrameHeight();
+
+  window.addEventListener("storage", (ev) => {
+    if (ev && ev.key === STORAGE_KEY) { applyTheme(); setTimeout(updateFrameHeight, 60); }
+  });
+
+  new MutationObserver(() => { applyTheme(); setTimeout(updateFrameHeight, 60); })
+    .observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme"] });
+
+  function qs(id){ return document.getElementById(id); }
+  const nameEl = qs("from_name");
+  const replyEl = qs("reply_to");
+  const subjEl = qs("subject");
+  const msgEl  = qs("message");
+  const btnEl  = qs("sendBtn");
+  const stEl   = qs("status");
+
+  function setStatus(txt, kind){
+    stEl.textContent = txt || "";
+    stEl.className = "status" + (kind ? (" " + kind) : "");
+    updateFrameHeight();
+  }
+
+  function isReady(){
+    const n = (nameEl.value || "").trim();
+    const r = (replyEl.value || "").trim();
+    const s = (subjEl.value || "").trim();
+    const m = (msgEl.value || "").trim();
+    return Boolean(n && r && s && m);
+  }
+
+  function setButtonState(){
+    btnEl.disabled = !isReady();
+  }
+
+  ["input","change","blur"].forEach(evt => {
+    nameEl.addEventListener(evt, setButtonState);
+    replyEl.addEventListener(evt, setButtonState);
+    subjEl.addEventListener(evt, setButtonState);
+    msgEl.addEventListener(evt, setButtonState);
+  });
+
+  setButtonState();
+
+  function validEmail(v){
+    const s = String(v || "").trim();
+    if (!s) return false;
+    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(s);
+  }
+
+  function ensureConfig(){
+    return Boolean(PUBLIC_KEY && SERVICE_ID && TEMPLATE_ID);
+  }
+
+  async function send(){
+    if (!ensureConfig()){
+      setStatus("EmailJS is not configured on this app.", "err");
+      return;
+    }
+
+    const from_name = (nameEl.value || "").trim();
+    const reply_to = (replyEl.value || "").trim();
+    const subject = (subjEl.value || "").trim();
+    const message = (msgEl.value || "").trim();
+
+    if (!(from_name && reply_to && subject && message)){
+      setStatus("Please fill in all fields.", "err");
+      return;
+    }
+    if (!validEmail(reply_to)){
+      setStatus("Please enter a valid email.", "err");
+      return;
+    }
+
+    btnEl.disabled = true;
+    setStatus("Sending...", "");
+
+    try{
+      emailjs.init({ publicKey: PUBLIC_KEY });
+
+      const params = {
+        to_email: TO_EMAIL,
+        from_name,
+        reply_to,
+        subject,
+        message
+      };
+
+      await emailjs.send(SERVICE_ID, TEMPLATE_ID, params);
+
+      setStatus("Sent ✓", "ok");
+      nameEl.value = "";
+      replyEl.value = "";
+      subjEl.value = "";
+      msgEl.value = "";
+      setButtonState();
+    }catch(e){
+      setStatus("Failed to send. Please try again.", "err");
+      setButtonState();
+    }
+  }
+
+  btnEl.addEventListener("click", send);
+  window.addEventListener("resize", () => setTimeout(updateFrameHeight, 60));
+})();
+</script>
+</body>
+</html>
+"""
+
+def emailjs_contact_form_html(public_key: str, service_id: str, template_id: str, to_email: str) -> str:
+    return (
+        EMAILJS_CONTACT_TEMPLATE
+        .replace("__PUBLIC_KEY__", json.dumps(public_key or ""))
+        .replace("__SERVICE_ID__", json.dumps(service_id or ""))
+        .replace("__TEMPLATE_ID__", json.dumps(template_id or ""))
+        .replace("__TO_EMAIL__", json.dumps(to_email or ""))
     )
 
 left, right = st.columns([1.35, 1.0], gap="large")
@@ -1378,7 +1830,7 @@ Spectral data were collected from **SDSS** using a custom Python pipeline built 
                 y_range_new=y_range_new,
                 y_range_old=y_range_old,
             ),
-            height=460,
+            height=560,
             scrolling=False,
         )
 
@@ -1433,7 +1885,7 @@ Spectral data were collected from **SDSS** using a custom Python pipeline built 
             div_id="cm_plot_1d",
             wrap_id="cm_wrap_1d",
         ),
-        height=560,
+        height=740,
         scrolling=False,
     )
 
@@ -1446,7 +1898,7 @@ Spectral data were collected from **SDSS** using a custom Python pipeline built 
             div_id="cm_plot_2d",
             wrap_id="cm_wrap_2d",
         ),
-        height=560,
+        height=740,
         scrolling=False,
     )
 
@@ -1455,38 +1907,50 @@ Spectral data were collected from **SDSS** using a custom Python pipeline built 
     st.markdown("## Contact")
     st.write("Send me a message directly from this page:")
 
-    name = st.text_input("Name", placeholder="Your name")
-    subject = st.text_input("Subject", placeholder="What is this about?")
-    message = st.text_area("Message", placeholder="Type your message here...", height=160)
-
-    name_s = (name or "").strip()
-    subject_s = (subject or "").strip()
-    message_s = (message or "").strip()
-
-    ready = bool(name_s and subject_s and message_s)
-
-    if ready:
-        body = (
-            "New website message\n\n"
-            f"Name: {name_s}\n"
-            f"Subject: {subject_s}\n\n"
-            "Message:\n"
-            f"{message_s}\n"
-        )
-        mailto = build_mailto(
+    components.html(
+        emailjs_contact_form_html(
+            public_key=EMAILJS_PUBLIC_KEY,
+            service_id=EMAILJS_SERVICE_ID,
+            template_id=EMAILJS_TEMPLATE_ID,
             to_email=EMAIL,
-            subject=f"[Website] {subject_s}",
-            body=body,
-        )
-        st.markdown(
-            f'<a class="send-mailto-btn" href="{mailto}">Send message</a>',
-            unsafe_allow_html=True,
-        )
-    else:
-        st.markdown(
-            '<a class="send-mailto-btn is-disabled" href="#">Send message</a>',
-            unsafe_allow_html=True,
-        )
+        ),
+        height=340,
+        scrolling=False,
+    )
+
+    if False:
+        name = st.text_input("Name", placeholder="Your name")
+        subject = st.text_input("Subject", placeholder="What is this about?")
+        message = st.text_area("Message", placeholder="Type your message here...", height=160)
+
+        name_s = (name or "").strip()
+        subject_s = (subject or "").strip()
+        message_s = (message or "").strip()
+
+        ready = bool(name_s and subject_s and message_s)
+
+        if ready:
+            body = (
+                "New website message\n\n"
+                f"Name: {name_s}\n"
+                f"Subject: {subject_s}\n\n"
+                "Message:\n"
+                f"{message_s}\n"
+            )
+            mailto = build_mailto(
+                to_email=EMAIL,
+                subject=f"[Website] {subject_s}",
+                body=body,
+            )
+            st.markdown(
+                f'<a class="send-mailto-btn" href="{mailto}">Send message</a>',
+                unsafe_allow_html=True,
+            )
+        else:
+            st.markdown(
+                '<a class="send-mailto-btn is-disabled" href="#">Send message</a>',
+                unsafe_allow_html=True,
+            )
 
 st.divider()
 st.caption("© 2026 Bernard Swanepoel")
