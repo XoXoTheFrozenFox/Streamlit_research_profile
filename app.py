@@ -10,10 +10,8 @@ st.set_page_config(
 # -----------------------------
 # Links / info
 # -----------------------------
-TAGLINE = (
-    "Masters dissertation: Sunspot classification using deep learning techniques\n"
-    "Honours project: Assessing the cybersecurity awareness of staff members in a higher educational institution"
-)
+# ✅ Removed Honours line (only Masters line shown)
+TAGLINE = "Masters dissertation: Sunspot classification using deep learning techniques"
 
 PORTFOLIO_URL = "https://xoxothefrozenfox.github.io/react-personal-portfolio/"
 LINKEDIN_URL = "https://www.linkedin.com/in/bernard-swanepoel-a2777322b/"
@@ -23,7 +21,6 @@ EMAIL = "BernardSwanepoel1510@gmail.com"
 # Prefix must end with exactly ONE space (NBSP) and nothing else
 STATIC_PREFIX = "Hi🌞, my name is Bernard Swanepoel.\u00A0"
 
-# IMPORTANT: no leading spaces here (prefix already provides the one space)
 ROTATING = [
     "Masters student✏️",
     "Researcher🥸",
@@ -51,11 +48,9 @@ html, body, [data-testid="stAppViewContainer"]{
 }
 *{ color: var(--green) !important; }
 
-[data-testid="stSidebar"]{ background:#070707 !important; }
-
 .block-container{
-  padding-top: 1.2rem !important;
-  padding-bottom: 2rem !important;
+  padding-top: 0.8rem !important;
+  padding-bottom: 1.6rem !important;
 }
 
 /* Streamlit overlays that can steal clicks */
@@ -113,43 +108,45 @@ topbar_html = f"""
     --border:rgba(57,255,20,0.45);
   }}
 
+  html, body {{
+    overflow: visible !important;  /* ✅ prevents hover glow/lift from being clipped */
+  }}
+
   body {{
     margin: 0;
+    padding: 8px 6px 2px 6px;      /* ✅ stops top clipping without creating huge empty space */
     background: transparent;
     color: var(--green);
-    /* Include emoji-capable fonts to reduce odd fallback behavior */
     font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono",
                  "Courier New", "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", monospace;
+    box-sizing: border-box;
   }}
 
   .topbar {{
     display:flex;
-    align-items:center;
+    align-items:flex-start;
     justify-content:space-between;
-    gap: 14px;
+    gap: 10px;
     flex-wrap:wrap;
     width: 100%;
     box-sizing: border-box;
   }}
 
+  /* ✅ NOT flex for the title text (prevents "$" landing alone on its own line) */
   .terminal-title {{
-    font-size: 1.65rem;
+    font-size: 1.60rem;
     font-weight: 700;
     line-height: 1.25;
     margin: 0;
-    display:flex;
-    align-items:center;
-    flex-wrap:wrap;
-    gap: 0; /* IMPORTANT: no extra spacing beyond our NBSP */
     text-shadow: 0 0 18px rgba(57,255,20,0.12);
+    flex: 1 1 420px; /* gives room on desktop, wraps nicely on mobile */
+    min-width: 260px;
   }}
 
   .prompt {{
+    display:inline;
     margin-right: 10px;
-  }}
-
-  #prefix {{
-    margin-right: 0;
+    white-space: nowrap; /* ✅ keep $ with the line */
   }}
 
   .cursor {{
@@ -164,7 +161,7 @@ topbar_html = f"""
 
   .tagline {{
     margin-top: 0.35rem;
-    font-size: 1.25rem;
+    font-size: 1.18rem;
     font-weight: 650;
     opacity: 0.95;
     white-space: pre-line;
@@ -176,6 +173,7 @@ topbar_html = f"""
     align-items:center;
     flex-wrap:wrap;
     justify-content:flex-end;
+    flex: 0 0 auto;
   }}
 
   a.icon-btn {{
@@ -190,7 +188,7 @@ topbar_html = f"""
     border:1px solid var(--border);
     background: rgba(0,0,0,0.25);
     box-shadow: 0 0 0 1px rgba(57,255,20,0.12) inset, 0 10px 22px rgba(0,0,0,0.35);
-    transition: transform 160ms ease, background 160ms ease, border-color 160ms ease, box-shadow 160ms ease, filter 160ms ease;
+    transition: transform 140ms ease, background 140ms ease, border-color 140ms ease, box-shadow 140ms ease;
     -webkit-tap-highlight-color: transparent;
     user-select:none;
   }}
@@ -200,11 +198,12 @@ topbar_html = f"""
     pointer-events:none;
   }}
 
+  /* ✅ Smaller lift so it doesn't get clipped anywhere */
   a.icon-btn:hover {{
-    transform: translateY(-2px);
+    transform: translateY(-1px);
     background: rgba(57,255,20,0.12);
     border-color: rgba(57,255,20,0.85);
-    box-shadow: 0 0 18px rgba(57,255,20,0.18), 0 12px 26px rgba(0,0,0,0.45);
+    box-shadow: 0 0 14px rgba(57,255,20,0.18), 0 12px 22px rgba(0,0,0,0.45);
   }}
 
   a.icon-btn:active {{
@@ -229,17 +228,25 @@ topbar_html = f"""
   a.email-btn:hover .email-open {{ opacity: 1; }}
   a.email-btn:hover .email-closed {{ opacity: 0; }}
 
-  /* Responsive: shrink title + buttons so they don't clip on mobile */
+  /* ✅ Mobile: keep everything visible and compact */
   @media (max-width: 640px) {{
-    .terminal-title {{ font-size: 1.15rem; line-height: 1.25; }}
+    body {{ padding: 8px 6px 2px 6px; }}
+    .terminal-title {{ font-size: 1.10rem; min-width: 0; }}
     .tagline {{ font-size: 1.02rem; }}
+
     a.icon-btn {{ width: 38px; height: 38px; }}
     a.icon-btn i {{ font-size: 16px; }}
-    .icon-row {{ gap: 8px; }}
-    .prompt {{ margin-right: 8px; }}
+
+    /* Put icons on their own row if needed so they don't disappear */
+    .icon-row {{
+      width: 100%;
+      justify-content: flex-start;
+      gap: 8px;
+      margin-top: 6px;
+    }}
   }}
 
-  /* On touch devices: avoid "stuck hover" */
+  /* Touch devices: avoid "stuck hover" */
   @media (hover: none) and (pointer: coarse) {{
     a.icon-btn:hover {{
       transform:none;
@@ -250,7 +257,8 @@ topbar_html = f"""
     a.icon-btn:active {{
       background: rgba(57,255,20,0.12);
       border-color: rgba(57,255,20,0.85);
-      box-shadow: 0 0 18px rgba(57,255,20,0.18), 0 12px 26px rgba(0,0,0,0.45);
+      box-shadow: 0 0 14px rgba(57,255,20,0.18), 0 12px 22px rgba(0,0,0,0.45);
+      transform: scale(0.98);
     }}
   }}
 </style>
@@ -261,6 +269,7 @@ topbar_html = f"""
     <div class="terminal-title">
       <span class="prompt">$</span>
       <span id="prefix"></span><span id="word"></span><span class="cursor">▌</span>
+      <div class="tagline">{TAGLINE}</div>
     </div>
 
     <div class="icon-row">
@@ -277,11 +286,9 @@ topbar_html = f"""
     </div>
   </div>
 
-  <div class="tagline">{TAGLINE}</div>
-
 <script>
 (function () {{
-  // IMPORTANT: STATIC_PREFIX already includes the single NBSP at the end
+  // ✅ STATIC_PREFIX already includes the single NBSP at the end (do NOT add another space)
   const staticPrefix = {STATIC_PREFIX!r};
   const words = {ROTATING!r};
 
@@ -300,7 +307,7 @@ topbar_html = f"""
   const holdEmpty = 260;
 
   function step() {{
-    // Use Unicode-safe slicing so emojis don't show a "broken box" first
+    // ✅ Unicode-safe typing so emojis don't show broken characters first
     const glyphs = Array.from(words[idx]);
 
     if (!deleting) {{
@@ -314,7 +321,6 @@ topbar_html = f"""
         }}, holdFull);
         return;
       }}
-
       setTimeout(step, typeSpeed);
     }} else {{
       char--;
@@ -326,7 +332,6 @@ topbar_html = f"""
         setTimeout(step, holdEmpty);
         return;
       }}
-
       setTimeout(step, deleteSpeed);
     }}
   }}
@@ -348,8 +353,8 @@ topbar_html = f"""
 </html>
 """
 
-# Increased height so the top area never clips on mobile (2-line tagline + wrapping)
-components.html(topbar_html, height=190)
+# ✅ Less empty space (since TAGLINE is now single-line) + still safe for mobile wrap
+components.html(topbar_html, height=150)
 
 st.divider()
 
