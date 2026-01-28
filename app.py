@@ -762,13 +762,14 @@ with left:
     st.markdown("## Education")
     st.markdown(
         """
-    - **MSc Computer Science** — NWU — 2025–2027  
-    - **BSc Hons Computer Science and Information Technology** — NWU — 2023–2024  
-    - **BSc Information Technology** — NWU — 2021–2023  
-    - **TEFL (180 hours)** — i-to-i — 2023  
-    - **Matric certificate** — Wesvalia — 2016–2020  
+    - **MSc Computer Science** — NWU *(2025–2027)*  
+    - **BSc Hons Computer Science and Information Technology** — NWU *(2023–2024)*  
+    - **BSc Information Technology** — NWU *(2021–2023)*  
+    - **TEFL (180 hours)** — i-to-i *(2023)*  
+    - **Matric certificate** — Wesvalia *(2016–2020)*  
         """.strip()
-)
+    )
+
 
     st.markdown("## Research titles")
     st.markdown(
