@@ -1,3 +1,4 @@
+import re
 import streamlit as st
 import streamlit.components.v1 as components
 
@@ -10,8 +11,6 @@ st.set_page_config(
 # -----------------------------
 # Links / info
 # -----------------------------
-# Masters dissertation: Sunspot classification using deep learning techniques
-# Honours project: Assessing the cybersecurity awareness of staff members in a higher educational institution
 TAGLINE = ""
 
 PORTFOLIO_URL = "https://xoxothefrozenfox.github.io/react-personal-portfolio/"
@@ -32,6 +31,7 @@ ROTATING = [
 # -----------------------------
 # Global terminal aesthetic (whole Streamlit page)
 # Default theme = neon ORANGE, toggle => neon GREEN
+# + style code blocks to look like terminal blocks
 # -----------------------------
 st.markdown(
     """
@@ -87,6 +87,20 @@ p, li{
   font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
 }
 
+/* Code blocks look like terminal blocks */
+pre{
+  background: rgba(0,0,0,0.35) !important;
+  border: 1px solid var(--border-orange) !important;
+  border-radius: 14px !important;
+  padding: 12px 14px !important;
+  overflow-x: auto !important;
+  box-shadow: 0 0 0 1px rgba(255,122,24,0.10) inset;
+}
+code{
+  color: inherit !important;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace !important;
+}
+
 /* Green theme (set by JS) */
 html[data-theme="green"] body,
 html[data-theme="green"] [data-testid="stAppViewContainer"]{
@@ -105,6 +119,10 @@ html[data-theme="green"] div[data-testid="stMetric"]{
 html[data-theme="green"] div[data-testid="stAlert"]{
   border: 1px solid var(--border-green) !important;
 }
+html[data-theme="green"] pre{
+  border: 1px solid var(--border-green) !important;
+  box-shadow: 0 0 0 1px rgba(57,255,20,0.10) inset;
+}
 </style>
 """,
     unsafe_allow_html=True,
@@ -112,10 +130,9 @@ html[data-theme="green"] div[data-testid="stAlert"]{
 
 # -----------------------------
 # Topbar component
-# FIXES:
-# - No infinite scrolling: remove documentElement.scrollHeight feedback loop, clamp heights, update only on change
+# - No infinite scrolling (fixed resize loop)
 # - Theme toggle button left of portfolio button
-# - Mobile button bottom-edge clipping: use box-sizing:border-box + a touch of bottom padding + overflow visible
+# - Mobile button bottom-edge clipping fixed (box-sizing + padding + overflow visible)
 # -----------------------------
 topbar_html = f"""
 <!doctype html>
@@ -137,10 +154,9 @@ topbar_html = f"""
     height: auto !important;
   }}
 
-  /* Default theme in iframe = ORANGE */
   body {{
     margin: 0;
-    padding: 10px 8px 10px 8px; /* slightly more bottom padding */
+    padding: 10px 8px 10px 8px;
     background: transparent;
     color: var(--orange);
     font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono",
@@ -153,7 +169,7 @@ topbar_html = f"""
   #wrap {{
     width: 100%;
     display: block;
-    overflow: visible; /* ✅ ensure shadows/borders aren't clipped */
+    overflow: visible;
   }}
 
   .row1 {{
@@ -182,12 +198,7 @@ topbar_html = f"""
   }}
 
   .typing-line {{ display: inline; }}
-
-  .prompt {{
-    display: inline;
-    white-space: nowrap;
-  }}
-
+  .prompt {{ display: inline; white-space: nowrap; }}
   #prefix, #word {{ display: inline; }}
 
   .cursor {{
@@ -196,10 +207,7 @@ topbar_html = f"""
     margin-left: 2px;
     animation: blink 1s steps(1) infinite;
   }}
-
-  @keyframes blink {{
-    50% {{ opacity: 0; }}
-  }}
+  @keyframes blink {{ 50% {{ opacity: 0; }} }}
 
   .icon-row {{
     display:flex;
@@ -210,11 +218,10 @@ topbar_html = f"""
     padding-right: 8px;
     padding-left: 8px;
     padding-top: 10px;
-    padding-bottom: 4px;  /* ✅ helps on mobile/HiDPI borders */
-    overflow: visible;    /* ✅ don't clip button borders/shadows */
+    padding-bottom: 4px;
+    overflow: visible;
   }}
 
-  /* Buttons inherit current text color (orange/green) */
   a.icon-btn, button.icon-btn {{
     width:44px;
     height:44px;
@@ -225,7 +232,6 @@ topbar_html = f"""
     text-decoration:none;
     color: currentColor;
 
-    /* ✅ CRITICAL: keep border INSIDE width/height (fixes bottom clipping) */
     box-sizing: border-box;
 
     border:1px solid var(--border-orange);
@@ -236,8 +242,9 @@ topbar_html = f"""
     user-select:none;
     cursor: pointer;
 
-    line-height: 1;       /* ✅ avoids font metrics affecting layout */
-    overflow: visible;    /* ✅ ensure inner glyph never clips */
+    line-height: 1;
+    overflow: visible;
+    padding: 0;
   }}
 
   html[data-theme="green"] a.icon-btn,
@@ -266,7 +273,6 @@ topbar_html = f"""
     transform: translateY(0px) scale(0.98);
   }}
 
-  /* Email icon swap */
   a.email-btn {{ position: relative; }}
   a.email-btn i {{
     position: absolute;
@@ -293,7 +299,7 @@ topbar_html = f"""
   }}
 
   @media (max-width: 640px) {{
-    body {{ padding: 12px 10px 12px 10px; }} /* a touch more bottom padding */
+    body {{ padding: 12px 10px 12px 10px; }}
 
     .row1 {{
       grid-template-columns: 1fr;
@@ -311,7 +317,7 @@ topbar_html = f"""
     .icon-row {{
       justify-content: flex-start;
       gap: 8px;
-      padding: 0 0 6px 0; /* ✅ tiny bottom padding to stop any edge cut */
+      padding: 0 0 8px 0; /* a bit more breathing room on mobile */
       overflow: visible;
     }}
 
@@ -358,7 +364,6 @@ topbar_html = f"""
       </div>
 
       <div class="icon-row">
-        <!-- Theme toggle button (left of portfolio) -->
         <button class="icon-btn" id="themeToggle" type="button" title="Toggle theme (Orange/Green)">
           <i class="fa-solid fa-palette"></i>
         </button>
@@ -390,7 +395,6 @@ topbar_html = f"""
         window.parent.document.documentElement.setAttribute("data-theme", t);
       }}
     }} catch (e) {{}}
-
     try {{ localStorage.setItem("siteTheme", t); }} catch (e) {{}}
   }}
 
@@ -421,7 +425,7 @@ topbar_html = f"""
     if (raf) cancelAnimationFrame(raf);
     raf = requestAnimationFrame(() => {{
       try {{
-        const h = Math.min(280, Math.max(70, getHeight() + 12));
+        const h = Math.min(320, Math.max(70, getHeight() + 12));
         if (Math.abs(h - lastH) > 1 && window.frameElement) {{
           lastH = h;
           window.frameElement.style.height = h + "px";
@@ -432,7 +436,6 @@ topbar_html = f"""
 
   window.addEventListener("load", () => resizeFrame());
   window.addEventListener("resize", () => setTimeout(resizeFrame, 60));
-
   new MutationObserver(() => resizeFrame()).observe(wrap, {{
     childList: true, subtree: true, characterData: true
   }});
@@ -488,6 +491,7 @@ topbar_html = f"""
   wordEl.textContent = "";
   step();
 
+  // Prevent stuck focus when coming back (mobile)
   function blurActive() {{
     try {{ document.activeElement && document.activeElement.blur && document.activeElement.blur(); }} catch(e) {{}}
   }}
@@ -506,8 +510,44 @@ topbar_html = f"""
 """
 
 components.html(topbar_html, height=93)
-
 st.divider()
+
+# -----------------------------
+# Fake terminal / linux command blocks before each section
+# -----------------------------
+BASE = "Person@Interest:/Bernard"
+
+UBUNTU_BANNER = [
+    "Welcome to Ubuntu 22.04.3 LTS (GNU/Linux 6.5.0-xx-generic x86_64)",
+    "",
+    " * Documentation:  help.ubuntu.com",
+    " * Management:     landscape.canonical.com",
+    "",
+]
+
+def _safe_path_segment(title: str) -> str:
+    # keep it readable in a fake prompt (no crazy chars)
+    seg = re.sub(r"[^\w\s\-]", "", title).strip()
+    seg = re.sub(r"\s+", "_", seg)
+    return seg if seg else "Section"
+
+def _nano_block(title: str, show_banner: bool, show_ctrl_c_before: bool):
+    seg = _safe_path_segment(title)
+    filename = f'{title}.txt'
+
+    lines = []
+    if show_banner:
+        lines += UBUNTU_BANNER
+
+    if show_ctrl_c_before:
+        lines.append("^C  (CTRL+C to quit)")
+        lines.append("")
+
+    prompt = f"{BASE}/{seg}$"
+    lines.append(f'{prompt} nano "{filename}"')
+    lines.append("GNU nano 6.2")
+    lines.append("^C  (CTRL+C to quit)")
+    st.markdown("```text\n" + "\n".join(lines) + "\n```")
 
 # -----------------------------
 # Main content
@@ -515,12 +555,16 @@ st.divider()
 left, right = st.columns([1.35, 1.0], gap="large")
 
 with left:
+    # Section 1
+    _nano_block("Research overview", show_banner=True, show_ctrl_c_before=False)
     st.markdown("## Research overview")
     st.write(
         "My research explores deep learning methods for classifying sunspot groups from solar imagery, "
         "with emphasis on robust generalization, handling class imbalance, and producing interpretable predictions."
     )
 
+    # Section 2
+    _nano_block("What I’m building", show_banner=False, show_ctrl_c_before=True)
     st.markdown("## What I’m building")
     st.markdown(
         """
@@ -531,6 +575,8 @@ with left:
         """.strip()
     )
 
+    # Section 3
+    _nano_block("Highlights", show_banner=False, show_ctrl_c_before=True)
     st.markdown("## Highlights")
     st.info("Replace these placeholders with your real results (macro-F1, dataset size, best model, key findings).")
 
