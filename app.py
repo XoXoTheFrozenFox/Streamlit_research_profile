@@ -14,11 +14,24 @@ EMAIL = "BernardSwanepoel1510@gmail.com"
 st.markdown(
     """
 <style>
-/* Reduce padding so buttons don't get clipped */
+/* Avoid clipping + reduce padding */
 .block-container{
   padding-top: 1rem !important;
   padding-left: 1rem !important;
   padding-right: 1rem !important;
+}
+
+/* Sometimes Streamlit elements sit above custom HTML and steal hover.
+   This makes the header non-interactive and ensures our row is on top. */
+header[data-testid="stHeader"]{
+  background: transparent !important;
+  pointer-events: none !important;
+}
+
+/* Put our icons above any overlays */
+.icon-wrap{
+  position: relative;
+  z-index: 9999;
 }
 
 /* Tight row */
@@ -31,34 +44,38 @@ st.markdown(
   padding: 0;
 }
 
-/* FORCE colors (Streamlit link styles can override unless we use !important) */
+/* Bigger hit area + always clickable */
 .icon-row a.icon-btn,
 .icon-row a.icon-btn:visited{
-  width:40px;
-  height:40px;
+  width:44px;                 /* slightly larger target */
+  height:44px;
   border-radius:999px;
   display:inline-flex;
   align-items:center;
   justify-content:center;
   text-decoration:none !important;
 
-  background:#ffffff !important;      /* base: white circle */
-  color:#111111 !important;            /* base: black icon */
+  background:#ffffff !important;        /* base */
+  color:#111111 !important;
   border:1px solid rgba(0,0,0,0.22) !important;
 
   box-shadow: 0 6px 14px rgba(0,0,0,0.12);
-  transition: background 140ms ease, color 140ms ease, transform 140ms ease, box-shadow 140ms ease, border-color 140ms ease;
-  cursor:pointer;
+  transition: background 120ms ease, color 120ms ease, transform 120ms ease, box-shadow 120ms ease, border-color 120ms ease;
+  cursor:pointer !important;
+
+  /* Key: prevents “dead hover” by ensuring the anchor receives pointer events */
+  pointer-events: auto !important;
 }
 
-/* Make sure the icon always inherits the anchor color */
+/* Ensure icon inherits color */
 .icon-row a.icon-btn i{
   color: inherit !important;
-  font-size: 16px;
+  font-size: 17px;
   line-height: 1;
+  pointer-events: none; /* pointer stays on the anchor, not the <i> */
 }
 
-/* Hover + keyboard focus: invert */
+/* Hover + focus invert */
 .icon-row a.icon-btn:hover,
 .icon-row a.icon-btn:focus-visible{
   background:#111111 !important;
@@ -72,9 +89,6 @@ st.markdown(
 .icon-row a.icon-btn:active{
   transform: translateY(0px) scale(0.98);
 }
-
-/* Prevent header overlay oddities */
-header[data-testid="stHeader"]{ background: transparent; }
 </style>
 
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
@@ -84,19 +98,21 @@ header[data-testid="stHeader"]{ background: transparent; }
 
 st.markdown(
     f"""
-<div class="icon-row">
-  <a class="icon-btn" href="{PORTFOLIO_URL}" target="_blank" rel="noopener" title="Portfolio">
-    <i class="fa-solid fa-globe"></i>
-  </a>
-  <a class="icon-btn" href="{GITHUB_URL}" target="_blank" rel="noopener" title="GitHub">
-    <i class="fa-brands fa-github"></i>
-  </a>
-  <a class="icon-btn" href="{LINKEDIN_URL}" target="_blank" rel="noopener" title="LinkedIn">
-    <i class="fa-brands fa-linkedin-in"></i>
-  </a>
-  <a class="icon-btn" href="mailto:{EMAIL}" title="Email">
-    <i class="fa-solid fa-envelope"></i>
-  </a>
+<div class="icon-wrap">
+  <div class="icon-row">
+    <a class="icon-btn" href="{PORTFOLIO_URL}" target="_blank" rel="noopener" title="Portfolio">
+      <i class="fa-solid fa-globe"></i>
+    </a>
+    <a class="icon-btn" href="{GITHUB_URL}" target="_blank" rel="noopener" title="GitHub">
+      <i class="fa-brands fa-github"></i>
+    </a>
+    <a class="icon-btn" href="{LINKEDIN_URL}" target="_blank" rel="noopener" title="LinkedIn">
+      <i class="fa-brands fa-linkedin-in"></i>
+    </a>
+    <a class="icon-btn" href="mailto:{EMAIL}" title="Email">
+      <i class="fa-solid fa-envelope"></i>
+    </a>
+  </div>
 </div>
 """,
     unsafe_allow_html=True,
