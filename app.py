@@ -779,7 +779,7 @@ with left:
         """.strip()
     )
 
-    st.markdown("## Research summary")
+    st.markdown("## Current research summary")
     st.write(
         "Higher sunspot numbers on the Sun usually mean higher solar activity and a greater chance of space-weather events "
         "that can disrupt power grids, telecommunications, and other critical electronic systems. "
