@@ -8,39 +8,19 @@ import pandas as pd
 import streamlit as st
 import streamlit.components.v1 as components
 
-# ✅ MUST be the first Streamlit command
 st.set_page_config(
     page_title="BS — Research profile",
     page_icon="🧑‍💻",
     layout="wide",
 )
 
-# -----------------------------
-# Helpers
-# -----------------------------
-def get_secret(key: str, default: str = "") -> str:
-    """
-    ✅ Prevents StreamlitSecretNotFoundError when no secrets.toml exists.
-    Falls back to environment variables, then default.
-    """
-    try:
-        return st.secrets.get(key, default)
-    except Exception:
-        return os.environ.get(key, default)
-
-def build_mailto(to_email: str, subject: str, body: str) -> str:
-    return f"mailto:{to_email}?subject={quote(subject)}&body={quote(body)}"
-
-# -----------------------------
-# Basic config
-# -----------------------------
 hide_st_style = """
-<style>
-#MainMenu {visibility: hidden;}
-footer {visibility: hidden;}
-header {visibility: hidden;}
-</style>
-"""
+            <style>
+            #MainMenu {visibility: hidden;}
+            footer {visibility: hidden;}
+            header {visibility: hidden;}
+            </style>
+            """
 st.markdown(hide_st_style, unsafe_allow_html=True)
 
 TAGLINE = ""
@@ -60,63 +40,10 @@ ROTATING = [
     "Space enthusiast💫",
 ]
 
-# ✅ Safe secrets (won't crash if missing)
-EMAILJS_PUBLIC_KEY = get_secret("EMAILJS_PUBLIC_KEY", "")
-EMAILJS_SERVICE_ID = get_secret("EMAILJS_SERVICE_ID", "")
-EMAILJS_TEMPLATE_ID = get_secret("EMAILJS_TEMPLATE_ID", "")
+EMAILJS_PUBLIC_KEY = st.secrets.get("EMAILJS_PUBLIC_KEY", "")
+EMAILJS_SERVICE_ID = st.secrets.get("EMAILJS_SERVICE_ID", "")
+EMAILJS_TEMPLATE_ID = st.secrets.get("EMAILJS_TEMPLATE_ID", "")
 
-EMAILJS_READY = all([EMAILJS_PUBLIC_KEY, EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID])
-
-# -----------------------------
-# ✅ Theme sync keeper (fixes “theme change breaks app”)
-# Keeps data-theme on the main document in sync with localStorage bs_theme even after Streamlit reruns.
-# -----------------------------
-THEME_SYNC_HTML = r"""
-<script>
-(function(){
-  const KEY = "bs_theme";
-  const THEMES = ["green","blue","pink","orange"];
-
-  function getTheme(){
-    try{
-      const t = localStorage.getItem(KEY);
-      if (t && THEMES.includes(t)) return t;
-    }catch(e){}
-    const t2 = document.documentElement.getAttribute("data-theme");
-    if (t2 && THEMES.includes(t2)) return t2;
-    return "green";
-  }
-
-  function apply(){
-    const t = getTheme();
-    try { document.documentElement.setAttribute("data-theme", t); } catch(e) {}
-  }
-
-  apply();
-
-  // Re-apply regularly to survive Streamlit rerenders / DOM rebuilds
-  let last = null;
-  setInterval(() => {
-    const t = getTheme();
-    if (t !== last){
-      last = t;
-      apply();
-    } else {
-      apply();
-    }
-  }, 500);
-
-  window.addEventListener("storage", (ev) => {
-    if (ev && ev.key === KEY) apply();
-  });
-})();
-</script>
-"""
-components.html(THEME_SYNC_HTML, height=0)
-
-# -----------------------------
-# Global CSS
-# -----------------------------
 st.markdown(
     """
 <style>
@@ -279,11 +206,12 @@ div[data-testid="stTextInput"] input:-webkit-autofill:focus{
   border: 1px solid var(--border-green) !important;
 }
 
-/* ✅ "Field empty!" bottom-right in each Streamlit input */
+/* ✅ Align "Field empty!" to bottom-right inside each Streamlit input */
 div[data-testid="stTextInput"]:has(input:placeholder-shown):not(:focus-within)::after{
   content: "Field empty!";
   position: absolute;
   right: 14px;
+  top: auto;
   bottom: 10px;
   font-size: 12px;
   opacity: 0.75;
@@ -294,6 +222,7 @@ div[data-testid="stTextArea"]:has(textarea:placeholder-shown):not(:focus-within)
   content: "Field empty!";
   position: absolute;
   right: 14px;
+  top: auto;
   bottom: 10px;
   font-size: 12px;
   opacity: 0.75;
@@ -383,7 +312,6 @@ div[data-testid="stCheckbox"] input{
   accent-color: var(--green) !important;
 }
 
-/* Theme overrides driven by html[data-theme="..."] */
 html[data-theme="orange"] body,
 html[data-theme="orange"] [data-testid="stAppViewContainer"]{ color: var(--orange) !important; }
 html[data-theme="orange"] *{ color: var(--orange) !important; }
@@ -461,7 +389,7 @@ html[data-theme="pink"] .stButton > button:hover,
 html[data-theme="pink"] div[data-testid="stFormSubmitButton"] button:hover,
 html[data-theme="pink"] a.send-mailto-btn:hover{ background: rgba(255,43,214,0.08) !important; }
 html[data-theme="pink"] div[data-testid="stCheckbox"]{ border: 1px solid var(--border-pink) !important; }
-html[data-theme="pink"] div[data-testid="stCheckbox"] input{ accent-color: var(--pink) !important; }
+html[data-theme="pink"] div[data-theme="pink"] div[data-testid="stCheckbox"] input{ accent-color: var(--pink) !important; }
 html[data-theme="pink"] div[data-testid="stSelectbox"] [data-baseweb="select"] > div{ border: 1px solid var(--border-pink) !important; }
 html[data-theme="pink"] div[data-testid="stSelectbox"] [role="listbox"]{ border: 1px solid var(--border-pink) !important; }
 </style>
@@ -469,9 +397,6 @@ html[data-theme="pink"] div[data-testid="stSelectbox"] [role="listbox"]{ border:
     unsafe_allow_html=True,
 )
 
-# -----------------------------
-# Topbar
-# -----------------------------
 TOPBAR_TEMPLATE = r"""
 <!doctype html>
 <html>
@@ -741,10 +666,8 @@ TOPBAR_TEMPLATE = r"""
 
     try { localStorage.setItem(STORAGE_KEY, t); } catch(e) {}
 
-    // apply to this iframe
     document.documentElement.setAttribute("data-theme", t);
 
-    // apply to parent (Streamlit page)
     try {
       if (window.parent && window.parent.document) {
         window.parent.document.documentElement.setAttribute("data-theme", t);
@@ -840,9 +763,9 @@ topbar_html = (
 components.html(topbar_html, height=93)
 st.divider()
 
-# -----------------------------
-# Data helpers
-# -----------------------------
+def build_mailto(to_email: str, subject: str, body: str) -> str:
+    return f"mailto:{to_email}?subject={quote(subject)}&body={quote(body)}"
+
 @st.cache_data(show_spinner=False)
 def read_spectrum_csv(folder: str) -> pd.DataFrame:
     paths = sorted(glob.glob(os.path.join(folder, "*.csv")))
@@ -903,9 +826,6 @@ def smart_yrange(y: np.ndarray) -> tuple[float, float]:
     pad = 0.08 * span if span > 0 else 0.5
     return float(lo - pad), float(hi + pad)
 
-# -----------------------------
-# Plotly spectrum template (unchanged)
-# -----------------------------
 SPECTRUM_TEMPLATE = r"""
 <div id="__DIV__" style="width:100%;"></div>
 <script src="https://cdn.plot.ly/plotly-2.30.0.min.js"></script>
@@ -1169,9 +1089,6 @@ def spectrum_plot_html(
         .replace("__PAYLOAD__", json.dumps(payload))
     )
 
-# -----------------------------
-# Confusion matrix template (unchanged)
-# -----------------------------
 CM_TEMPLATE = r"""
 <div class="cm-wrap" id="__WRAP__">
   <div id="__DIV__" style="width:100%;"></div>
@@ -1452,10 +1369,7 @@ def confusion_matrix_plot_html(
     )
 
 # -----------------------------
-# ✅ FIXED EmailJS contact form
-# - Prevents “send once then can’t send again” via inFlight guard + stricter state updates
-# - Re-enables send reliably after user types again
-# - Keeps working across theme changes
+# UPDATED: EmailJS contact form (no badge, no subtext, "Field empty!" bottom-right)
 # -----------------------------
 EMAILJS_CONTACT_TEMPLATE = r"""
 <!doctype html>
@@ -1484,9 +1398,13 @@ EMAILJS_CONTACT_TEMPLATE = r"""
     color: var(--accent);
     font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
   }
+
   *{ box-sizing:border-box; }
 
-  .outer{ width:100%; padding: 6px 0 2px 0; }
+  .outer{
+    width:100%;
+    padding: 6px 0 2px 0;
+  }
 
   .panel{
     background: var(--panel);
@@ -1544,9 +1462,14 @@ EMAILJS_CONTACT_TEMPLATE = r"""
     background-clip: padding-box;
   }
 
-  textarea{ min-height: 160px; resize: vertical; }
+  textarea{
+    min-height: 160px;
+    resize: vertical;
+  }
 
-  input::placeholder, textarea::placeholder{ color: var(--placeholder); }
+  input::placeholder, textarea::placeholder{
+    color: var(--placeholder);
+  }
 
   input:-webkit-autofill,
   input:-webkit-autofill:hover,
@@ -1557,10 +1480,12 @@ EMAILJS_CONTACT_TEMPLATE = r"""
     border: 1px solid var(--border) !important;
   }
 
+  /* ✅ Align "Field empty!" perfectly bottom-right in each field */
   .field:has(input:placeholder-shown):not(:focus-within)::after{
     content: "Field empty!";
     position:absolute;
     right: 14px;
+    top: auto;
     bottom: 10px;
     font-size: 12px;
     opacity: 0.75;
@@ -1572,6 +1497,7 @@ EMAILJS_CONTACT_TEMPLATE = r"""
     content: "Field empty!";
     position:absolute;
     right: 14px;
+    top: auto;
     bottom: 12px;
     font-size: 12px;
     opacity: 0.75;
@@ -1642,7 +1568,10 @@ EMAILJS_CONTACT_TEMPLATE = r"""
     line-height: 1;
   }
 
-  .pill small{ font-size: 11px; opacity: 0.95; }
+  .pill small{
+    font-size: 11px;
+    opacity: 0.95;
+  }
 
   @media (max-width: 640px){
     .grid{ grid-template-columns: 1fr; gap: 10px; }
@@ -1701,9 +1630,6 @@ EMAILJS_CONTACT_TEMPLATE = r"""
 
   const STORAGE_KEY = "bs_theme";
   const THEMES = ["green","blue","pink","orange"];
-
-  let inFlight = false;     // ✅ prevents “stuck after first send”
-  let hideTimer = null;
 
   function themeVars(t){
     switch(t){
@@ -1769,11 +1695,6 @@ EMAILJS_CONTACT_TEMPLATE = r"""
   const icon = qs("statusIcon");
   const text = qs("statusText");
 
-  function clearStatusSoon(ms){
-    if (hideTimer) { clearTimeout(hideTimer); hideTimer = null; }
-    hideTimer = setTimeout(() => setStatus("", ""), ms);
-  }
-
   function setStatus(kind, msg){
     if (!msg){
       pill.style.display = "none";
@@ -1781,6 +1702,7 @@ EMAILJS_CONTACT_TEMPLATE = r"""
       return;
     }
     pill.style.display = "inline-flex";
+    pill.className = "pill" + (kind ? (" " + kind) : "");
     if (kind === "ok"){ icon.textContent = "✓"; }
     else if (kind === "err"){ icon.textContent = "✕"; }
     else { icon.textContent = "…"; }
@@ -1803,24 +1725,14 @@ EMAILJS_CONTACT_TEMPLATE = r"""
   }
 
   function setButtonState(){
-    btnEl.disabled = inFlight || !isReady();
+    btnEl.disabled = !isReady();
   }
 
-  ["input","change","blur","keyup"].forEach(evt => {
+  ["input","change","blur"].forEach(evt => {
     nameEl.addEventListener(evt, setButtonState);
     replyEl.addEventListener(evt, setButtonState);
     subjEl.addEventListener(evt, setButtonState);
     msgEl.addEventListener(evt, setButtonState);
-  });
-
-  // Enter to send (but keep Enter inside textarea as newline)
-  [nameEl, replyEl, subjEl].forEach(el => {
-    el.addEventListener("keydown", (e) => {
-      if (e.key === "Enter"){
-        e.preventDefault();
-        if (!btnEl.disabled) send();
-      }
-    });
   });
 
   setButtonState();
@@ -1830,60 +1742,54 @@ EMAILJS_CONTACT_TEMPLATE = r"""
   }
 
   async function send(){
-    if (inFlight) return;
     if (!ensureConfig()){
       setStatus("err", "EmailJS not configured.");
-      clearStatusSoon(2600);
-      return;
-    }
-    if (!isReady()){
-      setStatus("err", "Please fill in all fields.");
-      clearStatusSoon(2600);
       return;
     }
 
-    inFlight = true;
-    setButtonState();
+    const from_name = (nameEl.value || "").trim();
+    const reply_to = (replyEl.value || "").trim();
+    const subject = (subjEl.value || "").trim();
+    const message = (msgEl.value || "").trim();
+
+    if (!(from_name && reply_to && subject && message)){
+      setStatus("err", "Please fill in all fields.");
+      return;
+    }
+    if (!validEmail(reply_to)){
+      setStatus("err", "Enter a valid email.");
+      return;
+    }
+
+    btnEl.disabled = true;
     setStatus("", "Sending…");
 
-    const params = {
-      to_email: TO_EMAIL,
-      from_name: (nameEl.value || "").trim(),
-      reply_to: (replyEl.value || "").trim(),
-      subject: (subjEl.value || "").trim(),
-      message: (msgEl.value || "").trim()
-    };
-
     try{
-      // init once is fine, but safe to call repeatedly
       emailjs.init({ publicKey: PUBLIC_KEY });
+
+      const params = {
+        to_email: TO_EMAIL,
+        from_name,
+        reply_to,
+        subject,
+        message
+      };
+
       await emailjs.send(SERVICE_ID, TEMPLATE_ID, params);
 
       setStatus("ok", "Sent.");
-
-      // clear fields
       nameEl.value = "";
       replyEl.value = "";
       subjEl.value = "";
       msgEl.value = "";
-
-      // allow next message
-      inFlight = false;
       setButtonState();
-
-      // UX: auto-hide status and refocus
-      clearStatusSoon(2200);
-      try { nameEl.focus(); } catch(e) {}
     }catch(e){
-      inFlight = false;
-      setButtonState();
       setStatus("err", "Failed to send. Try again.");
-      clearStatusSoon(2800);
+      setButtonState();
     }
   }
 
   btnEl.addEventListener("click", send);
-
   window.addEventListener("resize", () => setTimeout(updateFrameHeight, 60));
 })();
 </script>
@@ -1900,9 +1806,6 @@ def emailjs_contact_form_html(public_key: str, service_id: str, template_id: str
         .replace("__TO_EMAIL__", json.dumps(to_email or ""))
     )
 
-# -----------------------------
-# Layout
-# -----------------------------
 left, right = st.columns([1.35, 1.0], gap="large")
 
 with left:
