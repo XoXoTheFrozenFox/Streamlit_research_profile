@@ -1,5 +1,10 @@
 import re
 import json
+import time
+import ssl
+import smtplib
+from email.message import EmailMessage
+
 import requests
 import streamlit as st
 import streamlit.components.v1 as components
@@ -18,7 +23,7 @@ TAGLINE = ""
 PORTFOLIO_URL = "https://xoxothefrozenfox.github.io/react-personal-portfolio/"
 LINKEDIN_URL = "https://www.linkedin.com/in/bernard-swanepoel-a2777322b/"
 GITHUB_URL = "https://github.com/XoXoTheFrozenFox"
-EMAIL = "BernardSwanepoel1510@gmail.com"
+EMAIL = "BernardSwanepoel1510@gmail.com"  # where contact form sends to (you)
 
 STATIC_PREFIX = "Hi🌞, my name is Bernard Swanepoel. "
 
@@ -32,7 +37,7 @@ ROTATING = [
 
 # -----------------------------
 # Global terminal aesthetic + hide Streamlit chrome
-# + form widgets styled dark
+# + form widgets styled dark (same bg)
 # -----------------------------
 st.markdown(
     """
@@ -49,8 +54,6 @@ header {visibility: hidden;}
   --green:#39ff14;
   --border-orange:rgba(255,122,24,0.45);
   --border-green:rgba(57,255,20,0.45);
-  --panel: rgba(0,0,0,0.35);
-  --panel2: rgba(0,0,0,0.45);
 }
 
 /* Default theme = ORANGE */
@@ -74,7 +77,7 @@ hr{
 }
 
 div[data-testid="stMetric"]{
-  background: var(--panel) !important;
+  background: rgba(0,0,0,0.35) !important;
   border: 1px solid var(--border-orange) !important;
   border-radius: 14px !important;
   padding: 12px 12px !important;
@@ -82,7 +85,7 @@ div[data-testid="stMetric"]{
 }
 
 div[data-testid="stAlert"]{
-  background: var(--panel) !important;
+  background: rgba(0,0,0,0.35) !important;
   border: 1px solid var(--border-orange) !important;
 }
 
@@ -91,31 +94,37 @@ p, li{
 }
 
 /* -----------------------------
-   Form widgets: dark background + orange border/text
+   Form widgets: SAME BLACK bg + orange border/text
 ------------------------------ */
 [data-testid="stTextInput"] input,
 [data-testid="stTextArea"] textarea{
-  background: var(--panel2) !important;
+  background: var(--bg) !important;
   color: var(--orange) !important;
   border: 1px solid var(--border-orange) !important;
   border-radius: 14px !important;
   box-shadow: 0 0 0 1px rgba(255,122,24,0.10) inset !important;
+  caret-color: var(--orange) !important;
 }
 [data-testid="stTextInput"] input::placeholder,
 [data-testid="stTextArea"] textarea::placeholder{
   color: rgba(255,122,24,0.65) !important;
 }
+[data-testid="stTextInput"] input:focus,
+[data-testid="stTextArea"] textarea:focus{
+  outline: none !important;
+  box-shadow: 0 0 0 1px rgba(255,122,24,0.18) inset, 0 0 10px rgba(255,122,24,0.12) !important;
+}
 
-/* Streamlit buttons */
-.stButton > button{
-  background: var(--panel2) !important;
+/* Buttons */
+.stButton > button, [data-testid="stFormSubmitButton"] button{
+  background: var(--bg) !important;
   color: var(--orange) !important;
   border: 1px solid var(--border-orange) !important;
   border-radius: 14px !important;
   padding: 0.55rem 0.95rem !important;
   box-shadow: 0 0 0 1px rgba(255,122,24,0.10) inset !important;
 }
-.stButton > button:hover{
+.stButton > button:hover, [data-testid="stFormSubmitButton"] button:hover{
   background: rgba(255,122,24,0.10) !important;
 }
 
@@ -141,18 +150,21 @@ html[data-theme="green"] [data-testid="stTextInput"] input,
 html[data-theme="green"] [data-testid="stTextArea"] textarea{
   color: var(--green) !important;
   border: 1px solid var(--border-green) !important;
+  caret-color: var(--green) !important;
   box-shadow: 0 0 0 1px rgba(57,255,20,0.10) inset !important;
 }
 html[data-theme="green"] [data-testid="stTextInput"] input::placeholder,
 html[data-theme="green"] [data-testid="stTextArea"] textarea::placeholder{
   color: rgba(57,255,20,0.65) !important;
 }
-html[data-theme="green"] .stButton > button{
+html[data-theme="green"] .stButton > button,
+html[data-theme="green"] [data-testid="stFormSubmitButton"] button{
   color: var(--green) !important;
   border: 1px solid var(--border-green) !important;
   box-shadow: 0 0 0 1px rgba(57,255,20,0.10) inset !important;
 }
-html[data-theme="green"] .stButton > button:hover{
+html[data-theme="green"] .stButton > button:hover,
+html[data-theme="green"] [data-testid="stFormSubmitButton"] button:hover{
   background: rgba(57,255,20,0.10) !important;
 }
 </style>
@@ -325,35 +337,18 @@ topbar_html = f"""
 
   @media (max-width: 640px) {{
     body {{ padding: 12px 10px 14px 10px; }}
-
-    .row1 {{
-      grid-template-columns: 1fr;
-      gap: 8px;
-    }}
-
+    .row1 {{ grid-template-columns: 1fr; gap: 8px; }}
     .text-col {{ padding: 0; }}
-
-    .terminal-title {{
-      font-size: 1.10rem;
-      line-height: 1.25;
-      padding-top: 0;
-    }}
-
+    .terminal-title {{ font-size: 1.10rem; line-height: 1.25; padding-top: 0; }}
     .icon-row {{
       justify-content: flex-start;
       gap: 8px;
       padding: 0 0 12px 0;
       overflow: visible;
     }}
-
     a.icon-btn, button.icon-btn {{ width: 38px; height: 38px; }}
     a.icon-btn i, button.icon-btn i {{ font-size: 16px; }}
-
-    .tagline {{
-      font-size: 1.02rem;
-      line-height: 1.25;
-      margin-top: 6px;
-    }}
+    .tagline {{ font-size: 1.02rem; line-height: 1.25; margin-top: 6px; }}
   }}
 </style>
 </head>
@@ -506,42 +501,32 @@ components.html(topbar_html, height=93)
 st.divider()
 
 # -----------------------------
-# Email sending (Brevo Transactional API)
+# Email utilities
 # -----------------------------
 def _is_valid_email(addr: str) -> bool:
     if not addr:
         return False
     return re.match(r"^[^@\s]+@[^@\s]+\.[^@\s]+$", addr.strip()) is not None
 
-def send_contact_email_brevo(
-    *,
-    from_name: str,
-    from_email: str,
-    subject: str,
-    message: str,
-) -> tuple[bool, str]:
+
+def _send_via_brevo(*, from_name: str, from_email: str, message: str) -> tuple[bool, str]:
     """
-    Sends email to YOU using Brevo Transactional Email API (HTTPS).
-    Requires st.secrets["BREVO_API_KEY"] and a verified sender email in Brevo.
+    Brevo Transactional Email API:
+    POST https://api.brevo.com/v3/smtp/email
+    Header must include: api-key: <apiKey>
     """
-    api_key = st.secrets.get("BREVO_API_KEY", "")
-    sender_email = st.secrets.get("BREVO_SENDER_EMAIL", "")
-    sender_name = st.secrets.get("BREVO_SENDER_NAME", "Website Contact Form")
-    to_email = EMAIL
+    api_key = str(st.secrets.get("BREVO_API_KEY", "")).strip()
+    sender_email = str(st.secrets.get("BREVO_SENDER_EMAIL", "")).strip()
+    sender_name = str(st.secrets.get("BREVO_SENDER_NAME", "Website Contact Form")).strip()
 
     if not api_key:
         return False, "Missing BREVO_API_KEY in Streamlit secrets."
-    if not sender_email:
-        return False, "Missing BREVO_SENDER_EMAIL in Streamlit secrets."
-    if not _is_valid_email(sender_email):
-        return False, "BREVO_SENDER_EMAIL is not a valid email address."
+    if not sender_email or not _is_valid_email(sender_email):
+        return False, "BREVO_SENDER_EMAIL missing/invalid in Streamlit secrets."
 
-    # Build a clean body (avoid weird wrapping)
     safe_from_name = (from_name or "").strip()
     safe_from_email = (from_email or "").strip()
-    safe_subject = (subject or "").strip()
     safe_message = (message or "").strip()
-
     if not safe_message:
         return False, "Message cannot be empty."
 
@@ -550,7 +535,6 @@ def send_contact_email_brevo(
       <h3>New website message</h3>
       <p><b>Name:</b> {safe_from_name}</p>
       <p><b>Email:</b> {safe_from_email}</p>
-      <p><b>Subject:</b> {safe_subject}</p>
       <hr/>
       <pre style="white-space: pre-wrap;">{safe_message}</pre>
     </div>
@@ -558,31 +542,102 @@ def send_contact_email_brevo(
 
     payload = {
         "sender": {"name": sender_name, "email": sender_email},
-        "to": [{"email": to_email, "name": "Bernard Swanepoel"}],
-        "replyTo": {"email": safe_from_email or sender_email, "name": safe_from_name or "Website Visitor"},
-        "subject": f"[Website] {safe_subject}" if safe_subject else "[Website] New message",
+        "to": [{"email": EMAIL, "name": "Bernard Swanepoel"}],
+        "replyTo": {
+            "email": safe_from_email if _is_valid_email(safe_from_email) else sender_email,
+            "name": safe_from_name or "Website Visitor",
+        },
+        "subject": "[Website] New message",
         "htmlContent": html_content,
     }
 
     url = "https://api.brevo.com/v3/smtp/email"
     headers = {
-        "accept": "application/json",
         "api-key": api_key,
-        "content-type": "application/json",
+        "Content-Type": "application/json",
+        "accept": "application/json",
     }
 
     try:
-        r = requests.post(url, headers=headers, data=json.dumps(payload), timeout=20)
+        r = requests.post(url, headers=headers, json=payload, timeout=25)
         if 200 <= r.status_code < 300:
             return True, "Sent ✅"
-        # show a readable error
+
+        # Brevo returns JSON errors (usually)
         try:
             err = r.json()
         except Exception:
             err = {"error": r.text}
+
+        if r.status_code == 401:
+            return False, (
+                "Brevo rejected your API key (401). "
+                "Make sure your BREVO_API_KEY is a real Brevo API key from Transactional Email → SMTP & API → API Keys "
+                "and that it’s copied fully (no truncation/spaces)."
+            )
         return False, f"Brevo error ({r.status_code}): {err}"
     except Exception as e:
         return False, f"Request failed: {e}"
+
+
+def _send_via_gmail_smtp(*, from_name: str, from_email: str, message: str) -> tuple[bool, str]:
+    """
+    Gmail SMTP (free) using App Password (recommended).
+    Secrets needed:
+      SMTP_HOST="smtp.gmail.com"
+      SMTP_PORT=465
+      SMTP_USER="you@gmail.com"
+      SMTP_PASSWORD="xxxx xxxx xxxx xxxx"   (App Password, not your normal password)
+    """
+    host = str(st.secrets.get("SMTP_HOST", "")).strip()
+    port = int(st.secrets.get("SMTP_PORT", 465))
+    user = str(st.secrets.get("SMTP_USER", "")).strip()
+    password = str(st.secrets.get("SMTP_PASSWORD", "")).strip()
+
+    if not host or not user or not password:
+        return False, "Missing SMTP_HOST/SMTP_USER/SMTP_PASSWORD in Streamlit secrets."
+
+    safe_from_name = (from_name or "").strip()
+    safe_from_email = (from_email or "").strip()
+    safe_message = (message or "").strip()
+    if not safe_message:
+        return False, "Message cannot be empty."
+
+    msg = EmailMessage()
+    msg["Subject"] = "[Website] New message"
+    msg["From"] = user
+    msg["To"] = EMAIL
+    if _is_valid_email(safe_from_email):
+        msg["Reply-To"] = safe_from_email
+    msg.set_content(
+        f"New website message\n\n"
+        f"Name: {safe_from_name}\n"
+        f"Email: {safe_from_email}\n\n"
+        f"Message:\n{safe_message}\n"
+    )
+
+    try:
+        context = ssl.create_default_context()
+        with smtplib.SMTP_SSL(host, port, context=context) as server:
+            server.login(user, password)
+            server.send_message(msg)
+        return True, "Sent ✅"
+    except Exception as e:
+        return False, f"SMTP send failed: {e}"
+
+
+def send_contact_email(*, from_name: str, from_email: str, message: str) -> tuple[bool, str]:
+    """
+    Prefer Brevo if configured; otherwise fallback to Gmail SMTP if configured.
+    """
+    if str(st.secrets.get("BREVO_API_KEY", "")).strip():
+        return _send_via_brevo(from_name=from_name, from_email=from_email, message=message)
+
+    if str(st.secrets.get("SMTP_USER", "")).strip():
+        return _send_via_gmail_smtp(from_name=from_name, from_email=from_email, message=message)
+
+    return False, "No email provider configured. Add Brevo secrets OR Gmail SMTP secrets."
+
 
 # -----------------------------
 # Main content
@@ -633,7 +688,7 @@ with left:
 - **Evaluation:** Precision/Recall, Confusion matrices, ROC/PR analysis  
 - **UI / Apps:** Streamlit, Tkinter  
 - **Dev tools:** Visual Studio Code, Jupyter Notebooks, PyCharm  
-- **Environments:** Conda, Windows Subsystem for Linux (WSL)
+- **Environments:** Conda
         """.strip()
     )
 
@@ -648,32 +703,36 @@ with left:
 
     st.divider()
 
+    # -----------------------------
+    # Contact (sends directly)
+    # -----------------------------
     st.markdown("## Contact")
     st.write("Send me a message directly from this page:")
+
+    # simple abuse guard (keeps UI clean)
+    if "last_sent_ts" not in st.session_state:
+        st.session_state.last_sent_ts = 0.0
 
     with st.form("contact_form", clear_on_submit=True):
         name = st.text_input("Name", placeholder="Your name")
         email = st.text_input("Email", placeholder="you@example.com")
-        subject = st.text_input("Subject", placeholder="What is this about?")
-        message = st.text_area("Message", placeholder="Type your message here...", height=160)
-
+        message = st.text_area("Message", placeholder="Type your message here...", height=180)
         submitted = st.form_submit_button("Send message")
 
     if submitted:
-        if not name.strip():
+        now = time.time()
+        if now - float(st.session_state.last_sent_ts) < 25:
+            st.error("Please wait a few seconds before sending another message.")
+        elif not name.strip():
             st.error("Please enter your name.")
         elif not _is_valid_email(email):
             st.error("Please enter a valid email address.")
         elif not message.strip():
             st.error("Please enter a message.")
         else:
-            ok, info = send_contact_email_brevo(
-                from_name=name,
-                from_email=email,
-                subject=subject,
-                message=message,
-            )
+            ok, info = send_contact_email(from_name=name, from_email=email, message=message)
             if ok:
+                st.session_state.last_sent_ts = now
                 st.success("Message sent successfully ✅")
             else:
                 st.error(info)
