@@ -12,8 +12,7 @@ st.set_page_config(
 # -----------------------------
 TAGLINE = (
     "Masters dissertation: Sunspot classification using deep learning techniques\n"
-    "Honours project: Assessing the cybersecurity awareness of staff members in a higher educational institution\n"
-    "Line 3 here"
+    "Honours project: Assessing the cybersecurity awareness of staff members in a higher educational institution"
 )
 
 PORTFOLIO_URL = "https://xoxothefrozenfox.github.io/react-personal-portfolio/"
