@@ -466,9 +466,14 @@ left, right = st.columns([1.35, 1.0], gap="large")
 with left:
     st.markdown("## Research overview")
     st.write(
-        "My research explores deep learning methods for classifying sunspot groups from solar imagery, "
-        "with emphasis on robust generalization, handling class imbalance, and producing interpretable predictions."
+    "Higher sunspot numbers on the Sun usually mean higher solar activity and a greater chance of space-weather events that can disrupt power grids, telecommunications, and other critical electronic systems. "
+    "Some complex McIntosh sunspot group types are linked to higher probabilities of solar flares and coronal mass ejections (CMEs), which motivates the need for automated, reliable classification. "
+    "For my dissertation, I built a dataset from Solar Dynamics Observatory (SDO) images accessed via the Joint Science Operations Center (JSOC): 3,501 full-disk solar photos containing 14,014 sunspots. "
+    "I created four datasets—one for detection and three for classification using the McIntosh–Zurich Zpc scheme (Zurich class Z, leading-spot penumbra p, and interior compactness c)—and split them into 85% training, 10% validation, and 5% testing. "
+    "I evaluated multiple detection models (YOLO, RT-DETR, Faster R-CNN), with YOLOv8 performing best (83.30% precision, 76.00% recall). "
+    "For classification, transformer-based models (ViT, Swin) generally outperformed traditional CNNs, and ConvNeXt achieved the best overall accuracy (70.27%) across the Z, p, and c subclassifications."
     )
+
 
     st.markdown("## What I’m building")
     st.markdown(
