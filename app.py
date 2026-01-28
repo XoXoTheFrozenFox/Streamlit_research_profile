@@ -236,7 +236,6 @@ with col1:
     )
 
 with col2:
-    st.markdown("### Quick links")
 
     # Icon-only buttons + email hover open-envelope
     st.markdown(
@@ -266,11 +265,6 @@ with col2:
     )
 
     st.caption("Hover to invert colors ✨")
-
-with col3:
-    st.markdown("### Contact")
-    st.markdown(f"**Email:** {EMAIL}")
-    st.markdown(f"**University:** {UNIVERSITY}")
 
 st.divider()
 
