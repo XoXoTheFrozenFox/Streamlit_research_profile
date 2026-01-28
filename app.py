@@ -493,10 +493,14 @@ with left:
         """
 - **Data sources:** SDO, JSOC  
 - **Deep learning:** PyTorch  
+- **Core Python stack:** NumPy, Pandas  
+- **Visualization:** Matplotlib, Seaborn  
 - **Detection:** YOLOv8, RT-DETR, Faster R-CNN  
 - **Classification:** ViT, Swin, ResNet, EfficientNet, ConvNeXt  
-- **Evaluation:** precision/recall, confusion matrices, ROC/PR analysis  
-- **Deployment/UI:** Streamlit
+- **Evaluation:** Precision/Recall, Confusion Matrices, ROC/PR analysis  
+- **UI / Apps:** Streamlit, Tkinter  
+- **Dev tools:** Visual Studio Code, Jupyter Notebooks, PyCharm  
+- **Environments:** Conda, Windows Subsystem for Linux (WSL)
         """.strip()
     )
 
