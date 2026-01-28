@@ -19,7 +19,7 @@ EMAIL = "BernardSwanepoel1510@gmail.com"
 UNIVERSITY = "North-West University, Potchefstroom"
 
 STATIC_PREFIX = "Hi🌞, my name is Bernard Swanepoel."
-ROTATING = ["MSc. student", "Researcher", "Computer Scientist"]
+ROTATING = [" Masters student✏️", " Researcher🥸", " Computer Scientist💻"," Coffee addict☕"]
 
 # -----------------------------
 # Global terminal aesthetic (applies to whole Streamlit page)
