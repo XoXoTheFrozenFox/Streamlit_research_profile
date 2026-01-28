@@ -1,6 +1,4 @@
-import smtplib
-import ssl
-from email.message import EmailMessage
+import urllib.parse
 
 import streamlit as st
 import streamlit.components.v1 as components
@@ -89,17 +87,30 @@ p, li{
   font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
 }
 
-/* Make inputs feel more "terminal" */
+/* Inputs / textareas in terminal style */
 div[data-testid="stTextInput"] input,
 div[data-testid="stTextArea"] textarea{
   background: rgba(0,0,0,0.35) !important;
   border: 1px solid var(--border-orange) !important;
   border-radius: 14px !important;
   box-shadow: 0 0 0 1px rgba(255,122,24,0.10) inset !important;
+  caret-color: var(--orange) !important;
 }
 div[data-testid="stTextInput"] input:focus,
 div[data-testid="stTextArea"] textarea:focus{
   outline: none !important;
+}
+
+/* Buttons in terminal style */
+button[kind="primary"], button[kind="secondary"]{
+  border-radius: 999px !important;
+  border: 1px solid var(--border-orange) !important;
+  background: rgba(0,0,0,0.25) !important;
+  box-shadow: 0 0 0 1px rgba(255,122,24,0.12) inset, 0 10px 22px rgba(0,0,0,0.35) !important;
+}
+button[kind="primary"]:hover, button[kind="secondary"]:hover{
+  background: rgba(255,122,24,0.12) !important;
+  box-shadow: 0 0 12px rgba(255,122,24,0.18), 0 10px 18px rgba(0,0,0,0.45) !important;
 }
 
 /* Green theme (set by JS) */
@@ -124,6 +135,15 @@ html[data-theme="green"] div[data-testid="stTextInput"] input,
 html[data-theme="green"] div[data-testid="stTextArea"] textarea{
   border: 1px solid var(--border-green) !important;
   box-shadow: 0 0 0 1px rgba(57,255,20,0.10) inset !important;
+  caret-color: var(--green) !important;
+}
+html[data-theme="green"] button[kind="primary"], html[data-theme="green"] button[kind="secondary"]{
+  border: 1px solid var(--border-green) !important;
+  box-shadow: 0 0 0 1px rgba(57,255,20,0.12) inset, 0 10px 22px rgba(0,0,0,0.35) !important;
+}
+html[data-theme="green"] button[kind="primary"]:hover, html[data-theme="green"] button[kind="secondary"]:hover{
+  background: rgba(57,255,20,0.12) !important;
+  box-shadow: 0 0 12px rgba(57,255,20,0.18), 0 10px 18px rgba(0,0,0,0.45) !important;
 }
 </style>
 """,
@@ -134,8 +154,6 @@ html[data-theme="green"] div[data-testid="stTextArea"] textarea{
 # Topbar component
 # - DEFAULT ALWAYS ORANGE (no saved theme on load)
 # - Theme toggle button left of portfolio button
-# - No infinite scroll from iframe resize
-# - Mobile bottom-edge clipping fixed (box-sizing + padding)
 # -----------------------------
 topbar_html = f"""
 <!doctype html>
@@ -299,35 +317,13 @@ topbar_html = f"""
 
   @media (max-width: 640px) {{
     body {{ padding: 12px 10px 14px 10px; }}
-
-    .row1 {{
-      grid-template-columns: 1fr;
-      gap: 8px;
-    }}
-
+    .row1 {{ grid-template-columns: 1fr; gap: 8px; }}
     .text-col {{ padding: 0; }}
-
-    .terminal-title {{
-      font-size: 1.10rem;
-      line-height: 1.25;
-      padding-top: 0;
-    }}
-
-    .icon-row {{
-      justify-content: flex-start;
-      gap: 8px;
-      padding: 0 0 10px 0;
-      overflow: visible;
-    }}
-
+    .terminal-title {{ font-size: 1.10rem; line-height: 1.25; padding-top: 0; }}
+    .icon-row {{ justify-content: flex-start; gap: 8px; padding: 0 0 10px 0; overflow: visible; }}
     a.icon-btn, button.icon-btn {{ width: 38px; height: 38px; }}
     a.icon-btn i, button.icon-btn i {{ font-size: 16px; }}
-
-    .tagline {{
-      font-size: 1.02rem;
-      line-height: 1.25;
-      margin-top: 6px;
-    }}
+    .tagline {{ font-size: 1.02rem; line-height: 1.25; margin-top: 6px; }}
   }}
 </style>
 </head>
@@ -342,7 +338,6 @@ topbar_html = f"""
             <span id="prefix"></span><span id="word"></span><span class="cursor">▌</span>
           </span>
         </div>
-
         <div class="tagline">{TAGLINE}</div>
       </div>
 
@@ -379,7 +374,7 @@ topbar_html = f"""
     }} catch (e) {{}}
   }}
 
-  // ALWAYS start ORANGE (no localStorage restore)
+  // ALWAYS start ORANGE
   setTheme("orange");
 
   const toggleBtn = document.getElementById("themeToggle");
@@ -388,7 +383,7 @@ topbar_html = f"""
     setTheme(cur === "green" ? "orange" : "green");
   }});
 
-  // Resize without infinite growth
+  // Resize iframe nicely
   function getHeight() {{
     const b = wrap.getBoundingClientRect().height;
     const sh = wrap.scrollHeight;
@@ -481,44 +476,6 @@ components.html(topbar_html, height=93)
 st.divider()
 
 # -----------------------------
-# Email helper (uses st.secrets if available)
-# -----------------------------
-def _smtp_config_ok() -> bool:
-    return all(
-        k in st.secrets
-        for k in ("SMTP_HOST", "SMTP_PORT", "SMTP_USER", "SMTP_PASS", "SMTP_TO")
-    )
-
-def _send_email_via_smtp(sender_name: str, sender_email: str, subject: str, message: str) -> None:
-    msg = EmailMessage()
-    msg["Subject"] = f"[Website Contact] {subject}".strip()
-    msg["From"] = st.secrets["SMTP_USER"]
-    msg["To"] = st.secrets["SMTP_TO"]
-    msg["Reply-To"] = sender_email
-
-    body = (
-        f"New contact form submission\n\n"
-        f"Name: {sender_name}\n"
-        f"Email: {sender_email}\n"
-        f"Subject: {subject}\n\n"
-        f"Message:\n{message}\n"
-    )
-    msg.set_content(body)
-
-    host = str(st.secrets["SMTP_HOST"])
-    port = int(st.secrets["SMTP_PORT"])
-    user = str(st.secrets["SMTP_USER"])
-    pw = str(st.secrets["SMTP_PASS"])
-
-    context = ssl.create_default_context()
-    with smtplib.SMTP(host, port, timeout=20) as server:
-        server.ehlo()
-        server.starttls(context=context)
-        server.ehlo()
-        server.login(user, pw)
-        server.send_message(msg)
-
-# -----------------------------
 # Main content
 # -----------------------------
 left, right = st.columns([1.35, 1.0], gap="large")
@@ -576,7 +533,7 @@ with left:
     st.divider()
 
     # -----------------------------
-    # Contact page (section)
+    # Contact (mailto only — no extra/honeypot textbox, no extra messages)
     # -----------------------------
     st.markdown("## Contact")
 
@@ -585,52 +542,31 @@ with left:
         from_email = st.text_input("Your email", placeholder="e.g., jane@example.com")
         subject = st.text_input("Subject", placeholder="e.g., Research collaboration")
         message = st.text_area("Message", placeholder="Write your message here...", height=160)
-
-        # Simple anti-bot honeypot (should stay empty)
-        hp = st.text_input("Leave this empty", value="", label_visibility="collapsed")
-
-        submitted = st.form_submit_button("Send message")
+        submitted = st.form_submit_button("Create email draft")
 
     if submitted:
-        # Basic validation
-        if hp.strip():
-            st.warning("Message blocked.")
-        elif not name.strip() or not from_email.strip() or not subject.strip() or not message.strip():
+        if not name.strip() or not from_email.strip() or not subject.strip() or not message.strip():
             st.warning("Please complete all fields.")
         elif "@" not in from_email or "." not in from_email:
             st.warning("Please enter a valid email address.")
         else:
-            if _smtp_config_ok():
-                try:
-                    _send_email_via_smtp(
-                        sender_name=name.strip(),
-                        sender_email=from_email.strip(),
-                        subject=subject.strip(),
-                        message=message.strip(),
-                    )
-                    st.success("Sent ✅")
-                except Exception:
-                    st.error(
-                        "Could not send via server email (SMTP). "
-                        "You can still contact me directly using the Email button at the top."
-                    )
-            else:
-                # Fallback: show a mailto link + message to copy (works without secrets)
-                mailto_subject = subject.strip().replace("\n", " ").replace("\r", " ")
-                st.info(
-                    "Email sending is not configured on this deployment yet. "
-                    "Use the button below to open your email client with the message pre-filled."
-                )
-                mailto_body = (
-                    f"Name: {name.strip()}\n"
-                    f"Email: {from_email.strip()}\n\n"
-                    f"{message.strip()}"
-                )
-                # Keep it simple: show mailto link + copyable text
-                st.markdown(
-                    f"[Open email draft](mailto:{EMAIL}?subject={mailto_subject}&body={mailto_body})"
-                )
-                st.code(mailto_body, language="text")
+            body = (
+                f"Name: {name.strip()}\n"
+                f"Email: {from_email.strip()}\n\n"
+                f"{message.strip()}"
+            )
+
+            mailto_url = (
+                f"mailto:{EMAIL}"
+                f"?subject={urllib.parse.quote(subject.strip())}"
+                f"&body={urllib.parse.quote(body)}"
+            )
+
+            # Single clean button only
+            try:
+                st.link_button("Open email draft", mailto_url)
+            except Exception:
+                st.markdown(f"[Open email draft]({mailto_url})")
 
 st.divider()
 st.caption("© 2026 Bernard Swanepoel")
