@@ -10,8 +10,8 @@ st.set_page_config(
 # -----------------------------
 # Links / info
 # -----------------------------
-#Masters dissertation: Sunspot classification using deep learning techniques
-#Honours project: Assessing the cybersecurity awareness of staff members in a higher educational institution
+# Masters dissertation: Sunspot classification using deep learning techniques
+# Honours project: Assessing the cybersecurity awareness of staff members in a higher educational institution
 TAGLINE = ""
 
 PORTFOLIO_URL = "https://xoxothefrozenfox.github.io/react-personal-portfolio/"
@@ -88,7 +88,7 @@ p, li{
 )
 
 # -----------------------------
-# Topbar component (FIXED)
+# Topbar component (DESKTOP TEXT PADDING ADDED)
 # -----------------------------
 topbar_html = f"""
 <!doctype html>
@@ -110,7 +110,7 @@ topbar_html = f"""
 
   body {{
     margin: 0;
-    padding: 10px 8px 6px 8px;  /* a bit more bottom padding so tagline never clips */
+    padding: 10px 8px 6px 8px;
     background: transparent;
     color: var(--green);
     font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono",
@@ -123,7 +123,7 @@ topbar_html = f"""
     display: block;
   }}
 
-  /* ✅ Use GRID so icons align to the TOP of the title block (first line) */
+  /* ✅ GRID: title + icons */
   .row1 {{
     display: grid;
     grid-template-columns: 1fr auto;
@@ -132,18 +132,23 @@ topbar_html = f"""
     width: 100%;
   }}
 
+  /* ✅ Desktop-only padding for TEXT column (title + tagline) */
+  .text-col {{
+    padding: 10px 16px 8px 16px;   /* <-- increase/decrease as you like */
+  }}
+
   .terminal-title {{
     font-size: clamp(1.08rem, 2.05vw, 1.62rem);
     font-weight: 700;
     line-height: 1.22;
     margin: 0;
-    min-width: 0;                  /* ✅ critical: allow wrapping in grid */
+    min-width: 0;
     white-space: normal;
     overflow: visible;
     overflow-wrap: anywhere;
     word-break: break-word;
     text-shadow: 0 0 18px rgba(57,255,20,0.12);
-    padding-top: 2px;              /* tiny nudge to match icon visual baseline */
+    padding-top: 2px;
   }}
 
   .typing-line {{
@@ -152,7 +157,7 @@ topbar_html = f"""
 
   .prompt {{
     display: inline;
-    white-space: nowrap;           /* keep "$ " together */
+    white-space: nowrap;
   }}
 
   #prefix, #word {{
@@ -176,7 +181,10 @@ topbar_html = f"""
     align-items:center;
     justify-content:flex-end;
     flex-wrap: wrap;
-    padding-top: 0px;              /* ✅ no weird drift */
+    padding-top: 0px;
+    padding-right: 8px;            /* small right breathing room */
+    padding-left: 8px;             /* keeps spacing when wrapped */
+    padding-top: 10px;             /* aligns nicely with padded text */
   }}
 
   a.icon-btn {{
@@ -228,7 +236,7 @@ topbar_html = f"""
   a.email-btn:hover .email-closed {{ opacity: 0; }}
 
   .tagline {{
-    margin-top: 6px;
+    margin-top: 10px;              /* a bit more breathing room under title */
     margin-bottom: 0;
     font-size: clamp(1.00rem, 1.45vw, 1.18rem);
     font-weight: 650;
@@ -239,13 +247,17 @@ topbar_html = f"""
     text-shadow: 0 0 14px rgba(57,255,20,0.10);
   }}
 
-  /* ✅ Mobile: stack icons under title, keep them aligned to left */
+  /* ✅ Mobile: remove desktop text padding + stack icons */
   @media (max-width: 640px) {{
     body {{ padding: 12px 10px 8px 10px; }}
 
     .row1 {{
-      grid-template-columns: 1fr;  /* stack */
+      grid-template-columns: 1fr;
       gap: 8px;
+    }}
+
+    .text-col {{
+      padding: 0;                  /* ✅ no extra padding on mobile */
     }}
 
     .terminal-title {{
@@ -257,6 +269,7 @@ topbar_html = f"""
     .icon-row {{
       justify-content: flex-start;
       gap: 8px;
+      padding: 0;                  /* ✅ keep tight on mobile */
     }}
 
     a.icon-btn {{ width: 38px; height: 38px; }}
@@ -265,6 +278,7 @@ topbar_html = f"""
     .tagline {{
       font-size: 1.02rem;
       line-height: 1.25;
+      margin-top: 6px;
     }}
   }}
 
@@ -289,11 +303,15 @@ topbar_html = f"""
 <body>
   <div id="wrap">
     <div class="row1">
-      <div class="terminal-title">
-        <span class="typing-line">
-          <span class="prompt">$&nbsp;</span>
-          <span id="prefix"></span><span id="word"></span><span class="cursor">▌</span>
-        </span>
+      <div class="text-col">
+        <div class="terminal-title">
+          <span class="typing-line">
+            <span class="prompt">$&nbsp;</span>
+            <span id="prefix"></span><span id="word"></span><span class="cursor">▌</span>
+          </span>
+        </div>
+
+        <div class="tagline">{TAGLINE}</div>
       </div>
 
       <div class="icon-row">
@@ -309,17 +327,13 @@ topbar_html = f"""
         <a class="icon-btn" href="https://www.nwu.ac.za/" target="_blank" rel="noopener" title="North-West University"><i class="fa-solid fa-building-columns"></i></a>
       </div>
     </div>
-
-    <div class="tagline">{TAGLINE}</div>
   </div>
 
 <script>
 (function () {{
   const wrap = document.getElementById("wrap");
 
-  // ✅ More reliable iframe autosize (handles font load + typing changes)
   function getHeight() {{
-    // Use the max of several measurements to avoid under-sizing on mobile
     const b = wrap.getBoundingClientRect().height;
     const sh = wrap.scrollHeight;
     const dh = document.documentElement.scrollHeight;
@@ -333,22 +347,19 @@ topbar_html = f"""
       try {{
         const h = getHeight();
         if (window.frameElement) {{
-          window.frameElement.style.height = (h + 6) + "px";
+          window.frameElement.style.height = (h + 10) + "px";
         }}
       }} catch (e) {{}}
     }});
   }}
 
-  // Run on load + after fonts settle + on resize
   window.addEventListener("load", () => resizeFrame());
   window.addEventListener("resize", () => setTimeout(resizeFrame, 60));
 
-  // Watch DOM changes (typing updates)
   new MutationObserver(() => resizeFrame()).observe(wrap, {{
     childList: true, subtree: true, characterData: true
   }});
 
-  // Typing animation (Unicode-safe for emojis)
   const staticPrefix = {STATIC_PREFIX!r};
   const words = {ROTATING!r};
 
@@ -399,7 +410,6 @@ topbar_html = f"""
   wordEl.textContent = "";
   step();
 
-  // Prevent stuck focus when coming back (mobile)
   function blurActive() {{
     try {{ document.activeElement && document.activeElement.blur && document.activeElement.blur(); }} catch(e) {{}}
   }}
@@ -408,7 +418,6 @@ topbar_html = f"""
     if (!document.hidden) blurActive();
   }});
 
-  // extra passes to catch icon/font load timing
   setTimeout(resizeFrame, 120);
   setTimeout(resizeFrame, 350);
   setTimeout(resizeFrame, 700);
@@ -418,8 +427,8 @@ topbar_html = f"""
 </html>
 """
 
-# ✅ Start bigger so you never see a clipped second line while JS kicks in
-components.html(topbar_html, height=90)
+# Give enough initial height so nothing clips while JS measures
+components.html(topbar_html, height=220)
 
 st.divider()
 
