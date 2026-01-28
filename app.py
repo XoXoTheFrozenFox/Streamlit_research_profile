@@ -804,7 +804,7 @@ with left:
         "(70.27%) across the Z, p, and c subclassifications."
     )
 
-    st.markdown("## Tools and technologies used")
+    st.markdown("## Current research tools and technologies used")
     st.markdown(
         """
 - **Data sources:** SDO, JSOC  
